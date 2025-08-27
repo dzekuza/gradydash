@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/client-server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createProductSchema } from '@/lib/utils/zod-schemas/product'
-import { getEnvironmentsForUser } from '@/lib/db/environments/get-environments'
+import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
+import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 
 export async function createProduct(formData: FormData) {
   const supabase = createClient()
@@ -19,6 +20,7 @@ export async function createProduct(formData: FormData) {
   const sellingPrice = formData.get('selling_price') as string
   const categories = formData.get('categories') as string
   const redirectTo = formData.get('redirectTo') as string
+  const environmentId = formData.get('environment_id') as string
 
   // Validate input
   const validation = createProductSchema.safeParse({
@@ -45,22 +47,50 @@ export async function createProduct(formData: FormData) {
       throw new Error('Authentication required')
     }
 
-    // Get user's environment
-    const environments = await getEnvironmentsForUser(user.id)
-    const environment = environments[0] // Use first environment for now
-    const environmentId = environment?.id
+    // Check user's admin status
+    const { isSystemAdmin } = await getUserAdminStatus(user.id)
 
-    if (!environmentId) {
-      throw new Error('No environment found')
+    let targetEnvironmentId = environmentId
+    let environmentSlug = ''
+
+    if (targetEnvironmentId) {
+      // Verify the environment exists and user has access
+      const { data: environment, error: envError } = await supabase
+        .from('environments')
+        .select('id, slug')
+        .eq('id', targetEnvironmentId)
+        .single()
+
+      if (envError || !environment) {
+        throw new Error('Environment not found')
+      }
+
+      // Check if user has access to this environment
+      if (!isSystemAdmin) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('environment_id', targetEnvironmentId)
+          .eq('user_id', user.id)
+          .single()
+
+        if (membershipError || !membership) {
+          throw new Error('You do not have permission to create products in this environment')
+        }
+      }
+
+      environmentSlug = environment.slug
+    } else {
+      throw new Error('Environment ID is required')
     }
 
-    const basePath = `/${environment.slug}`
+    const basePath = `/${environmentSlug}`
 
     // Create the product
     const { data: product, error: productError } = await supabase
       .from('products')
       .insert({
-        environment_id: environmentId,
+        environment_id: targetEnvironmentId,
         ...validation.data,
         created_by: user.id
       })
@@ -88,10 +118,12 @@ export async function createProduct(formData: FormData) {
       // Don't throw error here as the main product creation succeeded
     }
 
-
     // Revalidate paths for immediate UI updates
     revalidatePath(`${basePath}/products`)
     revalidatePath(basePath)
+
+    // Return the created product
+    return { success: true, product }
 
   } catch (error) {
     console.error('Error in createProduct:', error)
@@ -101,10 +133,5 @@ export async function createProduct(formData: FormData) {
     }
     
     throw new Error('An unexpected error occurred while creating the product')
-  }
-
-  // Redirect to the product detail page
-  if (redirectTo) {
-    redirect(redirectTo)
   }
 }

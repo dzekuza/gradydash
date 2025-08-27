@@ -41,7 +41,7 @@ export function LocationDialog({ environmentId, location, trigger }: LocationDia
     setIsCreating(true)
     
     try {
-      formData.append('environmentId', environmentId)
+      formData.append('environment_id', environmentId)
       await createLocation(formData)
       setOpen(false)
       toast({

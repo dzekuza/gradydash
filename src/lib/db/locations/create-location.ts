@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { revalidatePath } from 'next/cache'
 import { createLocationSchema } from '@/lib/utils/zod-schemas/environment'
+import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 
 export async function createLocation(formData: FormData) {
   const supabase = createClient()
@@ -10,14 +11,17 @@ export async function createLocation(formData: FormData) {
   const name = formData.get('name') as string
   const description = formData.get('description') as string
   const address = formData.get('address') as string
+  const contactPersonName = formData.get('contact_person_name') as string
   const contactEmail = formData.get('contact_email') as string
   const contactPhone = formData.get('contact_phone') as string
+  const environmentId = formData.get('environment_id') as string
 
   // Validate input
   const validation = createLocationSchema.safeParse({
     name,
     description,
     address,
+    contact_person_name: contactPersonName,
     contact_email: contactEmail,
     contact_phone: contactPhone
   })
@@ -34,41 +38,54 @@ export async function createLocation(formData: FormData) {
       throw new Error('Authentication required')
     }
 
-    // Get user's environment
-    const { data: memberships } = await supabase
-      .from('memberships')
-      .select('environment_id')
-      .eq('user_id', user.id)
-      .limit(1)
+    // Check user's admin status
+    const { isSystemAdmin } = await getUserAdminStatus(user.id)
 
-    if (!memberships || memberships.length === 0) {
-      throw new Error('No environment found for user')
-    }
+    let targetEnvironmentId = environmentId
+    let environmentSlug = ''
 
-    const environmentId = memberships[0].environment_id
+    if (targetEnvironmentId) {
+      // Verify the environment exists and user has access
+      const { data: environment, error: envError } = await supabase
+        .from('environments')
+        .select('id, slug')
+        .eq('id', targetEnvironmentId)
+        .single()
 
-    // Get environment slug for revalidation
-    const { data: environment } = await supabase
-      .from('environments')
-      .select('slug')
-      .eq('id', environmentId)
-      .single()
+      if (envError || !environment) {
+        throw new Error('Environment not found')
+      }
 
-    if (!environment) {
-      throw new Error('Environment not found')
+      // Check if user has access to this environment
+      if (!isSystemAdmin) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('environment_id', targetEnvironmentId)
+          .eq('user_id', user.id)
+          .single()
+
+        if (membershipError || !membership) {
+          throw new Error('You do not have permission to create locations in this environment')
+        }
+      }
+
+      environmentSlug = environment.slug
+    } else {
+      throw new Error('Environment ID is required')
     }
 
     // Create the location
     const { data: location, error: locationError } = await supabase
       .from('locations')
       .insert({
-        environment_id: environmentId,
+        environment_id: targetEnvironmentId,
         name: validation.data.name,
         description: validation.data.description,
         address: validation.data.address,
+        contact_person_name: validation.data.contact_person_name,
         contact_email: validation.data.contact_email,
-        contact_phone: validation.data.contact_phone,
-        created_by: user.id
+        contact_phone: validation.data.contact_phone
       })
       .select()
       .single()
@@ -78,10 +95,9 @@ export async function createLocation(formData: FormData) {
       throw new Error('Failed to create location: ' + locationError.message)
     }
 
-
     // Revalidate paths for immediate UI updates
-    revalidatePath(`/${environment.slug}/locations`)
-    revalidatePath(`/${environment.slug}`)
+    revalidatePath(`/${environmentSlug}/locations`)
+    revalidatePath(`/${environmentSlug}`)
 
     return { success: true, location }
   } catch (error) {

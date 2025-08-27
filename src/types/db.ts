@@ -93,12 +93,12 @@ export interface ProductComment {
 export interface ProductImage {
   id: string
   product_id: string
-  storage_path: string
+  file_path: string
   file_name: string
-  file_size: number
-  mime_type: string
+  file_size?: number
   uploaded_by?: string | null
   created_at: string
+  public_url?: string
 }
 
 export interface Sale {

@@ -2,10 +2,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
+import { getPendingInvites } from '@/lib/db/environments/get-pending-invites'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminInviteUserDialog } from '@/components/admin/admin-invite-user-dialog'
+import { PendingInvites } from '@/components/admin/pending-invites'
 import { 
   Users, 
   UserPlus, 
@@ -76,10 +78,14 @@ export default async function AdminUsersPage() {
     console.error('Error fetching users:', usersError)
   }
 
+  // Get pending invites
+  const pendingInvites = await getPendingInvites()
+
   // Calculate statistics
   const totalUsers = users?.length || 0
   const totalMemberships = users?.reduce((total, user) => total + (user.memberships?.length || 0), 0) || 0
   const avgMemberships = totalUsers > 0 ? Math.round(totalMemberships / totalUsers) : 0
+  const totalPendingInvites = pendingInvites.length
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -96,7 +102,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -133,7 +139,28 @@ export default async function AdminUsersPage() {
             </p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalPendingInvites}</div>
+            <p className="text-xs text-muted-foreground">
+              Waiting for acceptance
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Pending Invites */}
+      <PendingInvites 
+        invites={pendingInvites} 
+        onInviteUpdate={() => {
+          // This will be handled by the component itself for now
+          // In a real implementation, you might want to refresh the page or refetch data
+        }} 
+      />
 
       {/* Users List */}
       <Card>

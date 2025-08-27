@@ -4,7 +4,9 @@ import { getProducts } from '@/lib/db/products/get-products'
 import { getDashboardStats } from '@/lib/db/products/get-dashboard-stats'
 import { getUserMembership } from '@/lib/db/environments/get-user-membership'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
+import { getLocations } from '@/lib/db/locations/get-locations'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
+import { ProductDialog } from '@/components/product/product-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Package, 
@@ -42,10 +44,11 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
     redirect('/dashboard')
   }
 
-  // Get products and stats using environment ID
-  const [products, stats] = await Promise.all([
+  // Get products, stats, and locations using environment ID
+  const [products, stats, locations] = await Promise.all([
     getProducts(environment.id),
-    getDashboardStats(environment.id)
+    getDashboardStats(environment.id),
+    getLocations(environment.id)
   ])
 
   const getStatusIcon = (status: string) => {
@@ -73,6 +76,10 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
             Manage your product inventory and track their status
           </p>
         </div>
+        <ProductDialog 
+          locations={locations} 
+          environmentId={environment.id}
+        />
       </div>
 
       {/* Stats Cards */}

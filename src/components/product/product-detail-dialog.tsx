@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Product, Location } from '@/types/db'
+import { useState, useEffect } from 'react'
+import { Product, Location, ProductImage } from '@/types/db'
 import { statuses } from '@/components/data-table/data'
 import { CategoryDisplay } from '@/components/product/category-display'
+import { ProductImages } from '@/components/product/product-images'
+import { getProductImagesClient } from '@/lib/db/products/get-product-images-client'
 import {
   Dialog,
   DialogContent,
@@ -44,6 +46,23 @@ export function ProductDetailDialog({
   environmentSlug
 }: ProductDetailDialogProps) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [images, setImages] = useState<ProductImage[]>([])
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
+
+  // Fetch images when product changes or dialog opens
+  useEffect(() => {
+    if (product && open) {
+      setIsLoadingImages(true)
+      getProductImagesClient(product.id)
+        .then(setImages)
+        .catch(error => {
+          console.error('Error fetching product images:', error)
+        })
+        .finally(() => {
+          setIsLoadingImages(false)
+        })
+    }
+  }, [product?.id, open])
 
   if (!product) {
     return null
@@ -339,23 +358,19 @@ export function ProductDetailDialog({
           </TabsContent>
 
           <TabsContent value="images" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  Product Images
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-32 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-                  <div className="text-center">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No images uploaded yet</p>
-                    <p className="text-xs text-muted-foreground">Images will appear here when uploaded</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ProductImages
+              productId={product.id}
+              images={images}
+              onImagesUpdate={() => {
+                // Refresh images when they're updated
+                getProductImagesClient(product.id)
+                  .then(setImages)
+                  .catch(error => {
+                    console.error('Error refreshing product images:', error)
+                  })
+              }}
+              canEdit={true}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -12,6 +12,8 @@ import { Product, Location, ProductStatus } from '@/types/db'
 import { createProduct } from '@/lib/db/products/create-product'
 import { updateProduct } from '@/lib/db/products/update-product'
 import { CategorySelector } from '@/components/product/category-selector'
+import { ImageUpload } from '@/components/product/image-upload'
+import { uploadProductImages } from '@/lib/db/products/upload-product-images'
 
 interface ProductFormProps {
   product?: Product
@@ -49,6 +51,7 @@ export function ProductForm({
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     product?.categories || []
   )
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
   const router = useRouter()
 
   // Use external loading state if provided, otherwise use internal
@@ -73,10 +76,28 @@ export function ProductForm({
       // Add categories as JSON string
       formData.append('categories', JSON.stringify(selectedCategories))
 
+      let createdProductId: string | null = null
+
       if (isEditing && product) {
         await updateProduct(product.id, formData)
+        createdProductId = product.id
       } else {
-        await createProduct(formData)
+        const result = await createProduct(formData)
+        // Extract product ID from the result if available
+        if (result && typeof result === 'object' && 'product' in result) {
+          createdProductId = (result as any).product.id
+        }
+      }
+
+      // Upload images if any were selected
+      if (selectedImages.length > 0 && createdProductId) {
+        try {
+          await uploadProductImages(createdProductId, selectedImages)
+        } catch (uploadError) {
+          console.error('Error uploading images:', uploadError)
+          // Don't fail the entire form submission if image upload fails
+          setError(`Product saved but image upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`)
+        }
       }
       
       // Call onSuccess callback if provided
@@ -235,6 +256,13 @@ export function ProductForm({
               rows={3}
             />
           </div>
+
+          <ImageUpload
+            onImagesChange={setSelectedImages}
+            maxFiles={5}
+            maxFileSize={5}
+            acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+          />
 
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={isLoading}>
