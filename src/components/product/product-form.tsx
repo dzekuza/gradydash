@@ -1,0 +1,208 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Product, Location, ProductStatus } from '@/types/db'
+import { createProduct } from '@/lib/db/products/create-product'
+import { updateProduct } from '@/lib/db/products/update-product'
+
+interface ProductFormProps {
+  product?: Product
+  locations: Location[]
+  environmentId?: string
+}
+
+const productStatuses: { value: ProductStatus; label: string }[] = [
+  { value: 'taken', label: 'Taken' },
+  { value: 'in_repair', label: 'In Repair' },
+  { value: 'selling', label: 'Selling' },
+  { value: 'sold', label: 'Sold' },
+  { value: 'returned', label: 'Returned' },
+  { value: 'discarded', label: 'Discarded' },
+]
+
+export function ProductForm({ product, locations, environmentId }: ProductFormProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<ProductStatus>(product?.status || 'taken')
+  const [locationId, setLocationId] = useState<string>(product?.location_id || '')
+  const router = useRouter()
+
+  const isEditing = !!product
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (environmentId) {
+        formData.append('environment_id', environmentId)
+      }
+
+      // Add the select values to form data
+      formData.append('status', status)
+      formData.append('location_id', locationId)
+
+      if (isEditing && product) {
+        await updateProduct(product.id, formData)
+      } else {
+        await createProduct(formData)
+      }
+    } catch (err) {
+      console.error('Error saving product:', err)
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</CardTitle>
+        <CardDescription>
+          {isEditing 
+            ? 'Update the product information below.'
+            : 'Fill in the product details to add it to your inventory.'
+          }
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Product Title *</Label>
+              <Input
+                id="title"
+                name="title"
+                defaultValue={product?.title}
+                placeholder="e.g., iPhone 13 Pro"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sku">SKU</Label>
+              <Input
+                id="sku"
+                name="sku"
+                defaultValue={product?.sku}
+                placeholder="e.g., IP13P-001"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                name="barcode"
+                defaultValue={product?.barcode}
+                placeholder="e.g., 1234567890123"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status *</Label>
+              <Select value={status} onValueChange={(value: ProductStatus) => setStatus(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productStatuses.map((statusOption) => (
+                    <SelectItem key={statusOption.value} value={statusOption.value}>
+                      {statusOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="purchase_price">Purchase Price (€)</Label>
+              <Input
+                id="purchase_price"
+                name="purchase_price"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={product?.purchase_price}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="selling_price">Selling Price (€)</Label>
+              <Input
+                id="selling_price"
+                name="selling_price"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={product?.selling_price}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location_id">Location</Label>
+            <Select value={locationId} onValueChange={setLocationId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No location assigned</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={product?.description}
+              placeholder="Product description..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product')}
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => router.back()}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}

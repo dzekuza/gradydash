@@ -16,7 +16,7 @@ export interface Environment {
   name: string
   slug: string
   description?: string
-  created_by: string
+  created_by?: string | null
   created_at: string
   updated_at: string
 }
@@ -64,14 +64,14 @@ export interface ProductStatusHistory {
   from_status: ProductStatus
   to_status: ProductStatus
   note?: string
-  changed_by: string
+  changed_by?: string | null
   created_at: string
 }
 
 export interface ProductComment {
   id: string
   product_id: string
-  user_id: string
+  user_id?: string | null
   content: string
   created_at: string
   updated_at: string
@@ -84,7 +84,7 @@ export interface ProductImage {
   file_name: string
   file_size: number
   mime_type: string
-  uploaded_by: string
+  uploaded_by?: string | null
   created_at: string
 }
 
@@ -93,7 +93,7 @@ export interface Sale {
   product_id: string
   amount: number
   currency: string
-  sold_by: string
+  sold_by?: string | null
   sold_at: string
   created_at: string
 }
@@ -103,7 +103,7 @@ export interface EnvironmentInvite {
   environment_id: string
   email: string
   role: Role
-  invited_by: string
+  invited_by?: string | null
   accepted_at?: string
   expires_at: string
   created_at: string

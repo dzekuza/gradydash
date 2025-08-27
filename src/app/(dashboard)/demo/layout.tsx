@@ -10,35 +10,24 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { getCurrentUserProfile } from '@/lib/supabase/auth'
+import { getOrCreateDemoEnvironment } from '@/lib/db/environments/get-demo-environment'
 
-const demoEnvironment = {
-  id: 'demo-env',
-  name: 'Demo Environment',
-  slug: 'demo',
-  description: 'Demo environment for testing',
-  created_by: 'demo-user',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-}
-
-const demoEnvironments = [
-  demoEnvironment,
-  {
-    id: 'test-env',
-    name: 'Test Environment',
-    slug: 'test',
-    description: 'Test environment',
-    created_by: 'demo-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-]
-
-export default function DemoLayout({
+export default async function DemoLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Get real user profile data
+  const userProfile = await getCurrentUserProfile()
+  
+  // Get the real demo environment from database
+  const demoEnvironment = await getOrCreateDemoEnvironment()
+
+  // For demo purposes, we'll create a simple list with just the demo environment
+  // In a real app, this would come from getEnvironmentsForUser
+  const demoEnvironments = [demoEnvironment]
+
   return (
     <SidebarProvider>
       <AppSidebar
@@ -49,6 +38,7 @@ export default function DemoLayout({
           />
         }
         currentEnvironment={demoEnvironment}
+        userProfile={userProfile}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">

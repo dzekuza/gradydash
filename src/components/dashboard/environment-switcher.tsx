@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useToast } from '@/hooks/use-toast'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { createEnvironment } from '@/lib/db/environments/create-environment'
 
 interface Environment {
   id: string
@@ -50,7 +52,9 @@ export function EnvironmentSwitcher({
   const [open, setOpen] = React.useState(false)
   const [showCreateDialog, setShowCreateDialog] = React.useState(false)
   const [value, setValue] = React.useState(currentEnvironment?.slug || '')
+  const [isCreating, setIsCreating] = React.useState(false)
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleEnvironmentSelect = (environmentSlug: string) => {
     setValue(environmentSlug)
@@ -59,19 +63,24 @@ export function EnvironmentSwitcher({
   }
 
   const handleCreateEnvironment = async (formData: FormData) => {
-    const name = formData.get('name') as string
-    const slug = formData.get('slug') as string
-
-    if (!name || !slug) return
-
+    setIsCreating(true)
+    
     try {
-      // TODO: Implement createEnvironment server action
-      console.log('Creating environment:', { name, slug })
+      await createEnvironment(formData)
       setShowCreateDialog(false)
-      // Refresh the page to show the new environment
-      router.refresh()
+      toast({
+        title: 'Environment created',
+        description: 'Your new environment has been created successfully.',
+      })
     } catch (error) {
       console.error('Failed to create environment:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create environment',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -140,6 +149,7 @@ export function EnvironmentSwitcher({
                   name="name"
                   placeholder="Enter environment name"
                   required
+                  disabled={isCreating}
                 />
               </div>
               <div className="grid gap-2">
@@ -151,11 +161,14 @@ export function EnvironmentSwitcher({
                   pattern="[a-z0-9-]+"
                   title="Only lowercase letters, numbers, and hyphens allowed"
                   required
+                  disabled={isCreating}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Create Environment</Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? 'Creating...' : 'Create Environment'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

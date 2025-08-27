@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getProductsByStatus, getRevenueLast30Days, getAverageTimeToSale } from '@/lib/db/products/get-dashboard-stats'
+import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
 interface DashboardPageProps {
   params: { env: string }
@@ -88,8 +89,12 @@ function DashboardStatsSkeleton() {
 }
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
-  // Get environment ID from slug (this would be done in the layout)
-  const environmentId = 'temp-id' // TODO: Get from layout context
+  // Get environment from slug
+  const environment = await getEnvironmentBySlug(params.env)
+  
+  if (!environment) {
+    throw new Error('Environment not found')
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -97,7 +102,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
       <Suspense fallback={<DashboardStatsSkeleton />}>
-        <DashboardStats environmentId={environmentId} />
+        <DashboardStats environmentId={environment.id} />
       </Suspense>
     </div>
   )

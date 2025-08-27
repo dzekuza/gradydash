@@ -12,7 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { getSession } from '@/lib/supabase/auth'
+import { getSession, getCurrentUserProfile } from '@/lib/supabase/auth'
 import { getEnvironmentsForUser, getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
 interface DashboardLayoutProps {
@@ -30,10 +30,11 @@ export default async function DashboardLayout({
     notFound()
   }
 
-  // Get user's environments and current environment
-  const [environments, currentEnvironment] = await Promise.all([
+  // Get user's environments, current environment, and profile
+  const [environments, currentEnvironment, userProfile] = await Promise.all([
     getEnvironmentsForUser(session.user.id),
     getEnvironmentBySlug(params.env),
+    getCurrentUserProfile(),
   ])
 
   if (!currentEnvironment) {
@@ -41,7 +42,9 @@ export default async function DashboardLayout({
   }
 
   // Check if user has access to this environment
-  const hasAccess = environments.some(env => env.id === currentEnvironment.id)
+  // If the user created this environment, they should have access even if membership isn't created yet
+  const hasAccess = environments.some(env => env.id === currentEnvironment.id) || 
+                   currentEnvironment.created_by === session.user.id
   if (!hasAccess) {
     notFound()
   }
@@ -58,6 +61,7 @@ export default async function DashboardLayout({
           </Suspense>
         }
         currentEnvironment={currentEnvironment}
+        userProfile={userProfile}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">

@@ -56,6 +56,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // If user is signed in and accessing /dashboard directly, redirect to their first environment
+  if (user && request.nextUrl.pathname === '/dashboard') {
+    // Get user's environments and redirect to the first one
+    const { data: memberships } = await supabase
+      .from('memberships')
+      .select('environment_id')
+      .eq('user_id', user.id)
+      .limit(1)
+
+    if (memberships && memberships.length > 0) {
+      const { data: environment } = await supabase
+        .from('environments')
+        .select('slug')
+        .eq('id', memberships[0].environment_id)
+        .single()
+
+      if (environment) {
+        const redirectUrl = request.nextUrl.clone()
+        redirectUrl.pathname = `/${environment.slug}`
+        return NextResponse.redirect(redirectUrl)
+      }
+    }
+
+    // If no environments found, redirect to demo
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/demo'
+    return NextResponse.redirect(redirectUrl)
+  }
+
   return supabaseResponse
 }
 

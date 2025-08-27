@@ -20,16 +20,18 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
-import { Environment } from "@/types/db"
+import { Environment, Profile } from "@/types/db"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   environmentSwitcher?: React.ReactNode
   currentEnvironment?: Environment
+  userProfile?: Profile | null
 }
 
 export function AppSidebar({ 
   environmentSwitcher,
   currentEnvironment,
+  userProfile,
   ...props 
 }: AppSidebarProps) {
   const pathname = usePathname()
@@ -74,7 +76,12 @@ export function AppSidebar({
     },
   ] : []
 
-  const user = {
+  // Use real user profile data or fallback to demo data
+  const user = userProfile ? {
+    name: userProfile.full_name || userProfile.email,
+    email: userProfile.email,
+    avatar: userProfile.avatar_url || "/avatars/default.jpg",
+  } : {
     name: "Demo User",
     email: "demo@example.com",
     avatar: "/avatars/demo.jpg",

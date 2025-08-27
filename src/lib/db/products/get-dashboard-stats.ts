@@ -1,14 +1,20 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { ProductStatus } from '@/types/db'
+import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
 
 export async function getProductsByStatus(environmentId: string): Promise<Record<ProductStatus, number>> {
   const supabase = createClient()
   
   try {
+    // Handle demo environment
+    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
+      ? await getDemoEnvironmentId() 
+      : environmentId
+
     const { data, error } = await supabase
       .from('products')
       .select('status')
-      .eq('environment_id', environmentId)
+      .eq('environment_id', actualEnvironmentId)
 
     if (error) {
       console.error('Error fetching products by status:', error)
@@ -53,24 +59,30 @@ export async function getRevenueLast30Days(environmentId: string): Promise<numbe
   const supabase = createClient()
   
   try {
+    // Handle demo environment
+    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
+      ? await getDemoEnvironmentId() 
+      : environmentId
+
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
     const { data, error } = await supabase
       .from('sales')
       .select(`
-        amount,
-        products(environment_id)
+        sale_price,
+        product_id,
+        products!inner(environment_id)
       `)
-      .eq('products.environment_id', environmentId)
-      .gte('sold_at', thirtyDaysAgo.toISOString())
+      .eq('products.environment_id', actualEnvironmentId)
+      .gte('sale_date', thirtyDaysAgo.toISOString())
 
     if (error) {
       console.error('Error fetching revenue:', error)
       return 0
     }
 
-    return data?.reduce((sum, sale) => sum + sale.amount, 0) || 0
+    return data?.reduce((sum, sale) => sum + Number(sale.sale_price), 0) || 0
   } catch (error) {
     console.error('Unexpected error in getRevenueLast30Days:', error)
     return 0
@@ -81,31 +93,83 @@ export async function getAverageTimeToSale(environmentId: string): Promise<numbe
   const supabase = createClient()
   
   try {
-    const { data, error } = await supabase
+    // Handle demo environment
+    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
+      ? await getDemoEnvironmentId() 
+      : environmentId
+
+    // First get all products in the environment with their creation dates
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, created_at')
+      .eq('environment_id', actualEnvironmentId)
+
+    if (productsError) {
+      console.error('Error fetching products:', productsError)
+      return 0
+    }
+
+    if (!products || products.length === 0) {
+      return 0
+    }
+
+    // Then get sales for these products
+    const productIds = products.map(p => p.id)
+    const { data: sales, error: salesError } = await supabase
       .from('sales')
-      .select(`
-        sold_at,
-        products(created_at, environment_id)
-      `)
-      .eq('products.environment_id', environmentId)
+      .select('product_id, sale_date')
+      .in('product_id', productIds)
 
-    if (error) {
-      console.error('Error fetching average time to sale:', error)
+    if (salesError) {
+      console.error('Error fetching sales:', salesError)
       return 0
     }
 
-    if (!data || data.length === 0) {
+    if (!sales || sales.length === 0) {
       return 0
     }
 
-    const timeToSaleDays = data
-      .filter(sale => sale.products && sale.products.length > 0)
-      .map(sale => {
-        const created = new Date(sale.products[0]?.created_at || sale.sold_at)
-        const sold = new Date(sale.sold_at)
-        const diffTime = Math.abs(sold.getTime() - created.getTime())
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      })
+    // Group sales by product_id and find the earliest sale_date for each product
+    const earliestSalesByProduct = sales.reduce((acc, sale) => {
+      const existing = acc.get(sale.product_id)
+      if (!existing || new Date(sale.sale_date) < new Date(existing.sale_date)) {
+        acc.set(sale.product_id, sale)
+      }
+      return acc
+    }, new Map<string, typeof sales[0]>())
+
+    // Calculate time to sale for each product with at least one sale
+    const timeToSaleDays: number[] = []
+    const negativeDurations: Array<{ productId: string, created: Date, sold: Date, duration: number }> = []
+
+    earliestSalesByProduct.forEach((sale, productId) => {
+      const product = products.find(p => p.id === productId)
+      if (!product) return
+
+      const created = new Date(product.created_at)
+      const sold = new Date(sale.sale_date)
+      const diffTime = sold.getTime() - created.getTime()
+      const durationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+      if (durationDays < 0) {
+        // Log negative durations for investigation
+        negativeDurations.push({
+          productId,
+          created,
+          sold,
+          duration: durationDays
+        })
+        console.warn(`Negative time-to-sale detected for product ${productId}:`, {
+          created: created.toISOString(),
+          sold: sold.toISOString(),
+          durationDays
+        })
+        // Skip negative durations from the average calculation
+        return
+      }
+
+      timeToSaleDays.push(durationDays)
+    })
 
     if (timeToSaleDays.length === 0) {
       return 0

@@ -1,40 +1,77 @@
-# GradyDash - Multi-Environment Dashboard
+# Grady ReSellOps Dashboard
 
-A modern, multi-tenant dashboard application built with Next.js 14, Supabase,
-and shadcn/ui.
+A multi-tenant returns/resale dashboard built with Next.js, Supabase, and
+shadcn/ui.
 
-## 🚀 Features
+## Features
 
-### ✅ Working Features
+- ✅ Multi-tenant environment system
+- ✅ Role-based access control (RBAC)
+- ✅ Environment switching with keyboard shortcuts
+- ✅ Product management with status tracking
+- ✅ Location management
+- ✅ Member management
+- ✅ Analytics dashboard
+- ✅ Modern UI with shadcn/ui components
 
-- **Modern Sidebar Navigation**: Using shadcn/ui sidebar-07 component with
-  collapsible design
-- **Multi-Environment Support**: Switch between different environments
-  seamlessly
-- **SPA Navigation**: All navigation uses Next.js Link - no full page reloads
-- **Responsive Design**: Mobile-first approach with collapsible sidebar
-- **Type Safety**: Full TypeScript support throughout the application
-- **Demo Environment**: Fully functional demo at `/demo` for testing
+## Quick Start
 
-### 🎨 UI Components
+### 1. Install Dependencies
 
-- **shadcn/ui Integration**: All components from shadcn/ui library
-- **Sidebar-07**: Modern collapsible sidebar with environment switcher
-- **Breadcrumb Navigation**: Contextual breadcrumbs in header
-- **Environment Switcher**: Popover with Command component for environment
-  selection
-- **Responsive Layout**: Adapts to mobile and desktop screens
+```bash
+npm install
+```
 
-## 🛠 Tech Stack
+### 2. Set Up Supabase
 
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui, Radix UI
-- **Backend**: Supabase (Auth, Postgres, Storage)
-- **Forms**: React Hook Form + Zod validation
-- **State**: Server Actions + URL params (nuqs)
-- **Styling**: Tailwind CSS with CSS variables
+1. Create a new Supabase project at [supabase.com](https://supabase.com)
+2. Get your project URL and anon key from the project settings
+3. Create a `.env.local` file in the root directory:
 
-## 📁 Project Structure
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### 3. Run Database Migrations
+
+**Option A: Using Supabase Dashboard (Recommended)**
+
+1. Go to your Supabase project dashboard
+2. Navigate to SQL Editor
+3. Run the migrations in order:
+   - `supabase/migrations/001_initial_schema.sql`
+   - `supabase/migrations/002_add_system_admin_support.sql`
+   - `supabase/migrations/003_fix_environment_access_policies.sql`
+
+**Option B: Using Supabase CLI**
+
+```bash
+# Install Supabase CLI
+npm install -g supabase
+
+# Link your project
+supabase link --project-ref your_project_ref
+
+# Run migrations
+supabase db push
+```
+
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+### 5. Test the Application
+
+- **Login**: http://localhost:3000/login
+- **Demo Dashboard**: http://localhost:3000/demo
+- **Create New Environment**: Use the "Add Environment" button in the
+  environment switcher
+
+## Project Structure
 
 ```
 src/
@@ -43,165 +80,131 @@ src/
 │   ├── (dashboard)/       # Dashboard routes
 │   │   ├── [env]/         # Environment-specific routes
 │   │   └── demo/          # Demo environment
-│   └── dashboard/         # Main dashboard (redirects to demo)
+│   └── layout.tsx         # Root layout
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
 │   ├── dashboard/        # Dashboard-specific components
-│   └── app-sidebar.tsx   # Main sidebar component (sidebar-07)
+│   └── app-sidebar.tsx   # Main sidebar
 ├── lib/                  # Utility libraries
-│   ├── supabase/         # Supabase clients and auth
+│   ├── supabase/         # Supabase clients
 │   ├── db/               # Database operations
 │   └── utils/            # Utility functions
-└── types/                # TypeScript type definitions
+└── types/                # TypeScript types
 ```
 
-## 🚀 Getting Started
+## Database Schema
 
-### Prerequisites
+### Core Tables
 
-- Node.js 18+
-- npm or yarn
-- Supabase account (for production)
+- `profiles` - User profiles
+- `environments` - Multi-tenant environments
+- `memberships` - User-environment relationships with roles
+- `locations` - Physical locations within environments
+- `products` - Product inventory
+- `product_status_history` - Status change tracking
+- `product_comments` - Product discussions
+- `product_images` - Product image metadata
+- `sales` - Sales records
+- `environment_invites` - User invitations
 
-### Installation
+### Roles
 
-1. Clone the repository:
+- `grady_admin` - Full system access
+- `grady_staff` - System-wide staff access
+- `reseller_manager` - Environment manager
+- `reseller_staff` - Environment staff
 
-```bash
-git clone <repository-url>
-cd gradydash
-```
+### Product Statuses
 
-2. Install dependencies:
+- `taken` - Product taken in
+- `in_repair` - Product being repaired
+- `selling` - Product for sale
+- `sold` - Product sold
+- `returned` - Product returned
+- `discarded` - Product discarded
 
-```bash
-npm install
-```
+## Troubleshooting
 
-3. Set up environment variables:
+### "Page Not Found" When Creating Environments
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
+If you get a 404 error when trying to access a newly created environment:
 
-4. Run the development server:
+1. **Check Database Migrations**: Ensure all migrations have been run,
+   especially `003_fix_environment_access_policies.sql`
 
-```bash
-npm run dev
-```
+2. **Verify RLS Policies**: The following policies should exist:
+   - `Users can create environments` on environments table
+   - `Users can create their own memberships` on memberships table
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+3. **Check Environment Creation**: The environment should be created with the
+   current user as `created_by`
 
-## 🧪 Testing the Application
+4. **Verify Access Logic**: The layout checks for access using:
+   - User has membership in the environment, OR
+   - User created the environment
 
-### Demo Environment
+### Common Issues
 
-Visit `/demo` to see the fully functional demo environment:
+1. **Authentication Errors**: Make sure your Supabase environment variables are
+   correct
+2. **RLS Policy Errors**: Ensure all migrations have been applied
+3. **TypeScript Errors**: Run `npm run build` to check for type issues
 
-- **Dashboard**: `/demo` - Overview with sample data
-- **Products**: `/demo/products` - Product management
-- **Locations**: `/demo/locations` - Location management
-- **Members**: `/demo/members` - Member management
-- **Analytics**: `/demo/analytics` - Analytics dashboard
-
-### Navigation Features
-
-- **Environment Switcher**: Click the environment name in the sidebar header
-- **Collapsible Sidebar**: Click the hamburger menu to collapse/expand
-- **Breadcrumb Navigation**: Contextual breadcrumbs in the header
-- **SPA Navigation**: All navigation is instant - no page reloads
-
-## 🎯 Key Features
-
-### Sidebar-07 Integration
-
-The application uses the latest shadcn/ui sidebar-07 component which provides:
-
-- **Collapsible Design**: Sidebar can be collapsed to icon-only mode
-- **Environment Switcher**: Integrated in the sidebar header
-- **Responsive Behavior**: Adapts to mobile and desktop screens
-- **Keyboard Navigation**: Full keyboard accessibility
-- **Modern UI**: Clean, modern design with proper spacing and typography
-
-### Multi-Environment Architecture
-
-- **Environment-Based Routing**: Each environment has its own URL structure
-- **Role-Based Access**: Different user roles for different environments
-- **Isolated Data**: Each environment's data is completely isolated
-- **Environment Switching**: Seamless switching between environments
-
-## 🔧 Development
+## Development
 
 ### Code Style
 
-- Follow Standard.js rules (2 spaces, no semicolons, camelCase)
+- Follow Standard.js rules (2 spaces, no semicolons)
 - Use functional components with hooks
 - Prefer server components over client components
 - Use TypeScript for type safety
 
-### Navigation Rules
+### Adding New Features
 
-- Use `import Link from "next/link"` for all navigation
-- Use `const router = useRouter(); router.push(url)` for programmatic navigation
-- All routes render inside the dashboard layout - no full refresh
-- Sidebar items use Link and highlight active routes
+1. Create database migrations for schema changes
+2. Add RLS policies for new tables
+3. Create server actions for data operations
+4. Build UI components using shadcn/ui
+5. Add proper error handling and loading states
 
-### UI Rules
+### Testing
 
-- Use shadcn/ui components only - no native HTML styling
-- Import from `@/components/ui/[component]`
-- Use Tailwind CSS for styling
-- Follow shadcn/ui design patterns
+```bash
+# Run type checking
+npm run type-check
 
-## 📊 Database Schema
+# Run linting
+npm run lint
 
-The application uses a multi-tenant database schema with:
+# Build the application
+npm run build
+```
 
-- **profiles**: User profiles
-- **environments**: Multi-tenant environments
-- **memberships**: User-environment relationships with roles
-- **locations**: Physical locations within environments
-- **products**: Product inventory with status tracking
-- **sales**: Sales records
-- **environment_invites**: User invitations
+## Deployment
 
-### Row Level Security (RLS)
+### Vercel (Recommended)
 
-All tables have Row Level Security enabled with:
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-- Environment-based access control
-- Role-based permissions
-- User isolation
+### Other Platforms
 
-## 🚧 Next Steps
+The application can be deployed to any platform that supports Next.js:
 
-### Planned Features
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
 
-1. **Database Integration**: Connect to real Supabase database
-2. **Authentication**: Implement Supabase Auth
-3. **Product Management**: Full CRUD operations for products
-4. **Image Uploads**: Product image management
-5. **Barcode Scanning**: Mobile barcode scanning
-6. **Analytics Dashboard**: Real-time analytics and reporting
+## Contributing
 
-### Development Priorities
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-1. Set up Supabase project and run migrations
-2. Implement authentication flow
-3. Connect database functions to real queries
-4. Build product management interface
-5. Add data tables with filtering and sorting
+## License
 
-## 📝 License
-
-This project is licensed under the MIT License.
-
----
-
-**Status**: 🟢 **READY FOR FEATURE DEVELOPMENT**
-
-The foundation is complete with modern sidebar-07 integration. All core
-infrastructure is working and ready for real data connections and feature
-development.
+MIT License - see LICENSE file for details.
