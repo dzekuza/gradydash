@@ -27,10 +27,19 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleSuccess = () => {
-    setOpen(false)
-    router.refresh()
-  }
+  // Listen for the custom event from ProductForm
+  React.useEffect(() => {
+    const handleFormSuccess = () => {
+      setOpen(false)
+      router.refresh()
+    }
+
+    window.addEventListener('productFormSuccess', handleFormSuccess)
+    
+    return () => {
+      window.removeEventListener('productFormSuccess', handleFormSuccess)
+    }
+  }, [router])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -52,7 +61,6 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
           locations={locations}
           environmentId={environmentId}
           environments={environments}
-          onSuccess={handleSuccess}
           isLoading={isLoading}
           setIsLoading={setIsLoading}
         />

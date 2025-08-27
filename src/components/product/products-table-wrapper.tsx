@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
 import { columns } from '@/components/data-table/data'
+import { DataTableRowActions } from '@/components/data-table/data-table-row-actions'
+import { ColumnDef } from '@tanstack/react-table'
 import { Product, Location } from '@/types/db'
 import { ProductDetailDialog } from '@/components/product/product-detail-dialog'
 import { bulkUpdateProductStatus, bulkDeleteProducts } from '@/lib/db/products/bulk-actions'
@@ -16,6 +18,17 @@ export function ProductsTableWrapper({ products, environmentSlug }: ProductsTabl
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [productLocation, setProductLocation] = useState<Location | null>(null)
+
+  // Create custom columns with environmentSlug
+  const customColumns: ColumnDef<Product>[] = columns.map(column => {
+    if (column.id === 'actions') {
+      return {
+        ...column,
+        cell: ({ row }: any) => <DataTableRowActions row={row} environmentSlug={environmentSlug} />
+      }
+    }
+    return column
+  })
 
   const handleRowClick = async (product: Product) => {
     setSelectedProduct(product)
@@ -56,7 +69,7 @@ export function ProductsTableWrapper({ products, environmentSlug }: ProductsTabl
   return (
     <>
       <DataTable 
-        columns={columns} 
+        columns={customColumns} 
         data={products} 
         onBulkAction={handleBulkActionWrapper}
         onRowClick={handleRowClick}
@@ -67,6 +80,7 @@ export function ProductsTableWrapper({ products, environmentSlug }: ProductsTabl
         location={productLocation}
         open={isDetailDialogOpen}
         onOpenChange={setIsDetailDialogOpen}
+        environmentSlug={environmentSlug}
       />
     </>
   )

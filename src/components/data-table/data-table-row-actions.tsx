@@ -30,6 +30,7 @@ import {
 import { Product } from "@/types/db"
 import { statuses } from "./data"
 import { deleteProductAction } from "@/lib/db/products/delete-product-action"
+import { updateProductStatus } from "@/lib/db/products/update-product-status"
 import { useToast } from "@/hooks/use-toast"
 
 interface DataTableRowActionsProps {
@@ -40,6 +41,7 @@ interface DataTableRowActionsProps {
 export function DataTableRowActions({ row, environmentSlug }: DataTableRowActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const product = row.original
   const router = useRouter()
   const { toast } = useToast()
@@ -53,6 +55,35 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
   const handleView = () => {
     if (environmentSlug) {
       router.push(`/${environmentSlug}/products/${product.id}`)
+    }
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!environmentSlug) {
+      toast({
+        title: "Error",
+        description: "Environment not found",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUpdatingStatus(true)
+    try {
+      await updateProductStatus(product.id, newStatus, environmentSlug)
+      toast({
+        title: "Status updated",
+        description: `Product status changed to ${newStatus}.`,
+      })
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update status",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdatingStatus(false)
     }
   }
 
@@ -110,11 +141,15 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup value={product.status}>
+              <DropdownMenuRadioGroup 
+                value={product.status}
+                onValueChange={handleStatusChange}
+              >
                 {statuses.map((status) => (
                   <DropdownMenuRadioItem
                     key={status.value}
                     value={status.value}
+                    disabled={isUpdatingStatus}
                   >
                     {status.label}
                   </DropdownMenuRadioItem>

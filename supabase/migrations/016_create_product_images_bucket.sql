@@ -24,13 +24,13 @@ CREATE POLICY "Users can view product images in their environments" ON STORAGE.O
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  PRODUCTS P
+                           PRODUCTS P
         JOIN MEMBERSHIPS M
         ON P.ENVIRONMENT_ID = M.ENVIRONMENT_ID
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND P.ID::TEXT = (STORAGE.FOLDERNAME(NAME))[1]
 )
   )
@@ -41,13 +41,13 @@ CREATE POLICY "Users can upload product images in their environments" ON STORAGE
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  PRODUCTS P
+                           PRODUCTS P
         JOIN MEMBERSHIPS M
         ON P.ENVIRONMENT_ID = M.ENVIRONMENT_ID
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND P.ID::TEXT = (STORAGE.FOLDERNAME(NAME))[1]
 )
   )
@@ -58,13 +58,13 @@ CREATE POLICY "Users can update product images in their environments" ON STORAGE
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  PRODUCTS P
+                           PRODUCTS P
         JOIN MEMBERSHIPS M
         ON P.ENVIRONMENT_ID = M.ENVIRONMENT_ID
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND P.ID::TEXT = (STORAGE.FOLDERNAME(NAME))[1]
 )
   )
@@ -75,13 +75,13 @@ CREATE POLICY "Users can delete product images in their environments" ON STORAGE
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  PRODUCTS P
+                           PRODUCTS P
         JOIN MEMBERSHIPS M
         ON P.ENVIRONMENT_ID = M.ENVIRONMENT_ID
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND P.ID::TEXT = (STORAGE.FOLDERNAME(NAME))[1]
 )
   )
@@ -92,11 +92,11 @@ CREATE POLICY "Admins can view all product images" ON STORAGE.OBJECTS FOR SELECT
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  MEMBERSHIPS M
+                           MEMBERSHIPS M
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND M.ROLE = 'admin'
 )
   )
@@ -107,11 +107,11 @@ CREATE POLICY "Admins can manage all product images" ON STORAGE.OBJECTS FOR ALL 
   BUCKET_ID = 'product-images' AND (
     EXISTS (
     SELECT
-                  1
+                           1
     FROM
-                  MEMBERSHIPS M
+                           MEMBERSHIPS M
     WHERE
-                  M.USER_ID = AUTH.UID()
+                           M.USER_ID = AUTH.UID()
         AND M.ROLE = 'admin'
 )
   )

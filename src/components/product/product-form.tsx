@@ -20,9 +20,9 @@ interface ProductFormProps {
   locations: Location[]
   environmentId?: string
   environments?: Array<{ id: string; name: string; slug: string; description?: string }>
-  onSuccess?: () => void
   isLoading?: boolean
   setIsLoading?: (loading: boolean) => void
+  inDialog?: boolean
 }
 
 const productStatuses: { value: ProductStatus; label: string }[] = [
@@ -39,9 +39,9 @@ export function ProductForm({
   locations, 
   environmentId, 
   environments, 
-  onSuccess, 
   isLoading: externalIsLoading, 
-  setIsLoading: externalSetIsLoading 
+  setIsLoading: externalSetIsLoading,
+  inDialog = false
 }: ProductFormProps) {
   const [internalIsLoading, setInternalIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,12 +100,13 @@ export function ProductForm({
         }
       }
       
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess()
+      // If in dialog context, trigger a custom event to notify parent
+      if (inDialog) {
+        // Dispatch a custom event that the dialog can listen for
+        window.dispatchEvent(new CustomEvent('productFormSuccess'))
       } else {
-        // Default behavior: navigate back
-        router.back()
+        // Default behavior: refresh the page
+        router.refresh()
       }
     } catch (err) {
       console.error('Error saving product:', err)
@@ -268,16 +269,6 @@ export function ProductForm({
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product')}
             </Button>
-            {!onSuccess && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-            )}
           </div>
         </form>
   )
