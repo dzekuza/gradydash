@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Product, Location, ProductStatus } from '@/types/db'
 import { createProduct } from '@/lib/db/products/create-product'
 import { updateProduct } from '@/lib/db/products/update-product'
+import { CategorySelector } from '@/components/product/category-selector'
 
 interface ProductFormProps {
   product?: Product
@@ -31,7 +32,10 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<ProductStatus>(product?.status || 'taken')
-  const [locationId, setLocationId] = useState<string>(product?.location_id || '')
+  const [locationId, setLocationId] = useState<string>(product?.location_id || 'none')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    product?.categories || []
+  )
   const router = useRouter()
 
   const isEditing = !!product
@@ -47,7 +51,10 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
 
       // Add the select values to form data
       formData.append('status', status)
-      formData.append('location_id', locationId)
+      formData.append('location_id', locationId === 'none' ? '' : locationId)
+      
+      // Add categories as JSON string
+      formData.append('categories', JSON.stringify(selectedCategories))
 
       if (isEditing && product) {
         await updateProduct(product.id, formData)
@@ -167,7 +174,7 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No location assigned</SelectItem>
+                <SelectItem value="none">No location assigned</SelectItem>
                 {locations.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name}
@@ -175,6 +182,15 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="categories">Categories</Label>
+            <CategorySelector
+              selectedCategories={selectedCategories}
+              onCategoriesChange={setSelectedCategories}
+              placeholder="Select product categories..."
+            />
           </div>
 
           <div className="space-y-2">

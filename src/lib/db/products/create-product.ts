@@ -23,6 +23,19 @@ export async function createProduct(formData: FormData) {
       throw new Error('Authentication required')
     }
 
+    // Parse categories from form data
+    const categoriesJson = formData.get('categories') as string
+    let categories: string[] | undefined
+    
+    if (categoriesJson) {
+      try {
+        categories = JSON.parse(categoriesJson)
+      } catch (error) {
+        console.warn('Failed to parse categories JSON:', error)
+        categories = undefined
+      }
+    }
+
     // Parse and validate form data
     const rawData = {
       title: formData.get('title') as string,
@@ -33,6 +46,7 @@ export async function createProduct(formData: FormData) {
       location_id: formData.get('location_id') as string,
       purchase_price: formData.get('purchase_price') ? parseFloat(formData.get('purchase_price') as string) : undefined,
       selling_price: formData.get('selling_price') ? parseFloat(formData.get('selling_price') as string) : undefined,
+      categories,
     }
 
     // Validate the data

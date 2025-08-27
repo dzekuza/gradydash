@@ -4,10 +4,20 @@ import { createClient } from '@/lib/supabase/client-server'
 import { revalidatePath } from 'next/cache'
 
 interface CSVProduct {
-  title: string
+  id?: string
+  type?: string
   sku?: string
-  barcode?: string
+  gtin?: string
+  upc?: string
+  ean?: string
+  isbn?: string
+  name: string
+  short_description?: string
   description?: string
+  in_stock?: boolean
+  categories?: string[] | string
+  tags?: string[] | string
+  images?: string
   status: 'taken' | 'in_repair' | 'selling' | 'sold' | 'returned' | 'discarded'
   purchase_price?: number
   selling_price?: number
@@ -67,17 +77,40 @@ export async function importProductsFromCSV(formData: FormData) {
     const productsToInsert = products.map(product => {
       const productData: any = {
         environment_id: environmentId,
-        title: product.title,
+        title: product.name, // Map 'name' to 'title' for database
         status: product.status,
         status_updated_at: new Date().toISOString(),
       }
 
       // Add optional fields if they exist
+      if (product.id) productData.external_id = product.id
+      if (product.type) productData.product_type = product.type
       if (product.sku) productData.sku = product.sku
-      if (product.barcode) productData.barcode = product.barcode
+      if (product.gtin) productData.gtin = product.gtin
+      if (product.upc) productData.upc = product.upc
+      if (product.ean) productData.ean = product.ean
+      if (product.isbn) productData.isbn = product.isbn
+      if (product.short_description) productData.short_description = product.short_description
       if (product.description) productData.description = product.description
       if (product.purchase_price) productData.purchase_price = product.purchase_price
       if (product.selling_price) productData.selling_price = product.selling_price
+
+      // Handle categories and tags arrays
+      if (product.categories) {
+        if (Array.isArray(product.categories)) {
+          productData.categories = product.categories
+        } else if (typeof product.categories === 'string') {
+          productData.categories = product.categories.split(';').map((cat: string) => cat.trim()).filter(Boolean)
+        }
+      }
+
+      if (product.tags) {
+        if (Array.isArray(product.tags)) {
+          productData.tags = product.tags
+        } else if (typeof product.tags === 'string') {
+          productData.tags = product.tags.split(';').map((tag: string) => tag.trim()).filter(Boolean)
+        }
+      }
 
       // Map location name to location ID
       if (product.location_name) {

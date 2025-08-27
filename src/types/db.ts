@@ -56,6 +56,16 @@ export interface Product {
   status_updated_at: string
   created_at: string
   updated_at: string
+  // New fields for CSV import
+  external_id?: string
+  product_type?: string
+  gtin?: string
+  upc?: string
+  ean?: string
+  isbn?: string
+  short_description?: string
+  categories?: string[]
+  tags?: string[]
 }
 
 export interface ProductStatusHistory {

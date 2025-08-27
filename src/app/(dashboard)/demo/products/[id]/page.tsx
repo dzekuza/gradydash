@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2 } from 'lucide-react'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
 import { createClient } from '@/lib/supabase/client-server'
 import { statuses } from '@/components/data-table/data'
+import { CategoryDisplay } from '@/components/product/category-display'
 
 interface ProductDetailPageProps {
   params: {
@@ -39,6 +40,15 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       status_updated_at,
       created_at,
       updated_at,
+      external_id,
+      product_type,
+      gtin,
+      upc,
+      ean,
+      isbn,
+      short_description,
+      categories,
+      tags,
       locations (
         id,
         name,
@@ -108,6 +118,19 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Description</label>
                 <p>{product.description}</p>
+              </div>
+            )}
+            
+            {product.categories && product.categories.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Categories</label>
+                <div className="mt-1">
+                  <CategoryDisplay 
+                    categories={product.categories} 
+                    showFullPath={true}
+                    maxDisplay={10}
+                  />
+                </div>
               </div>
             )}
           </CardContent>

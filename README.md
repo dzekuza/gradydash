@@ -92,6 +92,43 @@ src/
 └── types/                # TypeScript types
 ```
 
+## Product Categories
+
+The system includes a comprehensive hierarchical category system for organizing
+products:
+
+### Category Structure
+
+The categories are organized in a 3-level hierarchy:
+
+1. **Top Level Categories** (10 main categories):
+   - Small Electronics
+   - Large Electronics
+   - Home & Kitchen
+   - Sports & Activity
+   - Car & Vehicle
+   - Pets
+   - Gaming & Consoles
+   - Office & Printers
+   - Labels & Printing
+   - Uncategorized
+
+2. **Subcategories**: Each top-level category contains relevant subcategories
+3. **Specific Items**: Further breakdown for specific product types
+
+### Using Categories
+
+- **Product Forms**: Use the category selector to assign multiple categories to
+  products
+- **CSV Import**: Include categories as semicolon-separated category IDs
+- **Display**: Categories are shown as badges with full hierarchical paths
+- **Validation**: Category IDs are validated against the system during import
+
+### Category IDs
+
+Categories use kebab-case IDs (e.g., `mobile-phones-main`, `laptops-main`). See
+`src/lib/utils/categories.ts` for the complete list.
+
 ## Database Schema
 
 ### Core Tables

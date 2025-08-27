@@ -18,16 +18,27 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { importProductsFromCSV } from '@/lib/db/products/import-products'
+import { getAllCategories } from '@/lib/utils/categories'
 
 interface ImportProductsDialogProps {
   environmentId: string
 }
 
 interface CSVProduct {
-  title: string
+  id?: string
+  type?: string
   sku?: string
-  barcode?: string
+  gtin?: string
+  upc?: string
+  ean?: string
+  isbn?: string
+  name: string
+  short_description?: string
   description?: string
+  in_stock?: boolean
+  categories?: string
+  tags?: string
+  images?: string
   status: 'taken' | 'in_repair' | 'selling' | 'sold' | 'returned' | 'discarded'
   purchase_price?: number
   selling_price?: number
@@ -82,7 +93,7 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
     }
 
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-    const requiredHeaders = ['title', 'status']
+    const requiredHeaders = ['name', 'status']
     
     // Check for required headers
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
@@ -108,8 +119,8 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
       })
 
       // Validate required fields
-      if (!product.title?.trim()) {
-        validationErrors.push(`Row ${i + 1}: Title is required`)
+      if (!product.name?.trim()) {
+        validationErrors.push(`Row ${i + 1}: Name is required`)
         continue
       }
 
@@ -137,6 +148,28 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
           continue
         }
         product.selling_price = price
+      }
+
+      // Parse boolean field
+      if (product.in_stock !== undefined) {
+        product.in_stock = product.in_stock.toLowerCase() === 'true' || product.in_stock === '1' || product.in_stock === 'yes'
+      }
+
+      // Parse array fields
+      if (product.categories) {
+        const categoryIds = product.categories.split(';').map((cat: string) => cat.trim()).filter(Boolean)
+        // Validate category IDs against our category system
+        const validCategories = getAllCategories().map(cat => cat.id)
+        const invalidCategories = categoryIds.filter(id => !validCategories.includes(id))
+        if (invalidCategories.length > 0) {
+          validationErrors.push(`Row ${i + 1}: Invalid category IDs: ${invalidCategories.join(', ')}`)
+          continue
+        }
+        product.categories = categoryIds
+      }
+
+      if (product.tags) {
+        product.tags = product.tags.split(';').map((tag: string) => tag.trim()).filter(Boolean)
       }
 
       products.push(product as CSVProduct)
@@ -186,9 +219,11 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
   }
 
   const downloadTemplate = () => {
-    const template = `title,sku,barcode,description,status,purchase_price,selling_price,location_name
-"iPhone 13 Pro","IP13P001","1234567890123","Excellent condition iPhone 13 Pro",taken,800.00,1200.00,"Main Store"
-"MacBook Air M1","MBA001","9876543210987","Like new MacBook Air",selling,900.00,1400.00,"Online Store"`
+    const template = `id,type,sku,gtin,upc,ean,isbn,name,short_description,description,in_stock,categories,tags,images,status,purchase_price,selling_price,location_name
+"PROD001","Electronics","IP13P001","1234567890123","","","","iPhone 13 Pro","Excellent condition iPhone 13 Pro","Excellent condition iPhone 13 Pro with 256GB storage",true,"mobile-phones-main;phone-case","Apple;iPhone;5G",,taken,800.00,1200.00,"Main Store"
+"PROD002","Electronics","MBA001","","9876543210987","","","MacBook Air M1","Like new MacBook Air","Like new MacBook Air with M1 chip",true,"laptops-main;laptop-accessories","Apple;MacBook;M1",,selling,900.00,1400.00,"Online Store"
+"PROD003","Audio","HP001","","","","","Sony WH-1000XM4","Wireless noise-canceling headphones","Premium wireless headphones with noise cancellation",true,"headphones","Sony;Wireless;Noise-Canceling",,selling,200.00,350.00,"Audio Store"
+"PROD004","Home","CM001","","","","","Nespresso Vertuo","Coffee machine","Automatic coffee machine",true,"coffee-machines-main;coffee-capsules","Nespresso;Coffee;Automatic",,taken,150.00,250.00,"Kitchen Store"`
     
     const blob = new Blob([template], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
@@ -234,7 +269,7 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
               className="cursor-pointer"
             />
             <p className="text-xs text-muted-foreground">
-              Required columns: title, status. Optional: sku, barcode, description, purchase_price, selling_price, location_name
+              Required columns: name, status. Optional: id, type, sku, gtin, upc, ean, isbn, short_description, description, in_stock, categories, tags, images, purchase_price, selling_price, location_name
             </p>
           </div>
 
@@ -265,10 +300,13 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
                   {preview.map((product, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium">{product.title}</span>
+                      <span className="font-medium">{product.name}</span>
                       <span className="text-muted-foreground">({product.status})</span>
                       {product.sku && (
                         <span className="text-muted-foreground">SKU: {product.sku}</span>
+                      )}
+                      {product.type && (
+                        <span className="text-muted-foreground">Type: {product.type}</span>
                       )}
                     </div>
                   ))}

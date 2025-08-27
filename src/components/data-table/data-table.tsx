@@ -27,15 +27,20 @@ import {
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
+import { DataTableBulkActions } from "./data-table-bulk-actions"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  onBulkAction?: (action: string, data: any) => Promise<void>
+  onRowClick?: (row: TData) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onBulkAction,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -64,9 +69,20 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  const handleRowClick = (row: any) => {
+    if (onRowClick) {
+      onRowClick(row.original)
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <div className="flex items-center justify-between">
+        <DataTableToolbar table={table} />
+        {onBulkAction && (
+          <DataTableBulkActions table={table} onBulkAction={onBulkAction} />
+        )}
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -93,6 +109,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                  onClick={() => handleRowClick(row)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

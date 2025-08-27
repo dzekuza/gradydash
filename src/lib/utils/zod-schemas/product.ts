@@ -10,6 +10,7 @@ export const createProductSchema = z.object({
   location_id: z.string().uuid().optional(),
   purchase_price: z.number().positive().optional(),
   selling_price: z.number().positive().optional(),
+  categories: z.array(z.string()).optional(),
 })
 
 export const updateProductSchema = z.object({
@@ -21,6 +22,7 @@ export const updateProductSchema = z.object({
   location_id: z.string().uuid().optional(),
   purchase_price: z.number().positive().optional(),
   selling_price: z.number().positive().optional(),
+  categories: z.array(z.string()).optional(),
 })
 
 export const changeProductStatusSchema = z.object({
