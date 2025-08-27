@@ -21,10 +21,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 
 const registerSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
+  companyName: z.string().optional(),
+  phone: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -64,7 +67,11 @@ export function RegisterForm({
         password: data.password,
         options: {
           data: {
-            full_name: data.fullName,
+            full_name: `${data.firstName} ${data.lastName}`,
+            first_name: data.firstName,
+            last_name: data.lastName,
+            company_name: data.companyName,
+            phone: data.phone,
           },
         },
       })
@@ -133,18 +140,34 @@ export function RegisterForm({
                 </Alert>
               )}
               
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  {...register('fullName')}
-                  disabled={isLoading}
-                />
-                {errors.fullName && (
-                  <p className="text-sm text-red-500">{errors.fullName.message}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    {...register('firstName')}
+                    disabled={isLoading}
+                  />
+                  {errors.firstName && (
+                    <p className="text-sm text-red-500">{errors.firstName.message}</p>
+                  )}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    {...register('lastName')}
+                    disabled={isLoading}
+                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-red-500">{errors.lastName.message}</p>
+                  )}
+                </div>
               </div>
               
               <div className="grid gap-2">
@@ -158,6 +181,34 @@ export function RegisterForm({
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="companyName">Company Name (Optional)</Label>
+                <Input
+                  id="companyName"
+                  type="text"
+                  placeholder="Your Company"
+                  {...register('companyName')}
+                  disabled={isLoading}
+                />
+                {errors.companyName && (
+                  <p className="text-sm text-red-500">{errors.companyName.message}</p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  {...register('phone')}
+                  disabled={isLoading}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-500">{errors.phone.message}</p>
                 )}
               </div>
               

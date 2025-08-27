@@ -3,13 +3,12 @@
 import * as React from "react"
 import {
   BarChart3,
-  Package,
+  Building2,
   MapPin,
-  Users,
+  Package,
   Settings2,
+  Users,
 } from "lucide-react"
-import { usePathname } from 'next/navigation'
-import Link from 'next/link'
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -20,21 +19,23 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Environment } from '@/types/db'
+import { usePathname } from "next/navigation"
+import { Environment } from "@/types/db"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  environmentSwitcher: React.ReactNode
-  currentEnvironment: Environment
+  environmentSwitcher?: React.ReactNode
+  currentEnvironment?: Environment
 }
 
 export function AppSidebar({ 
-  environmentSwitcher, 
-  currentEnvironment, 
+  environmentSwitcher,
+  currentEnvironment,
   ...props 
 }: AppSidebarProps) {
   const pathname = usePathname()
   
-  const navItems = [
+  // Generate navigation items based on current environment
+  const navMain = currentEnvironment ? [
     {
       title: "Dashboard",
       url: `/${currentEnvironment.slug}`,
@@ -65,25 +66,30 @@ export function AppSidebar({
       icon: BarChart3,
       isActive: pathname.startsWith(`/${currentEnvironment.slug}/analytics`),
     },
-  ]
+    {
+      title: "Settings",
+      url: `/${currentEnvironment.slug}/settings`,
+      icon: Settings2,
+      isActive: pathname.startsWith(`/${currentEnvironment.slug}/settings`),
+    },
+  ] : []
+
+  const user = {
+    name: "Demo User",
+    email: "demo@example.com",
+    avatar: "/avatars/demo.jpg",
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="p-4">
-          <h2 className="text-lg font-semibold mb-2">Grady ReSellOps</h2>
-          {environmentSwitcher}
-        </div>
+        {environmentSwitcher}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{
-          name: "User",
-          email: "user@example.com",
-          avatar: "/avatars/user.jpg",
-        }} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

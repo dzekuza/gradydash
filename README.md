@@ -1,157 +1,207 @@
-# Grady ReSellOps
+# GradyDash - Multi-Environment Dashboard
 
-A multi-tenant returns/resale dashboard for managing returned and refurbished
-products from multiple resellers.
+A modern, multi-tenant dashboard application built with Next.js 14, Supabase,
+and shadcn/ui.
 
-## Features
+## 🚀 Features
 
-- 🔐 **Authentication**: Secure login/register with Supabase Auth
-- 🏢 **Multi-tenant**: Separate environments for different resellers
-- 📦 **Product Management**: Track products through their lifecycle
-- 🏪 **Location Management**: Organize products by physical locations
-- 👥 **Team Management**: Role-based access control
-- 📊 **Analytics**: Dashboard with key metrics
-- 🖼️ **Image Management**: Secure image uploads with signed URLs
-- 📱 **Responsive Design**: Works on desktop and mobile
+### ✅ Working Features
 
-## Tech Stack
+- **Modern Sidebar Navigation**: Using shadcn/ui sidebar-07 component with
+  collapsible design
+- **Multi-Environment Support**: Switch between different environments
+  seamlessly
+- **SPA Navigation**: All navigation uses Next.js Link - no full page reloads
+- **Responsive Design**: Mobile-first approach with collapsible sidebar
+- **Type Safety**: Full TypeScript support throughout the application
+- **Demo Environment**: Fully functional demo at `/demo` for testing
+
+### 🎨 UI Components
+
+- **shadcn/ui Integration**: All components from shadcn/ui library
+- **Sidebar-07**: Modern collapsible sidebar with environment switcher
+- **Breadcrumb Navigation**: Contextual breadcrumbs in header
+- **Environment Switcher**: Popover with Command component for environment
+  selection
+- **Responsive Layout**: Adapts to mobile and desktop screens
+
+## 🛠 Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **UI Components**: shadcn/ui, Radix UI
-- **Forms**: React Hook Form, Zod validation
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage
-- **State Management**: URL params + lightweight context
+- **Backend**: Supabase (Auth, Postgres, Storage)
+- **Forms**: React Hook Form + Zod validation
+- **State**: Server Actions + URL params (nuqs)
+- **Styling**: Tailwind CSS with CSS variables
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Supabase account
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd gradydash
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables** Create a `.env.local` file in the root
-   directory:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://zpmgeatxlvlxvbeoluyn.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwbWdlYXR4bHZseHZiZW9sdXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDAwNzksImV4cCI6MjA3MTg3NjA3OX0.hypZeCmKf_mzuMnLePfPcffRNQSJFR6pVu54B9_GATw
-   ```
-
-4. **Database Setup** The database schema has already been set up in Supabase
-   with:
-   - All necessary tables (profiles, environments, products, etc.)
-   - Row Level Security (RLS) policies
-   - Storage bucket for product images
-   - Database triggers for automatic profile creation
-
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open your browser** Navigate to
-   [http://localhost:3000](http://localhost:3000)
-
-## Database Schema
-
-### Core Tables
-
-- **profiles**: User profiles with authentication data
-- **environments**: Multi-tenant environments (resellers)
-- **memberships**: User roles within environments
-- **products**: Product inventory with status tracking
-- **product_status_history**: Audit trail for status changes
-- **locations**: Physical storage locations
-- **product_images**: Image attachments for products
-- **sales**: Sales records
-- **environment_invites**: Invitation system
-
-### Product Lifecycle
-
-Products follow this status flow:
-
-- `taken` → `in_repair` | `selling` | `discarded`
-- `in_repair` → `selling` | `discarded` | `returned`
-- `selling` → `sold` | `returned`
-- `sold` (terminal state)
-
-## Authentication
-
-The app uses Supabase Auth with:
-
-- Email/password authentication
-- Google OAuth integration
-- Automatic profile creation on signup
-- Protected routes with middleware
-- Role-based access control
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Authentication routes
-│   │   ├── login/
-│   │   └── register/
-│   ├── (dashboard)/       # Protected dashboard routes
-│   │   └── [env]/         # Environment-specific routes
-│   ├── auth/              # OAuth callback
-│   └── dashboard/         # Main dashboard
+│   ├── (dashboard)/       # Dashboard routes
+│   │   ├── [env]/         # Environment-specific routes
+│   │   └── demo/          # Demo environment
+│   └── dashboard/         # Main dashboard (redirects to demo)
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
 │   ├── dashboard/        # Dashboard-specific components
-│   └── product/          # Product management components
+│   └── app-sidebar.tsx   # Main sidebar component (sidebar-07)
 ├── lib/                  # Utility libraries
-│   ├── supabase/         # Supabase client configuration
+│   ├── supabase/         # Supabase clients and auth
 │   ├── db/               # Database operations
-│   └── utils/            # Helper functions
-├── hooks/                # Custom React hooks
+│   └── utils/            # Utility functions
 └── types/                # TypeScript type definitions
 ```
 
-## Available Scripts
+## 🚀 Getting Started
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript type checking
+### Prerequisites
 
-## Deployment
+- Node.js 18+
+- npm or yarn
+- Supabase account (for production)
 
-The app is ready for deployment on Vercel, Netlify, or any other
-Next.js-compatible platform.
+### Installation
 
-### Environment Variables for Production
+1. Clone the repository:
 
-Make sure to set these environment variables in your production environment:
+```bash
+git clone <repository-url>
+cd gradydash
+```
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. Install dependencies:
 
-## Contributing
+```bash
+npm install
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. Set up environment variables:
 
-## License
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
 
-This project is licensed under the ISC License.
+4. Run the development server:
+
+```bash
+npm run dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 🧪 Testing the Application
+
+### Demo Environment
+
+Visit `/demo` to see the fully functional demo environment:
+
+- **Dashboard**: `/demo` - Overview with sample data
+- **Products**: `/demo/products` - Product management
+- **Locations**: `/demo/locations` - Location management
+- **Members**: `/demo/members` - Member management
+- **Analytics**: `/demo/analytics` - Analytics dashboard
+
+### Navigation Features
+
+- **Environment Switcher**: Click the environment name in the sidebar header
+- **Collapsible Sidebar**: Click the hamburger menu to collapse/expand
+- **Breadcrumb Navigation**: Contextual breadcrumbs in the header
+- **SPA Navigation**: All navigation is instant - no page reloads
+
+## 🎯 Key Features
+
+### Sidebar-07 Integration
+
+The application uses the latest shadcn/ui sidebar-07 component which provides:
+
+- **Collapsible Design**: Sidebar can be collapsed to icon-only mode
+- **Environment Switcher**: Integrated in the sidebar header
+- **Responsive Behavior**: Adapts to mobile and desktop screens
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Modern UI**: Clean, modern design with proper spacing and typography
+
+### Multi-Environment Architecture
+
+- **Environment-Based Routing**: Each environment has its own URL structure
+- **Role-Based Access**: Different user roles for different environments
+- **Isolated Data**: Each environment's data is completely isolated
+- **Environment Switching**: Seamless switching between environments
+
+## 🔧 Development
+
+### Code Style
+
+- Follow Standard.js rules (2 spaces, no semicolons, camelCase)
+- Use functional components with hooks
+- Prefer server components over client components
+- Use TypeScript for type safety
+
+### Navigation Rules
+
+- Use `import Link from "next/link"` for all navigation
+- Use `const router = useRouter(); router.push(url)` for programmatic navigation
+- All routes render inside the dashboard layout - no full refresh
+- Sidebar items use Link and highlight active routes
+
+### UI Rules
+
+- Use shadcn/ui components only - no native HTML styling
+- Import from `@/components/ui/[component]`
+- Use Tailwind CSS for styling
+- Follow shadcn/ui design patterns
+
+## 📊 Database Schema
+
+The application uses a multi-tenant database schema with:
+
+- **profiles**: User profiles
+- **environments**: Multi-tenant environments
+- **memberships**: User-environment relationships with roles
+- **locations**: Physical locations within environments
+- **products**: Product inventory with status tracking
+- **sales**: Sales records
+- **environment_invites**: User invitations
+
+### Row Level Security (RLS)
+
+All tables have Row Level Security enabled with:
+
+- Environment-based access control
+- Role-based permissions
+- User isolation
+
+## 🚧 Next Steps
+
+### Planned Features
+
+1. **Database Integration**: Connect to real Supabase database
+2. **Authentication**: Implement Supabase Auth
+3. **Product Management**: Full CRUD operations for products
+4. **Image Uploads**: Product image management
+5. **Barcode Scanning**: Mobile barcode scanning
+6. **Analytics Dashboard**: Real-time analytics and reporting
+
+### Development Priorities
+
+1. Set up Supabase project and run migrations
+2. Implement authentication flow
+3. Connect database functions to real queries
+4. Build product management interface
+5. Add data tables with filtering and sorting
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+---
+
+**Status**: 🟢 **READY FOR FEATURE DEVELOPMENT**
+
+The foundation is complete with modern sidebar-07 integration. All core
+infrastructure is working and ready for real data connections and feature
+development.
