@@ -92,18 +92,7 @@ export function ProductForm({
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</CardTitle>
-        <CardDescription>
-          {isEditing 
-            ? 'Update the product information below.'
-            : 'Fill in the product details to add it to your inventory.'
-          }
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={handleSubmit} className="space-y-6">
+    <form action={handleSubmit} className="space-y-6">
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
               {error}
@@ -242,7 +231,5 @@ export function ProductForm({
             )}
           </div>
         </form>
-      </CardContent>
-    </Card>
   )
 }

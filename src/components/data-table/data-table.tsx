@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <DataTableToolbar table={table} />
-        {onBulkAction && (
+        {onBulkAction && table.getFilteredSelectedRowModel().rows.length > 0 && (
           <DataTableBulkActions table={table} onBulkAction={onBulkAction} />
         )}
       </div>

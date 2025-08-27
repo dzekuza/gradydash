@@ -47,15 +47,13 @@ export function ProductDialog({ locations, environmentId }: ProductDialogProps) 
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4">
-          <ProductForm
-            locations={locations}
-            environmentId={environmentId}
-            onSuccess={handleSuccess}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-          />
-        </div>
+        <ProductForm
+          locations={locations}
+          environmentId={environmentId}
+          onSuccess={handleSuccess}
+          isLoading={isLoading}
+          setIsLoading={setIsLoading}
+        />
       </DialogContent>
     </Dialog>
   )
