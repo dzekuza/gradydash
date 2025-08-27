@@ -1,10 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createProductSchema } from '@/lib/utils/zod-schemas/product'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { CACHE_TAGS } from '@/lib/utils/cache'
 
 export async function createProduct(formData: FormData) {
   const supabase = createClient()
@@ -97,7 +98,12 @@ export async function createProduct(formData: FormData) {
     // Set redirect path
     redirectTo = `${basePath}/products/${product.id}`
 
-    // Revalidate the products page and base path
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    revalidateTag(CACHE_TAGS.ENVIRONMENTS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath(`${basePath}/products`)
     revalidatePath(basePath)
 

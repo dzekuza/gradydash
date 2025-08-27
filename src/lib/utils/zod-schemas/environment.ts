@@ -6,6 +6,15 @@ export const createEnvironmentSchema = z.object({
   description: z.string().optional(),
 })
 
+export const createLocationSchema = z.object({
+  name: z.string().min(1, 'Location name is required'),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  contact_person_name: z.string().optional(),
+  contact_email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  contact_phone: z.string().optional(),
+})
+
 export const inviteUserSchema = z.object({
   environment_id: z.string().uuid(),
   email: z.string().email('Invalid email address'),

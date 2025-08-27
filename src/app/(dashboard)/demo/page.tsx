@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getProductsByStatus, getRevenueLast30Days, getAverageTimeToSale } from '@/lib/db/products/get-dashboard-stats'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
@@ -6,8 +7,10 @@ import { DataTable } from '@/components/data-table/data-table'
 import { columns } from '@/components/data-table/data'
 
 export default async function DemoPage() {
+  const cookieStore = cookies()
+  
   // Get the demo environment ID
-  const demoEnvironmentId = await getDemoEnvironmentId()
+  const demoEnvironmentId = await getDemoEnvironmentId(cookieStore)
   
   // Initialize fallback defaults
   let productStats = {
@@ -25,10 +28,10 @@ export default async function DemoPage() {
   // Fetch real data from the database with error handling
   try {
     const [productStatsResult, revenueResult, avgTimeToSaleResult, productsResult] = await Promise.all([
-      getProductsByStatus(demoEnvironmentId),
-      getRevenueLast30Days(demoEnvironmentId),
-      getAverageTimeToSale(demoEnvironmentId),
-      getProducts(demoEnvironmentId),
+      getProductsByStatus(demoEnvironmentId, cookieStore),
+      getRevenueLast30Days(demoEnvironmentId, cookieStore),
+      getAverageTimeToSale(demoEnvironmentId, cookieStore),
+      getProducts(demoEnvironmentId, cookieStore),
     ])
 
     // Assign results to variables

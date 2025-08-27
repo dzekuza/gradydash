@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { unstable_cache } from 'next/cache'
+import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
 export interface LocationStats {
   id: string
@@ -8,13 +11,14 @@ export interface LocationStats {
   totalValue: number
 }
 
-export async function getLocationStats(environmentId: string): Promise<LocationStats[]> {
-  const supabase = createClient()
+// Internal function that does the actual data fetching
+async function _getLocationStats(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<LocationStats[]> {
+  const supabase = createClient(cookieStore)
   
   try {
     // Handle demo environment
     const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId() 
+      ? await getDemoEnvironmentId(cookieStore) 
       : environmentId
 
     // Get all locations for the environment
@@ -70,3 +74,13 @@ export async function getLocationStats(environmentId: string): Promise<LocationS
     return []
   }
 }
+
+// Cached version of getLocationStats
+export const getLocationStats = unstable_cache(
+  _getLocationStats,
+  ['get-location-stats'],
+  {
+    revalidate: CACHE_CONFIGS.SHORT.revalidate,
+    tags: [CACHE_TAGS.LOCATIONS, CACHE_TAGS.PRODUCTS, CACHE_TAGS.ENVIRONMENTS]
+  }
+)

@@ -1,158 +1,110 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { CACHE_TAGS } from '@/lib/utils/cache'
 
-interface CSVProduct {
-  id?: string
-  type?: string
+interface ImportProduct {
+  title: string
   sku?: string
-  gtin?: string
-  upc?: string
-  ean?: string
-  isbn?: string
-  name: string
-  short_description?: string
+  barcode?: string
   description?: string
-  in_stock?: boolean
-  categories?: string[] | string
-  tags?: string[] | string
-  images?: string
-  status: 'taken' | 'in_repair' | 'selling' | 'sold' | 'returned' | 'discarded'
+  status: string
+  location_id?: string
   purchase_price?: number
   selling_price?: number
-  location_name?: string
+  categories?: string[]
+  tags?: string[]
 }
 
-export async function importProductsFromCSV(formData: FormData) {
+export async function importProducts(products: ImportProduct[], environmentId?: string) {
   const supabase = createClient()
   
-  const environmentId = formData.get('environmentId') as string
-  const productsJson = formData.get('products') as string
-
-  if (!environmentId || !productsJson) {
-    throw new Error('Missing required data')
-  }
-
   try {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (userError || !user) {
+    // Check if we're in demo mode
+    const isDemoMode = !environmentId || environmentId === 'demo' || !user
+    
+    if (userError) {
+      console.error('User authentication error:', userError)
+      // In demo mode, we'll continue without authentication
+      if (!isDemoMode) {
+        throw new Error('Authentication error: ' + userError.message)
+      }
+    }
+    
+    if (!user && !isDemoMode) {
       throw new Error('Authentication required')
     }
 
-    // Check if user has permission to create products in this environment
-    const { data: membership, error: membershipError } = await supabase
-      .from('memberships')
-      .select('role')
-      .eq('environment_id', environmentId)
-      .eq('user_id', user.id)
-      .single()
+    // Get the actual environment ID
+    const actualEnvironmentId = environmentId === 'demo' || !environmentId
+      ? await getDemoEnvironmentId() 
+      : environmentId
 
-    if (membershipError || !membership) {
-      throw new Error('You do not have permission to import products to this environment')
-    }
-
-    // Only allow reseller_manager and above to import products
-    if (!['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)) {
-      throw new Error('You do not have permission to import products')
-    }
-
-    const products: CSVProduct[] = JSON.parse(productsJson)
-
-    if (!Array.isArray(products) || products.length === 0) {
-      throw new Error('No valid products to import')
-    }
-
-    // Get locations for this environment to map location names to IDs
-    const { data: locations } = await supabase
-      .from('locations')
-      .select('id, name')
-      .eq('environment_id', environmentId)
-
-    const locationMap = new Map(locations?.map(loc => [loc.name.toLowerCase(), loc.id]) || [])
+    console.log('Importing products for environment:', actualEnvironmentId)
 
     // Prepare products for insertion
-    const productsToInsert = products.map(product => {
-      const productData: any = {
-        environment_id: environmentId,
-        title: product.name, // Map 'name' to 'title' for database
-        status: product.status,
-        status_updated_at: new Date().toISOString(),
-      }
-
-      // Add optional fields if they exist
-      if (product.id) productData.external_id = product.id
-      if (product.type) productData.product_type = product.type
-      if (product.sku) productData.sku = product.sku
-      if (product.gtin) productData.gtin = product.gtin
-      if (product.upc) productData.upc = product.upc
-      if (product.ean) productData.ean = product.ean
-      if (product.isbn) productData.isbn = product.isbn
-      if (product.short_description) productData.short_description = product.short_description
-      if (product.description) productData.description = product.description
-      if (product.purchase_price) productData.purchase_price = product.purchase_price
-      if (product.selling_price) productData.selling_price = product.selling_price
-
-      // Handle categories and tags arrays
-      if (product.categories) {
-        if (Array.isArray(product.categories)) {
-          productData.categories = product.categories
-        } else if (typeof product.categories === 'string') {
-          productData.categories = product.categories.split(';').map((cat: string) => cat.trim()).filter(Boolean)
-        }
-      }
-
-      if (product.tags) {
-        if (Array.isArray(product.tags)) {
-          productData.tags = product.tags
-        } else if (typeof product.tags === 'string') {
-          productData.tags = product.tags.split(';').map((tag: string) => tag.trim()).filter(Boolean)
-        }
-      }
-
-      // Map location name to location ID
-      if (product.location_name) {
-        const locationId = locationMap.get(product.location_name.toLowerCase())
-        if (locationId) {
-          productData.location_id = locationId
-        }
-      }
-
-      return productData
-    })
+    const productsToInsert = products.map(product => ({
+      ...product,
+      environment_id: actualEnvironmentId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }))
 
     // Insert products in batches to avoid hitting limits
-    const batchSize = 50
-    const results = []
-
+    const batchSize = 100
+    const batches = []
+    
     for (let i = 0; i < productsToInsert.length; i += batchSize) {
-      const batch = productsToInsert.slice(i, i + batchSize)
-      
-      const { data: insertedProducts, error: insertError } = await supabase
-        .from('products')
-        .insert(batch)
-        .select()
-
-      if (insertError) {
-        console.error('Error inserting batch:', insertError)
-        throw new Error(`Failed to import products: ${insertError.message}`)
-      }
-
-      results.push(...(insertedProducts || []))
+      batches.push(productsToInsert.slice(i, i + batchSize))
     }
 
-    console.log('Products imported successfully:', {
-      environmentId,
-      count: results.length,
-      importedBy: user.id
-    })
+    let totalInserted = 0
+    const errors: string[] = []
 
-    revalidatePath(`/[env]/products`)
-    return { success: true, count: results.length }
+    for (const batch of batches) {
+      const { data: insertedProducts, error: batchError } = await supabase
+        .from('products')
+        .insert(batch)
+        .select('id')
+
+      if (batchError) {
+        console.error('Error inserting batch:', batchError)
+        errors.push(`Batch error: ${batchError.message}`)
+      } else {
+        totalInserted += insertedProducts?.length || 0
+      }
+    }
+
+    console.log(`Import completed: ${totalInserted} products imported`)
+
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    revalidateTag(CACHE_TAGS.ENVIRONMENTS)
+    
+    // Also revalidate paths for immediate UI updates
+    revalidatePath('/demo/products')
+    revalidatePath('/demo')
+    revalidatePath(`/${environmentId}/products`)
+    revalidatePath(`/${environmentId}`)
+
+    return {
+      success: true,
+      imported: totalInserted,
+      errors: errors.length > 0 ? errors : undefined
+    }
   } catch (error) {
-    console.error('Error in importProductsFromCSV:', error)
-    throw error
+    console.error('Error in importProducts:', error)
+    
+    if (error instanceof Error) {
+      throw new Error(error.message)
+    }
+    
+    throw new Error('An unexpected error occurred while importing products')
   }
 }

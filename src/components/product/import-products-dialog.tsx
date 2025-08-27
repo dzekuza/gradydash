@@ -15,9 +15,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Upload, FileText, AlertCircle, CheckCircle, Map } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { importProductsFromCSV } from '@/lib/db/products/import-products'
+import { importProducts } from '@/lib/db/products/import-products'
 import { getAllCategories } from '@/lib/utils/categories'
 
 interface ImportProductsDialogProps {
@@ -45,12 +46,40 @@ interface CSVProduct {
   location_name?: string
 }
 
+interface FieldMapping {
+  [csvColumn: string]: string
+}
+
+const APP_FIELDS = [
+  { value: 'name', label: 'Product Name (Required)', required: true },
+  { value: 'status', label: 'Status (Required)', required: true },
+  { value: 'id', label: 'External ID', required: false },
+  { value: 'type', label: 'Product Type', required: false },
+  { value: 'sku', label: 'SKU', required: false },
+  { value: 'gtin', label: 'GTIN', required: false },
+  { value: 'upc', label: 'UPC', required: false },
+  { value: 'ean', label: 'EAN', required: false },
+  { value: 'isbn', label: 'ISBN', required: false },
+  { value: 'short_description', label: 'Short Description', required: false },
+  { value: 'description', label: 'Description', required: false },
+  { value: 'purchase_price', label: 'Purchase Price', required: false },
+  { value: 'selling_price', label: 'Selling Price', required: false },
+  { value: 'categories', label: 'Categories', required: false },
+  { value: 'tags', label: 'Tags', required: false },
+  { value: 'location_name', label: 'Location Name', required: false },
+  { value: 'in_stock', label: 'In Stock', required: false },
+  { value: 'images', label: 'Images', required: false },
+]
+
 export function ImportProductsDialog({ environmentId }: ImportProductsDialogProps) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [preview, setPreview] = useState<CSVProduct[]>([])
   const [errors, setErrors] = useState<string[]>([])
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([])
+  const [fieldMapping, setFieldMapping] = useState<FieldMapping>({})
+  const [currentStep, setCurrentStep] = useState<'upload' | 'mapping' | 'preview'>('upload')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const router = useRouter()
@@ -72,15 +101,95 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
     setFile(selectedFile)
     setErrors([])
     setPreview([])
+    setFieldMapping({})
 
     try {
       const text = await selectedFile.text()
-      const products = parseCSV(text)
-      setPreview(products.slice(0, 5)) // Show first 5 rows as preview
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      if (lines.length < 2) {
+        throw new Error('CSV file must have at least a header and one data row')
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+      setCsvHeaders(headers)
+
+      // Auto-map common field names
+      const autoMapping: FieldMapping = {}
+      headers.forEach(header => {
+        const lowerHeader = header.toLowerCase()
+        
+        // Auto-map common variations
+        if (lowerHeader.includes('name') || lowerHeader.includes('title') || lowerHeader.includes('product')) {
+          autoMapping[header] = 'name'
+        } else if (lowerHeader.includes('status') || lowerHeader.includes('condition')) {
+          autoMapping[header] = 'status'
+        } else if (lowerHeader.includes('price') && lowerHeader.includes('purchase')) {
+          autoMapping[header] = 'purchase_price'
+        } else if (lowerHeader.includes('price') && lowerHeader.includes('sell')) {
+          autoMapping[header] = 'selling_price'
+        } else if (lowerHeader.includes('sku')) {
+          autoMapping[header] = 'sku'
+        } else if (lowerHeader.includes('category')) {
+          autoMapping[header] = 'categories'
+        } else if (lowerHeader.includes('tag')) {
+          autoMapping[header] = 'tags'
+        } else if (lowerHeader.includes('location')) {
+          autoMapping[header] = 'location_name'
+        } else if (lowerHeader.includes('description')) {
+          autoMapping[header] = 'description'
+        }
+      })
+
+      setFieldMapping(autoMapping)
+      setCurrentStep('mapping')
     } catch (error) {
       toast({
         title: 'Error reading file',
         description: 'Could not read the CSV file. Please check the format.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleMappingChange = (csvColumn: string, appField: string) => {
+    setFieldMapping(prev => ({
+      ...prev,
+      [csvColumn]: appField
+    }))
+  }
+
+  const validateMapping = () => {
+    const requiredFields = ['name', 'status']
+    const missingFields = requiredFields.filter(field => 
+      !Object.values(fieldMapping).includes(field)
+    )
+
+    if (missingFields.length > 0) {
+      setErrors([`Missing required field mappings: ${missingFields.join(', ')}`])
+      return false
+    }
+
+    setErrors([])
+    return true
+  }
+
+  const handlePreview = () => {
+    if (!validateMapping()) return
+
+    try {
+      const text = file?.text()
+      if (!text) return
+
+      text.then(csvText => {
+        const products = parseCSV(csvText)
+        setPreview(products.slice(0, 5))
+        setCurrentStep('preview')
+      })
+    } catch (error) {
+      toast({
+        title: 'Error parsing CSV',
+        description: 'Could not parse the CSV file with current mapping.',
         variant: 'destructive',
       })
     }
@@ -92,21 +201,13 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
       throw new Error('CSV file must have at least a header and one data row')
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-    const requiredHeaders = ['name', 'status']
-    
-    // Check for required headers
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
-    if (missingHeaders.length > 0) {
-      throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`)
-    }
-
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
     const products: CSVProduct[] = []
     const validationErrors: string[] = []
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i]
-      const values = line.split(',').map(v => v.trim())
+      const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
       
       if (values.length < headers.length) {
         validationErrors.push(`Row ${i + 1}: Insufficient columns`)
@@ -114,8 +215,13 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
       }
 
       const product: any = {}
+      
+      // Map CSV values to app fields using fieldMapping
       headers.forEach((header, index) => {
-        product[header] = values[index] || undefined
+        const appField = fieldMapping[header]
+        if (appField) {
+          product[appField] = values[index] || undefined
+        }
       })
 
       // Validate required fields
@@ -189,22 +295,34 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
     setIsLoading(true)
     try {
       const text = await file.text()
-      const products = parseCSV(text)
+      const csvProducts = parseCSV(text)
       
-      const formData = new FormData()
-      formData.append('environmentId', environmentId)
-      formData.append('products', JSON.stringify(products))
-
-      await importProductsFromCSV(formData)
+      // Transform CSVProduct[] to ImportProduct[]
+      const transformedProducts = csvProducts.map(product => ({
+        title: product.name,
+        sku: product.sku,
+        barcode: product.gtin || product.upc || product.ean || product.isbn,
+        description: product.description || product.short_description,
+        status: product.status,
+        location_id: undefined, // Will be mapped by location name later
+        purchase_price: product.purchase_price,
+        selling_price: product.selling_price,
+        categories: Array.isArray(product.categories) ? product.categories : undefined,
+        tags: Array.isArray(product.tags) ? product.tags : undefined
+      }))
+      
+      await importProducts(transformedProducts, environmentId)
 
       toast({
         title: 'Import successful',
-        description: `Successfully imported ${products.length} products`,
+        description: `Successfully imported ${transformedProducts.length} products`,
       })
 
       setFile(null)
       setPreview([])
       setErrors([])
+      setFieldMapping({})
+      setCurrentStep('upload')
       setOpen(false)
       router.refresh()
     } catch (error) {
@@ -219,11 +337,9 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
   }
 
   const downloadTemplate = () => {
-    const template = `id,type,sku,gtin,upc,ean,isbn,name,short_description,description,in_stock,categories,tags,images,status,purchase_price,selling_price,location_name
-"PROD001","Electronics","IP13P001","1234567890123","","","","iPhone 13 Pro","Excellent condition iPhone 13 Pro","Excellent condition iPhone 13 Pro with 256GB storage",true,"mobile-phones-main;phone-case","Apple;iPhone;5G",,taken,800.00,1200.00,"Main Store"
-"PROD002","Electronics","MBA001","","9876543210987","","","MacBook Air M1","Like new MacBook Air","Like new MacBook Air with M1 chip",true,"laptops-main;laptop-accessories","Apple;MacBook;M1",,selling,900.00,1400.00,"Online Store"
-"PROD003","Audio","HP001","","","","","Sony WH-1000XM4","Wireless noise-canceling headphones","Premium wireless headphones with noise cancellation",true,"headphones","Sony;Wireless;Noise-Canceling",,selling,200.00,350.00,"Audio Store"
-"PROD004","Home","CM001","","","","","Nespresso Vertuo","Coffee machine","Automatic coffee machine",true,"coffee-machines-main;coffee-capsules","Nespresso;Coffee;Automatic",,taken,150.00,250.00,"Kitchen Store"`
+    const template = `Product Name,Status,Purchase Price,Selling Price,SKU,Categories,Location
+"iPhone 13 Pro","taken","800.00","1200.00","IP13P001","mobile-phones-main;phone-case","Main Store"
+"MacBook Air M1","selling","900.00","1400.00","MBA001","laptops-main;laptop-accessories","Online Store"`
     
     const blob = new Blob([template], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
@@ -234,6 +350,18 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
     window.URL.revokeObjectURL(url)
   }
 
+  const resetImport = () => {
+    setFile(null)
+    setPreview([])
+    setErrors([])
+    setCsvHeaders([])
+    setFieldMapping({})
+    setCurrentStep('upload')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -242,11 +370,11 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
           Import CSV
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import Products from CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to import multiple products at once. 
+            Upload a CSV file and map the columns to product fields. 
             <Button 
               variant="link" 
               className="p-0 h-auto font-normal text-primary"
@@ -258,43 +386,86 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="csv-file">CSV File</Label>
-            <Input
-              id="csv-file"
-              type="file"
-              accept=".csv"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              className="cursor-pointer"
-            />
-            <p className="text-xs text-muted-foreground">
-              Required columns: name, status. Optional: id, type, sku, gtin, upc, ean, isbn, short_description, description, in_stock, categories, tags, images, purchase_price, selling_price, location_name
-            </p>
-          </div>
-
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-1">
-                  <p className="font-medium">Validation errors found:</p>
-                  <ul className="text-sm space-y-1">
-                    {errors.slice(0, 5).map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                    {errors.length > 5 && (
-                      <li>• ... and {errors.length - 5} more errors</li>
-                    )}
-                  </ul>
-                </div>
-              </AlertDescription>
-            </Alert>
+          {/* Step 1: File Upload */}
+          {currentStep === 'upload' && (
+            <div className="grid gap-2">
+              <Label htmlFor="csv-file">CSV File</Label>
+              <Input
+                id="csv-file"
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload your CSV file. The next step will allow you to map columns to product fields.
+              </p>
+            </div>
           )}
 
-          {preview.length > 0 && (
-            <div className="space-y-2">
-              <Label>Preview (first 5 rows)</Label>
+          {/* Step 2: Field Mapping */}
+          {currentStep === 'mapping' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                <Label>Map CSV Columns to Product Fields</Label>
+              </div>
+              
+              <div className="grid gap-3">
+                {csvHeaders.map((csvColumn) => (
+                  <div key={csvColumn} className="flex items-center gap-3">
+                                         <div className="flex-1">
+                       <Label className="text-sm font-medium">&quot;{csvColumn}&quot;</Label>
+                     </div>
+                    <div className="flex-1">
+                      <Select
+                        value={fieldMapping[csvColumn] || ''}
+                        onValueChange={(value) => handleMappingChange(csvColumn, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select field..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Skip this column</SelectItem>
+                          {APP_FIELDS.map((field) => (
+                            <SelectItem key={field.value} value={field.value}>
+                              {field.label} {field.required && '*'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <p className="font-medium">Mapping errors:</p>
+                      <ul className="text-sm space-y-1">
+                        {errors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Preview */}
+          {currentStep === 'preview' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <Label>Preview (first 5 rows)</Label>
+              </div>
+              
               <div className="border rounded-md p-3 bg-muted/50">
                 <div className="space-y-2">
                   {preview.map((product, index) => (
@@ -305,13 +476,32 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
                       {product.sku && (
                         <span className="text-muted-foreground">SKU: {product.sku}</span>
                       )}
-                      {product.type && (
-                        <span className="text-muted-foreground">Type: {product.type}</span>
+                      {product.purchase_price && (
+                        <span className="text-muted-foreground">€{product.purchase_price}</span>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
+
+              {errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <p className="font-medium">Validation errors found:</p>
+                      <ul className="text-sm space-y-1">
+                        {errors.slice(0, 5).map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                        {errors.length > 5 && (
+                          <li>• ... and {errors.length - 5} more errors</li>
+                        )}
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
         </div>
@@ -320,12 +510,27 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleImport} 
-            disabled={!file || isLoading || errors.length > 0}
-          >
-            {isLoading ? 'Importing...' : 'Import Products'}
-          </Button>
+          
+          {currentStep === 'mapping' && (
+            <Button onClick={handlePreview} disabled={errors.length > 0}>
+              Preview Import
+            </Button>
+          )}
+          
+          {currentStep === 'preview' && (
+            <Button 
+              onClick={handleImport} 
+              disabled={!file || isLoading || errors.length > 0}
+            >
+              {isLoading ? 'Importing...' : 'Import Products'}
+            </Button>
+          )}
+          
+          {(currentStep === 'mapping' || currentStep === 'preview') && (
+            <Button type="button" variant="outline" onClick={resetImport}>
+              Start Over
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

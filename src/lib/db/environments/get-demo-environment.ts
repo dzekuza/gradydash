@@ -1,10 +1,14 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { Environment } from '@/types/db'
+import { unstable_cache } from 'next/cache'
+import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
 const DEMO_ENVIRONMENT_SLUG = 'demo'
 
-export async function getOrCreateDemoEnvironment(): Promise<Environment> {
-  const supabase = createClient()
+// Internal function for getting or creating demo environment
+async function _getOrCreateDemoEnvironment(cookieStore?: ReadonlyRequestCookies): Promise<Environment> {
+  const supabase = createClient(cookieStore)
   
   try {
     // First try to get the existing demo environment
@@ -76,7 +80,27 @@ export async function getOrCreateDemoEnvironment(): Promise<Environment> {
   }
 }
 
-export async function getDemoEnvironmentId(): Promise<string> {
-  const demoEnv = await getOrCreateDemoEnvironment()
+// Internal function for getting demo environment ID
+async function _getDemoEnvironmentId(cookieStore?: ReadonlyRequestCookies): Promise<string> {
+  const demoEnv = await _getOrCreateDemoEnvironment(cookieStore)
   return demoEnv.id
 }
+
+// Cached versions of the functions
+export const getOrCreateDemoEnvironment = unstable_cache(
+  _getOrCreateDemoEnvironment,
+  ['get-or-create-demo-environment'],
+  {
+    revalidate: CACHE_CONFIGS.VERY_LONG.revalidate,
+    tags: [CACHE_TAGS.ENVIRONMENTS, CACHE_TAGS.DEMO_DATA]
+  }
+)
+
+export const getDemoEnvironmentId = unstable_cache(
+  _getDemoEnvironmentId,
+  ['get-demo-environment-id'],
+  {
+    revalidate: CACHE_CONFIGS.VERY_LONG.revalidate,
+    tags: [CACHE_TAGS.ENVIRONMENTS, CACHE_TAGS.DEMO_DATA]
+  }
+)

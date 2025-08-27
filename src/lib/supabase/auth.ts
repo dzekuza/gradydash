@@ -1,9 +1,10 @@
 import { createClient } from './client-server'
 import { redirect } from 'next/navigation'
 import { Profile } from '@/types/db'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export async function getSession() {
-  const supabase = createClient()
+export async function getSession(cookieStore?: ReadonlyRequestCookies) {
+  const supabase = createClient(cookieStore)
   try {
     const {
       data: { session },
@@ -23,13 +24,13 @@ export async function requireUser() {
   return session.user
 }
 
-export async function getUser() {
-  const session = await getSession()
+export async function getUser(cookieStore?: ReadonlyRequestCookies) {
+  const session = await getSession(cookieStore)
   return session?.user ?? null
 }
 
-export async function getCurrentUserProfile(): Promise<Profile | null> {
-  const supabase = createClient()
+export async function getCurrentUserProfile(cookieStore?: ReadonlyRequestCookies): Promise<Profile | null> {
+  const supabase = createClient(cookieStore)
   const user = await getUser()
   
   if (!user) {

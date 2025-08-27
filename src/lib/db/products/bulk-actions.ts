@@ -1,8 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { ProductStatus } from '@/types/db'
+import { CACHE_TAGS } from '@/lib/utils/cache'
 
 interface BulkActionData {
   productIds: string[]
@@ -60,6 +61,11 @@ export async function bulkUpdateStatus(data: BulkActionData) {
       // Don't throw error here as the main update succeeded
     }
 
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath('/demo/products')
     return { success: true, count: productIds.length }
   } catch (error) {
@@ -99,6 +105,10 @@ export async function bulkUpdateTags(data: BulkActionData) {
       throw new Error('Failed to update product tags')
     }
 
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath('/demo/products')
     return { success: true, count: productIds.length }
   } catch (error) {
@@ -138,6 +148,10 @@ export async function bulkUpdateCategories(data: BulkActionData) {
       throw new Error('Failed to update product categories')
     }
 
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath('/demo/products')
     return { success: true, count: productIds.length }
   } catch (error) {
@@ -192,6 +206,11 @@ export async function bulkDeleteProducts(data: BulkActionData) {
       throw new Error('Failed to delete products')
     }
 
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath('/demo/products')
     return { success: true, count: productIds.length }
   } catch (error) {

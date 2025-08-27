@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -11,14 +12,16 @@ import { ProductDialog } from '@/components/product/product-dialog'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
 
 export default async function DemoProductsPage() {
+  const cookieStore = cookies()
+  
   // Get the demo environment ID
-  const demoEnvironmentId = await getDemoEnvironmentId()
+  const demoEnvironmentId = await getDemoEnvironmentId(cookieStore)
   
   // Fetch products, locations, and environments for the demo environment
   const [products, locations, environments] = await Promise.all([
-    getProducts(demoEnvironmentId),
-    getLocations(demoEnvironmentId),
-    getUserEnvironments()
+    getProducts(demoEnvironmentId, cookieStore),
+    getLocations(demoEnvironmentId, cookieStore),
+    getUserEnvironments(cookieStore)
   ])
 
   return (

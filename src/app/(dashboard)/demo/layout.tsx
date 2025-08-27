@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { AppSidebar } from '@/components/app-sidebar'
 import { EnvironmentSwitcher } from '@/components/dashboard/environment-switcher'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
@@ -19,14 +20,16 @@ export default async function DemoLayout({
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = cookies()
+  
   // Get real user profile data
-  const userProfile = await getCurrentUserProfile()
+  const userProfile = await getCurrentUserProfile(cookieStore)
   
   // Get the real demo environment from database
-  const demoEnvironment = await getOrCreateDemoEnvironment()
+  const demoEnvironment = await getOrCreateDemoEnvironment(cookieStore)
 
   // Get all environments the user has access to
-  const userEnvironments = await getUserEnvironments()
+  const userEnvironments = await getUserEnvironments(cookieStore)
   
   // Use user environments if available, otherwise fall back to just demo environment
   const environments = userEnvironments.length > 0 ? userEnvironments : [demoEnvironment]

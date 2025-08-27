@@ -1,14 +1,18 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { Location } from '@/types/db'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { unstable_cache } from 'next/cache'
+import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export async function getLocations(environmentId: string): Promise<Location[]> {
-  const supabase = createClient()
+// Internal function that does the actual data fetching
+async function _getLocations(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<Location[]> {
+  const supabase = createClient(cookieStore)
   
   try {
     // Handle demo environment
     const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId() 
+      ? await getDemoEnvironmentId(cookieStore) 
       : environmentId
 
     const { data, error } = await supabase
@@ -39,3 +43,13 @@ export async function getLocations(environmentId: string): Promise<Location[]> {
     return []
   }
 }
+
+// Cached version of getLocations
+export const getLocations = unstable_cache(
+  _getLocations,
+  ['get-locations'],
+  {
+    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
+    tags: [CACHE_TAGS.LOCATIONS, CACHE_TAGS.ENVIRONMENTS]
+  }
+)

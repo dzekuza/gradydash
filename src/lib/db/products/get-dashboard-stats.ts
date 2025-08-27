@@ -1,14 +1,18 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { ProductStatus } from '@/types/db'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { unstable_cache } from 'next/cache'
+import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export async function getProductsByStatus(environmentId: string): Promise<Record<ProductStatus, number>> {
-  const supabase = createClient()
+// Internal function for getting products by status
+async function _getProductsByStatus(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<Record<ProductStatus, number>> {
+  const supabase = createClient(cookieStore)
   
   try {
     // Handle demo environment
     const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId() 
+      ? await getDemoEnvironmentId(cookieStore) 
       : environmentId
 
     const { data, error } = await supabase
@@ -55,13 +59,14 @@ export async function getProductsByStatus(environmentId: string): Promise<Record
   }
 }
 
-export async function getRevenueLast30Days(environmentId: string): Promise<number> {
-  const supabase = createClient()
+// Internal function for getting revenue last 30 days
+async function _getRevenueLast30Days(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<number> {
+  const supabase = createClient(cookieStore)
   
   try {
     // Handle demo environment
     const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId() 
+      ? await getDemoEnvironmentId(cookieStore) 
       : environmentId
 
     const thirtyDaysAgo = new Date()
@@ -89,13 +94,14 @@ export async function getRevenueLast30Days(environmentId: string): Promise<numbe
   }
 }
 
-export async function getAverageTimeToSale(environmentId: string): Promise<number> {
-  const supabase = createClient()
+// Internal function for getting average time to sale
+async function _getAverageTimeToSale(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<number> {
+  const supabase = createClient(cookieStore)
   
   try {
     // Handle demo environment
     const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId() 
+      ? await getDemoEnvironmentId(cookieStore) 
       : environmentId
 
     // First get all products in the environment with their creation dates
@@ -182,3 +188,31 @@ export async function getAverageTimeToSale(environmentId: string): Promise<numbe
     return 0
   }
 }
+
+// Cached versions of the functions
+export const getProductsByStatus = unstable_cache(
+  _getProductsByStatus,
+  ['get-products-by-status'],
+  {
+    revalidate: CACHE_CONFIGS.SHORT.revalidate,
+    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.PRODUCTS, CACHE_TAGS.ENVIRONMENTS]
+  }
+)
+
+export const getRevenueLast30Days = unstable_cache(
+  _getRevenueLast30Days,
+  ['get-revenue-last-30-days'],
+  {
+    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
+    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.ENVIRONMENTS]
+  }
+)
+
+export const getAverageTimeToSale = unstable_cache(
+  _getAverageTimeToSale,
+  ['get-average-time-to-sale'],
+  {
+    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
+    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.PRODUCTS, CACHE_TAGS.ENVIRONMENTS]
+  }
+)

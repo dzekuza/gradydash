@@ -1,9 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { updateProductSchema } from '@/lib/utils/zod-schemas/product'
+import { CACHE_TAGS } from '@/lib/utils/cache'
 
 export async function updateProduct(productId: string, formData: FormData) {
   const supabase = createClient()
@@ -12,19 +12,7 @@ export async function updateProduct(productId: string, formData: FormData) {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Check if we're in demo mode
-    const environmentId = formData.get('environment_id') as string || 'demo'
-    const isDemoMode = environmentId === 'demo' || !user
-    
-    if (userError) {
-      console.error('User authentication error:', userError)
-      // In demo mode, we'll continue without authentication
-      if (!isDemoMode) {
-        throw new Error('Authentication error: ' + userError.message)
-      }
-    }
-    
-    if (!user && !isDemoMode) {
+    if (userError || !user) {
       throw new Error('Authentication required')
     }
 
@@ -57,14 +45,12 @@ export async function updateProduct(productId: string, formData: FormData) {
     // Validate the data
     const validatedData = updateProductSchema.parse(rawData)
 
-    console.log('Updating product with:', { productId, ...validatedData })
-
     // Update the product
     const { data: product, error: productError } = await supabase
       .from('products')
       .update({
         ...validatedData,
-        status_updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString()
       })
       .eq('id', productId)
       .select()
@@ -76,18 +62,20 @@ export async function updateProduct(productId: string, formData: FormData) {
     }
 
     if (!product) {
-      throw new Error('Product was not found')
+      throw new Error('Product not found')
     }
 
     console.log('Product updated successfully:', product.id)
 
-    // Revalidate the products page
+    // Invalidate relevant cache tags
+    revalidateTag(CACHE_TAGS.PRODUCTS)
+    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    
+    // Also revalidate paths for immediate UI updates
     revalidatePath('/demo/products')
     revalidatePath('/demo')
 
-    // Redirect to the products page
-    redirect('/demo/products')
-
+    return { success: true, product }
   } catch (error) {
     console.error('Error in updateProduct:', error)
     

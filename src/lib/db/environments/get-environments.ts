@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { Environment } from '@/types/db'
+import { unstable_cache } from 'next/cache'
+import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export async function getEnvironmentsForUser(userId: string): Promise<Environment[]> {
-  const supabase = createClient()
+// Internal function for getting environments for a user
+async function _getEnvironmentsForUser(userId: string, cookieStore?: ReadonlyRequestCookies): Promise<Environment[]> {
+  const supabase = createClient(cookieStore)
   
   // Get environment IDs where user has membership
   const { data: memberships, error: membershipsError } = await supabase
@@ -47,8 +51,9 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
   return environments || []
 }
 
-export async function getEnvironmentBySlug(slug: string): Promise<Environment | null> {
-  const supabase = createClient()
+// Internal function for getting environment by slug
+async function _getEnvironmentBySlug(slug: string, cookieStore?: ReadonlyRequestCookies): Promise<Environment | null> {
+  const supabase = createClient(cookieStore)
   
   const { data, error } = await supabase
     .from('environments')
@@ -71,3 +76,22 @@ export async function getEnvironmentBySlug(slug: string): Promise<Environment | 
 
   return data
 }
+
+// Cached versions of the functions
+export const getEnvironmentsForUser = unstable_cache(
+  _getEnvironmentsForUser,
+  ['get-environments-for-user'],
+  {
+    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
+    tags: [CACHE_TAGS.ENVIRONMENTS, CACHE_TAGS.MEMBERSHIPS, CACHE_TAGS.USER_PROFILES]
+  }
+)
+
+export const getEnvironmentBySlug = unstable_cache(
+  _getEnvironmentBySlug,
+  ['get-environment-by-slug'],
+  {
+    revalidate: CACHE_CONFIGS.LONG.revalidate,
+    tags: [CACHE_TAGS.ENVIRONMENTS]
+  }
+)
