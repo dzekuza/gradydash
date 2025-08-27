@@ -1,0 +1,13 @@
+---
+alwaysApply: false
+---
+
+When updating code, don’t just append or inject partial snippets. If the update
+affects the structure, logic, or API of a file, fully rewrite the entire file.
+Remove any obsolete/duplicate code instead of layering updates. Ensure the final
+file is clean, complete, and self-contained, without overlapping old and new
+logic. When updating code, don’t just append or inject partial snippets. If the
+update affects the structure, logic, or API of a file, fully rewrite the entire
+file. Remove any obsolete/duplicate code instead of layering updates. Ensure the
+final file is clean, complete, and self-contained, without overlapping old and
+new logic.

@@ -1,0 +1,309 @@
+---
+alwaysApply: true
+---
+
+Perfect—here’s an updated, copy-paste prompt for Cursor that enforces in-app
+navigation with Next.js <Link> (no full reloads), every UI element from
+shadcn/ui, and a clean, modular file structure with one function per file for
+easy maintenance and lightweight optimization.
+
+⸻
+
+Build “Grady ReSellOps” — Multi-tenant Returns/Resale Dashboard (SPA-style
+inside shadcn layout)
+
+Goal: A production-ready web app for Grady to track returned/refurbished
+products from multiple resellers (environments). Navigation must stay inside the
+shadcn sidebar-07 dashboard layout using Next.js App Router and next/link so
+pages swap content without full page reloads.
+
+Tech & rules •	Next.js (App Router, TypeScript, RSC-first) •	Navigation:
+strictly via next/link and router.push() from next/navigation. No full page
+reloads, all routes render inside the dashboard layout. •	UI: shadcn/ui
+only—buttons, tables, inputs, forms, dialogs, dropdowns, tabs, badges, cards,
+breadcrumbs, pagination, toasts, etc. •	Styling: Tailwind + tokens; typography
+via shadcn’s Text/Heading styles. •	Forms: React Hook Form + Zod. •	Data:
+Supabase (Auth, Postgres, Storage) + strict RLS. •	Images: Supabase Storage
+(private, signed URLs). •	Perf: Each function in its own file; collocate per
+feature; minimize client JS; use RSC for data-fetch where possible; client
+components only for interactive bits. •	State: Keep server actions + URL params
+as source of truth; optional lightweight context (no heavy global state).
+•	Accessibility: Keyboard focus, aria labels, semantic headings. •	i18n-ready
+(en/lt placeholders).
+
+shadcn setup
+
+npx shadcn@latest init npx shadcn@latest add sidebar-07 npx shadcn@latest add
+button input textarea select label form dialog sheet popover dropdown-menu badge
+avatar tooltip toast table tabs card separator progress alert skeleton
+breadcrumb pagination scroll-area sonner command
+
+Project structure (one responsibility per file)
+
+app/ layout.tsx // root shell (auth)/ login/page.tsx (dashboard)/ [env]/
+layout.tsx // wraps all env routes with sidebar-07; RSC page.tsx // env
+Dashboard products/ page.tsx // list new/page.tsx [id]/page.tsx
+locations/page.tsx members/page.tsx analytics/page.tsx admin/ layout.tsx
+page.tsx
+
+components/ dashboard/ environment-switcher.tsx // client component (shadcn
+popover/command) data-table/ data-table.tsx // table scaffold (shadcn table)
+columns.tsx // column defs toolbar.tsx // filters/search product/
+product-card.tsx status-badge.tsx status-change-dialog.tsx image-uploader.tsx
+timeline.tsx comments-thread.tsx barcode-scanner.tsx ui/ // generated shadcn
+components
+
+lib/ supabase/ // one file per operation (service layer) client-browser.ts //
+createBrowserClient client-server.ts // createServerClient auth.ts //
+getSession, requireUser db/ products/ get-products.ts // RSC fetch
+get-product.ts create-product.ts // server action update-product.ts
+change-status.ts add-comment.ts upload-image.ts record-sale.ts environments/
+list-environments.ts create-environment.ts get-memberships.ts invite-user.ts
+accept-invite.ts locations/ get-locations.ts create-location.ts utils/
+zod-schemas/ product.ts environment.ts invite.ts rbac.ts // role
+guards/transition matrix urls.ts // route builders signed-url.ts //
+getSignedImageUrl csv.ts // CSV import helpers
+
+hooks/ use-confirm.ts use-toast.ts
+
+types/ db.ts // shared types, enums
+
+Routing & SPA behavior •	Use App Router nested layouts:
+•	app/(dashboard)/[env]/layout.tsx imports the shadcn sidebar-07 and renders
+{children} inside its content area. •	All pages under [env] render inside this
+layout—no full refresh. •	Links: Use import Link from "next/link" for all
+navigation (sidebar items, tables, breadcrumbs, row actions). •	Programmatic
+nav: const router = useRouter(); router.push(url); from client components.
+•	Sidebar items use Link and visually highlight active routes based on
+usePathname().
+
+Sidebar & environment switcher •	Build EnvironmentSwitcher using shadcn
+Popover + Command (or Combobox) with keyboard shortcuts (⌘1..⌘9). •	Items are
+Link to /${env}/.... •	Provide “Add environment” as a Dialog with a form (RHF +
+Zod).
+
+UI rules •	Buttons: import { Button } from "@/components/ui/button"—no native
+<button> styling. •	Tables: shadcn Table with our DataTable wrapper; server-side
+pagination; searchable; filterable. •	Forms: shadcn Form +
+Input/Select/Textarea; submit via server action; show FormMessage errors.
+•	Dialogs/Dropdowns/Tabs/Badges/Cards/Toasts: always shadcn. •	Typography:
+consistent with shadcn primitives; set base font in root layout and use
+Heading/Muted classes where applicable.
+
+Data model (unchanged core, summarized) •	Enums:
+role('grady_admin','grady_staff','reseller_manager','reseller_staff'),
+product_status('taken','in_repair','selling','sold','returned','discarded').
+•	Tables: profiles, environments, memberships, locations, products,
+product_status_history, product_comments, product_images, sales,
+environment_invites. •	Storage bucket: product-images (private). Access via
+signed URLs only.
+
+RLS essentials (summary) •	Enable RLS on all tables. •	Read: environment members
+or global admins. •	Write: grady_admin/grady_staff in their environments;
+comments from any member; history writes restricted to staff/admin. •	Storage
+writes validated server-side; reads via signed URL.
+
+Product lifecycle & transitions •	Allowed transitions: •	taken → in_repair |
+selling | discarded •	in_repair → selling | discarded | returned •	selling →
+sold | returned •	sold terminal •	status-change-dialog.tsx enforces transitions;
+every change creates a product_status_history row; updates products.status +
+status_updated_at; optional note.
+
+Pages (all render inside dashboard layout) •	/:env Dashboard (cards: Products by
+Status, Avg Time-to-Sale, In Repair, Revenue last 30d) •	/:env/products
+(DataTable with filters: Status, Location, Has Images, Date; columns: Title,
+SKU, Barcode, Status Badge, Location, Updated, Actions) •	/:env/products/new
+(Dialog or page—RHF form; drag-drop image-uploader; environment preselected)
+•	/:env/products/[id] (tabs: Overview, Timeline, Images, Comments, Sales,
+Activity; barcode scanner button) •	/:env/locations (CRUD with Dialog forms)
+•	/:env/members (list; invite-user dialog with role control) •	/:env/analytics
+(charts with shadcn Card + simple <canvas> or Recharts if allowed) •	/admin
+global (environments, cross-env analytics, exports)
+
+Component behavior highlights •	EnvironmentSwitcher: Link for all items; no
+window.location. •	DataTable: controlled, server queries in RSC; toolbar filters
+update search params; row actions open shadcn Dialog or route to /[id].
+•	ImageUploader: client component; uploads to Storage via server action;
+progress UI; on success, refresh RSC segment via router.refresh().
+•	CommentsThread: optimistic insert; fallback toast on error. •	BarcodeScanner:
+uses BarcodeDetector if available; fallback manual input dialog.
+
+Server actions (each in its own file) •	createEnvironment, inviteUser,
+acceptInvite •	createProduct, updateProduct, changeProductStatus
+•	uploadProductImages, addComment, recordSale •	createLocation, updateLocation
+•	getSignedImageUrl
+
+All actions: Zod-validate input, check membership & role, throw typed errors for
+UI toasts.
+
+Perf & DX •	Favor RSC loaders for lists/detail pages; client only for
+interactive UI. •	Co-locate queries with routes; keep service logic in lib/db/*
+files (one function per file). •	Use revalidatePath/router.refresh() after
+mutations to keep UI in sync. •	Codegen types (optional) or manual zod schemas
+in utils/zod-schemas. •	Strict ESLint/Prettier; CI should type-check.
+
+Acceptance criteria 1.	All navigation uses next/link or router.push—no full
+reloads. Content always renders inside the sidebar-07 dashboard layout. 2.	Every
+button/table/font/input/dialog/dropdown/tab/badge comes from shadcn/ui. 3.	RLS
+prevents cross-environment access; Topocentras manager cannot see Varle data.
+4.	Changing a product status writes history, updates UI immediately, and shows a
+toast. 5.	Image uploads are private; images visible only via signed URLs for
+authorized members. 6.	Codebase is modular: one operation per file, feature
+folders, clear boundaries.
+
+Start building now. Initialize the project, add shadcn components, create the
+nested app/(dashboard)/[env]/layout.tsx, wire the sidebar with Link, scaffold
+pages, implement server actions, and apply RLS. Include a README.md with setup
+and migration steps. Perfect—here’s an updated, copy-paste prompt for Cursor
+that enforces in-app navigation with Next.js <Link> (no full reloads), every UI
+element from shadcn/ui, and a clean, modular file structure with one function
+per file for easy maintenance and lightweight optimization.
+
+⸻
+
+Build “Grady ReSellOps” — Multi-tenant Returns/Resale Dashboard (SPA-style
+inside shadcn layout)
+
+Goal: A production-ready web app for Grady to track returned/refurbished
+products from multiple resellers (environments). Navigation must stay inside the
+shadcn sidebar-07 dashboard layout using Next.js App Router and next/link so
+pages swap content without full page reloads.
+
+Tech & rules •	Next.js (App Router, TypeScript, RSC-first) •	Navigation:
+strictly via next/link and router.push() from next/navigation. No full page
+reloads, all routes render inside the dashboard layout. •	UI: shadcn/ui
+only—buttons, tables, inputs, forms, dialogs, dropdowns, tabs, badges, cards,
+breadcrumbs, pagination, toasts, etc. •	Styling: Tailwind + tokens; typography
+via shadcn’s Text/Heading styles. •	Forms: React Hook Form + Zod. •	Data:
+Supabase (Auth, Postgres, Storage) + strict RLS. •	Images: Supabase Storage
+(private, signed URLs). •	Perf: Each function in its own file; collocate per
+feature; minimize client JS; use RSC for data-fetch where possible; client
+components only for interactive bits. •	State: Keep server actions + URL params
+as source of truth; optional lightweight context (no heavy global state).
+•	Accessibility: Keyboard focus, aria labels, semantic headings. •	i18n-ready
+(en/lt placeholders).
+
+shadcn setup
+
+npx shadcn@latest init npx shadcn@latest add sidebar-07 npx shadcn@latest add
+button input textarea select label form dialog sheet popover dropdown-menu badge
+avatar tooltip toast table tabs card separator progress alert skeleton
+breadcrumb pagination scroll-area sonner command
+
+Project structure (one responsibility per file)
+
+app/ layout.tsx // root shell (auth)/ login/page.tsx (dashboard)/ [env]/
+layout.tsx // wraps all env routes with sidebar-07; RSC page.tsx // env
+Dashboard products/ page.tsx // list new/page.tsx [id]/page.tsx
+locations/page.tsx members/page.tsx analytics/page.tsx admin/ layout.tsx
+page.tsx
+
+components/ dashboard/ environment-switcher.tsx // client component (shadcn
+popover/command) data-table/ data-table.tsx // table scaffold (shadcn table)
+columns.tsx // column defs toolbar.tsx // filters/search product/
+product-card.tsx status-badge.tsx status-change-dialog.tsx image-uploader.tsx
+timeline.tsx comments-thread.tsx barcode-scanner.tsx ui/ // generated shadcn
+components
+
+lib/ supabase/ // one file per operation (service layer) client-browser.ts //
+createBrowserClient client-server.ts // createServerClient auth.ts //
+getSession, requireUser db/ products/ get-products.ts // RSC fetch
+get-product.ts create-product.ts // server action update-product.ts
+change-status.ts add-comment.ts upload-image.ts record-sale.ts environments/
+list-environments.ts create-environment.ts get-memberships.ts invite-user.ts
+accept-invite.ts locations/ get-locations.ts create-location.ts utils/
+zod-schemas/ product.ts environment.ts invite.ts rbac.ts // role
+guards/transition matrix urls.ts // route builders signed-url.ts //
+getSignedImageUrl csv.ts // CSV import helpers
+
+hooks/ use-confirm.ts use-toast.ts
+
+types/ db.ts // shared types, enums
+
+Routing & SPA behavior •	Use App Router nested layouts:
+•	app/(dashboard)/[env]/layout.tsx imports the shadcn sidebar-07 and renders
+{children} inside its content area. •	All pages under [env] render inside this
+layout—no full refresh. •	Links: Use import Link from "next/link" for all
+navigation (sidebar items, tables, breadcrumbs, row actions). •	Programmatic
+nav: const router = useRouter(); router.push(url); from client components.
+•	Sidebar items use Link and visually highlight active routes based on
+usePathname().
+
+Sidebar & environment switcher •	Build EnvironmentSwitcher using shadcn
+Popover + Command (or Combobox) with keyboard shortcuts (⌘1..⌘9). •	Items are
+Link to /${env}/.... •	Provide “Add environment” as a Dialog with a form (RHF +
+Zod).
+
+UI rules •	Buttons: import { Button } from "@/components/ui/button"—no native
+<button> styling. •	Tables: shadcn Table with our DataTable wrapper; server-side
+pagination; searchable; filterable. •	Forms: shadcn Form +
+Input/Select/Textarea; submit via server action; show FormMessage errors.
+•	Dialogs/Dropdowns/Tabs/Badges/Cards/Toasts: always shadcn. •	Typography:
+consistent with shadcn primitives; set base font in root layout and use
+Heading/Muted classes where applicable.
+
+Data model (unchanged core, summarized) •	Enums:
+role('grady_admin','grady_staff','reseller_manager','reseller_staff'),
+product_status('taken','in_repair','selling','sold','returned','discarded').
+•	Tables: profiles, environments, memberships, locations, products,
+product_status_history, product_comments, product_images, sales,
+environment_invites. •	Storage bucket: product-images (private). Access via
+signed URLs only.
+
+RLS essentials (summary) •	Enable RLS on all tables. •	Read: environment members
+or global admins. •	Write: grady_admin/grady_staff in their environments;
+comments from any member; history writes restricted to staff/admin. •	Storage
+writes validated server-side; reads via signed URL.
+
+Product lifecycle & transitions •	Allowed transitions: •	taken → in_repair |
+selling | discarded •	in_repair → selling | discarded | returned •	selling →
+sold | returned •	sold terminal •	status-change-dialog.tsx enforces transitions;
+every change creates a product_status_history row; updates products.status +
+status_updated_at; optional note.
+
+Pages (all render inside dashboard layout) •	/:env Dashboard (cards: Products by
+Status, Avg Time-to-Sale, In Repair, Revenue last 30d) •	/:env/products
+(DataTable with filters: Status, Location, Has Images, Date; columns: Title,
+SKU, Barcode, Status Badge, Location, Updated, Actions) •	/:env/products/new
+(Dialog or page—RHF form; drag-drop image-uploader; environment preselected)
+•	/:env/products/[id] (tabs: Overview, Timeline, Images, Comments, Sales,
+Activity; barcode scanner button) •	/:env/locations (CRUD with Dialog forms)
+•	/:env/members (list; invite-user dialog with role control) •	/:env/analytics
+(charts with shadcn Card + simple <canvas> or Recharts if allowed) •	/admin
+global (environments, cross-env analytics, exports)
+
+Component behavior highlights •	EnvironmentSwitcher: Link for all items; no
+window.location. •	DataTable: controlled, server queries in RSC; toolbar filters
+update search params; row actions open shadcn Dialog or route to /[id].
+•	ImageUploader: client component; uploads to Storage via server action;
+progress UI; on success, refresh RSC segment via router.refresh().
+•	CommentsThread: optimistic insert; fallback toast on error. •	BarcodeScanner:
+uses BarcodeDetector if available; fallback manual input dialog.
+
+Server actions (each in its own file) •	createEnvironment, inviteUser,
+acceptInvite •	createProduct, updateProduct, changeProductStatus
+•	uploadProductImages, addComment, recordSale •	createLocation, updateLocation
+•	getSignedImageUrl
+
+All actions: Zod-validate input, check membership & role, throw typed errors for
+UI toasts.
+
+Perf & DX •	Favor RSC loaders for lists/detail pages; client only for
+interactive UI. •	Co-locate queries with routes; keep service logic in lib/db/*
+files (one function per file). •	Use revalidatePath/router.refresh() after
+mutations to keep UI in sync. •	Codegen types (optional) or manual zod schemas
+in utils/zod-schemas. •	Strict ESLint/Prettier; CI should type-check.
+
+Acceptance criteria 1.	All navigation uses next/link or router.push—no full
+reloads. Content always renders inside the sidebar-07 dashboard layout. 2.	Every
+button/table/font/input/dialog/dropdown/tab/badge comes from shadcn/ui. 3.	RLS
+prevents cross-environment access; Topocentras manager cannot see Varle data.
+4.	Changing a product status writes history, updates UI immediately, and shows a
+toast. 5.	Image uploads are private; images visible only via signed URLs for
+authorized members. 6.	Codebase is modular: one operation per file, feature
+folders, clear boundaries.
+
+Start building now. Initialize the project, add shadcn components, create the
+nested app/(dashboard)/[env]/layout.tsx, wire the sidebar with Link, scaffold
+pages, implement server actions, and apply RLS. Include a README.md with setup
+and migration steps.
