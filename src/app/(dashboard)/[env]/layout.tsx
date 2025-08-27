@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { EnvironmentSwitcher } from '@/components/dashboard/environment-switcher'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { getSession } from '@/lib/supabase/auth'
 import { getEnvironmentsForUser, getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
@@ -37,21 +38,23 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <AppSidebar
-        environmentSwitcher={
-          <Suspense fallback={<div className="h-10 bg-muted animate-pulse rounded" />}>
-            <EnvironmentSwitcher
-              environments={environments}
-              currentEnvironment={currentEnvironment}
-            />
-          </Suspense>
-        }
-        currentEnvironment={currentEnvironment}
-      />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar
+          environmentSwitcher={
+            <Suspense fallback={<div className="h-10 bg-muted animate-pulse rounded" />}>
+              <EnvironmentSwitcher
+                environments={environments}
+                currentEnvironment={currentEnvironment}
+              />
+            </Suspense>
+          }
+          currentEnvironment={currentEnvironment}
+        />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </SidebarProvider>
   )
 }
