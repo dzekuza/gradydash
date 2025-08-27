@@ -19,7 +19,7 @@ export async function getUserAdminStatus(userId: string) {
       throw new Error('Failed to check admin status')
     }
 
-    const isSystemAdmin = !!systemMembership && ['grady_admin', 'grady_staff'].includes(systemMembership.role)
+    const isSystemAdmin = !!systemMembership && systemMembership.role === 'admin'
 
     return {
       isSystemAdmin,

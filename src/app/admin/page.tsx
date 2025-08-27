@@ -93,7 +93,7 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center space-x-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <Shield className="h-3 w-3" />
-            {adminStatus.role === 'grady_admin' ? 'Master Admin' : 'Staff Admin'}
+            Admin
           </Badge>
         </div>
       </div>

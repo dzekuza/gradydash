@@ -71,7 +71,7 @@ export default async function AdminLayout({
             </Breadcrumb>
             <Badge variant="secondary" className="ml-2 flex items-center gap-1">
               <Shield className="h-3 w-3" />
-              {adminStatus.role === 'grady_admin' ? 'Master Admin' : 'Staff Admin'}
+              Admin
             </Badge>
           </div>
         </header>

@@ -39,7 +39,7 @@ This will create a user with the following credentials:
 
 - **Email**: admin@grady.app
 - **Password**: 7ftGiMiy.
-- **Role**: grady_admin (system-wide admin)
+- **Role**: admin (system-wide admin)
 
 ## Admin Capabilities
 

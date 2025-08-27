@@ -77,13 +77,13 @@ export async function createEnvironment(formData: FormData) {
 
     console.log('Environment created successfully:', environment.id)
 
-    // Add the current user as a member with reseller_manager role
+    // Add the current user as a member with store_manager role
     const { error: membershipError } = await supabase
       .from('memberships')
       .insert({
         environment_id: environment.id,
         user_id: user.id,
-        role: 'reseller_manager'
+        role: 'store_manager'
       })
 
     if (membershipError) {

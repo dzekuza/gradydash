@@ -2,10 +2,8 @@ import { Role, ProductStatus } from '@/types/db'
 
 // Role hierarchy (higher = more permissions)
 const roleHierarchy: Record<Role, number> = {
-  grady_admin: 4,
-  grady_staff: 3,
-  reseller_manager: 2,
-  reseller_staff: 1,
+  admin: 2,
+  store_manager: 1,
 }
 
 // Product status transition matrix
@@ -27,19 +25,19 @@ export function canTransitionStatus(fromStatus: ProductStatus, toStatus: Product
 }
 
 export function canManageProducts(userRole: Role): boolean {
-  return hasRole(userRole, 'grady_staff')
+  return hasRole(userRole, 'store_manager')
 }
 
 export function canManageUsers(userRole: Role): boolean {
-  return hasRole(userRole, 'reseller_manager')
+  return hasRole(userRole, 'store_manager')
 }
 
 export function canViewAnalytics(userRole: Role): boolean {
-  return hasRole(userRole, 'reseller_staff')
+  return hasRole(userRole, 'store_manager')
 }
 
 export function canManageEnvironments(userRole: Role): boolean {
-  return hasRole(userRole, 'grady_admin')
+  return hasRole(userRole, 'admin')
 }
 
 export function getAvailableStatusTransitions(currentStatus: ProductStatus): ProductStatus[] {

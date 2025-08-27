@@ -146,10 +146,8 @@ Categories use kebab-case IDs (e.g., `mobile-phones-main`, `laptops-main`). See
 
 ### Roles
 
-- `grady_admin` - Full system access
-- `grady_staff` - System-wide staff access
-- `reseller_manager` - Environment manager
-- `reseller_staff` - Environment staff
+- `admin` - Full system access (system-wide)
+- `store_manager` - Environment/store manager
 
 ### Product Statuses
 

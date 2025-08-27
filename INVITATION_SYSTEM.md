@@ -43,7 +43,7 @@ role.
 The system will:
 
 - Validate the invitation data
-- Check permissions (only reseller_manager+ can invite)
+- Check permissions (only store_manager or admin can invite)
 - Check for existing memberships
 - Create an invitation record
 - Generate an invitation URL
@@ -147,7 +147,7 @@ CREATE TABLE environment_invites (
 ### Common Issues
 
 1. **"You do not have permission to invite members"**
-   - Ensure the user has reseller_manager, grady_staff, or grady_admin role
+   - Ensure the user has store_manager or admin role
 
 2. **"This user is already a member"**
    - Check if the email is already associated with a user in the environment

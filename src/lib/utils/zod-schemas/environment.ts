@@ -18,7 +18,7 @@ export const createLocationSchema = z.object({
 export const inviteUserSchema = z.object({
   environment_id: z.string().uuid(),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['grady_admin', 'grady_staff', 'reseller_manager', 'reseller_staff'] as const),
+  role: z.enum(['admin', 'store_manager'] as const),
 })
 
 export const acceptInviteSchema = z.object({

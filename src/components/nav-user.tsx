@@ -56,7 +56,7 @@ export function NavUser({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const isAdmin = user.role === 'grady_admin' || user.role === 'grady_staff'
+  const isAdmin = user.role === 'admin'
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -91,7 +91,7 @@ export function NavUser({
                   {isAdmin && (
                     <Badge variant="secondary" className="h-4 px-1 text-xs">
                       <Shield className="h-2 w-2 mr-1" />
-                      {user.role === 'grady_admin' ? 'Admin' : 'Staff'}
+                      Admin
                     </Badge>
                   )}
                 </div>
@@ -118,7 +118,7 @@ export function NavUser({
                     {isAdmin && (
                       <Badge variant="secondary" className="h-4 px-1 text-xs">
                         <Shield className="h-2 w-2 mr-1" />
-                        {user.role === 'grady_admin' ? 'Admin' : 'Staff'}
+                        Admin
                       </Badge>
                     )}
                   </div>
