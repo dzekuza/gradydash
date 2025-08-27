@@ -15,9 +15,9 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
     return []
   }
 
-  const membershipEnvironmentIds = memberships?.map(m => m.environment_id) || []
+  const membershipEnvironmentIds = memberships?.map(m => m.environment_id).filter(id => id !== null) || []
 
-  // Build filters safely; avoid id.in.() when there are no memberships
+  // Build query based on memberships
   let envQuery = supabase
     .from('environments')
     .select(`
@@ -31,10 +31,11 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
     `)
 
   if (membershipEnvironmentIds.length === 0) {
+    // If no memberships, only show environments created by the user
     envQuery = envQuery.eq('created_by', userId)
   } else {
-    const quoted = membershipEnvironmentIds.map(id => `"${id}"`).join(',')
-    envQuery = envQuery.or(`created_by.eq.${userId},id.in.(${quoted})`)
+    // Show environments where user has membership OR environments created by the user
+    envQuery = envQuery.in('id', membershipEnvironmentIds)
   }
 
   const { data: environments, error: environmentsError } = await envQuery.order('name')
@@ -50,25 +51,35 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
 export async function getEnvironmentBySlug(slug: string): Promise<Environment | null> {
   const supabase = createClient()
   
-  const { data, error } = await supabase
-    .from('environments')
-    .select(`
-      id,
-      name,
-      slug,
-      description,
-      created_by,
-      created_at,
-      updated_at
-    `)
-    .eq('slug', slug)
-    .single()
+  try {
+    const { data, error } = await supabase
+      .from('environments')
+      .select(`
+        id,
+        name,
+        slug,
+        description,
+        created_by,
+        created_at,
+        updated_at
+      `)
+      .eq('slug', slug)
+      .single()
 
-  if (error) {
-    console.error('Error fetching environment:', error)
+    if (error) {
+      // Handle the case where no environment is found (PGRST116)
+      if (error.code === 'PGRST116') {
+        console.log(`Environment with slug '${slug}' not found`)
+        return null
+      }
+      console.error('Error fetching environment:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Unexpected error in getEnvironmentBySlug:', error)
     return null
   }
-
-  return data
 }
 

@@ -16,6 +16,7 @@ import { getProductsByStatus, getRevenueLast30Days, getAverageTimeToSale } from 
 import { getLocations } from '@/lib/db/locations/get-locations'
 import { getLocationStats } from '@/lib/db/locations/get-location-stats'
 import { getProducts } from '@/lib/db/products/get-products'
+import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
 interface AnalyticsPageProps {
   params: {
@@ -199,6 +200,12 @@ async function AnalyticsStats({ environmentId }: { environmentId: string }) {
 }
 
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
+  // Get the environment by slug
+  const environment = await getEnvironmentBySlug(params.env)
+  if (!environment) {
+    return <div>Environment not found</div>
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -220,7 +227,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           ))}
         </div>
       }>
-        <AnalyticsStats environmentId={params.env} />
+        <AnalyticsStats environmentId={environment.id} />
       </Suspense>
     </div>
   )

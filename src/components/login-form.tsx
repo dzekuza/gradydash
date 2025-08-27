@@ -69,10 +69,16 @@ export function LoginForm({
         console.log('Login successful for:', authData.user.email)
         
         // Check if user has any memberships (including system admin membership)
-        const { data: memberships } = await supabase
+        const { data: memberships, error: membershipsError } = await supabase
           .from('memberships')
           .select('id, role, environment_id')
           .eq('user_id', authData.user.id)
+
+        if (membershipsError) {
+          console.error('Error fetching memberships:', membershipsError)
+          setError('Error checking user permissions. Please try again.')
+          return
+        }
 
         if (!memberships || memberships.length === 0) {
           // User has no memberships, sign them out and show error
@@ -85,7 +91,9 @@ export function LoginForm({
         const isSystemAdmin = memberships.some(m => m.role === 'admin' && m.environment_id === null)
         
         // If not system admin, ensure they have at least one environment membership
-        if (!isSystemAdmin && !memberships.some(m => m.environment_id !== null)) {
+        const hasEnvironmentMembership = memberships.some(m => m.environment_id !== null)
+        
+        if (!isSystemAdmin && !hasEnvironmentMembership) {
           await supabase.auth.signOut()
           setError('Access denied. You must be invited to an environment before you can sign in.')
           return

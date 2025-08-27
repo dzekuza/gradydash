@@ -3,6 +3,19 @@ import { redirect } from 'next/navigation'
 import { Profile } from '@/types/db'
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
+export async function getUser(cookieStore?: ReadonlyRequestCookies) {
+  const supabase = createClient(cookieStore)
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    return user
+  } catch (error) {
+    console.error('Error getting user:', error)
+    return null
+  }
+}
+
 export async function getSession(cookieStore?: ReadonlyRequestCookies) {
   const supabase = createClient(cookieStore)
   try {
@@ -11,27 +24,22 @@ export async function getSession(cookieStore?: ReadonlyRequestCookies) {
     } = await supabase.auth.getSession()
     return session
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error getting session:', error)
     return null
   }
 }
 
 export async function requireUser() {
-  const session = await getSession()
-  if (!session?.user) {
+  const user = await getUser()
+  if (!user) {
     redirect('/login')
   }
-  return session.user
-}
-
-export async function getUser(cookieStore?: ReadonlyRequestCookies) {
-  const session = await getSession(cookieStore)
-  return session?.user ?? null
+  return user
 }
 
 export async function getCurrentUserProfile(cookieStore?: ReadonlyRequestCookies): Promise<Profile | null> {
   const supabase = createClient(cookieStore)
-  const user = await getUser()
+  const user = await getUser(cookieStore)
   
   if (!user) {
     return null

@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+description: when creating an app logic
+alwaysApply: false
 ---
 
 ## Current Working Features

@@ -1,18 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
 export async function createEnvironmentAdmin(formData: FormData) {
-  // Use server client for authentication
+  // Use server client for authentication and operations
   const supabase = createClient()
-  
-  // Use service role client for admin operations
-  const serviceClient = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
   
   const name = formData.get('name') as string
   const slug = formData.get('slug') as string
@@ -43,8 +36,8 @@ export async function createEnvironmentAdmin(formData: FormData) {
       throw new Error('User not authenticated')
     }
 
-    // Check if environment with this slug already exists using service client
-    const { data: existingEnv, error: checkError } = await serviceClient
+    // Check if environment with this slug already exists
+    const { data: existingEnv, error: checkError } = await supabase
       .from('environments')
       .select('id')
       .eq('slug', slug)
@@ -59,14 +52,15 @@ export async function createEnvironmentAdmin(formData: FormData) {
       throw new Error('Environment with this slug already exists')
     }
 
-    // Create the environment using service client
-    const { data: environment, error: envError } = await serviceClient
+    // Create the environment
+    // Note: created_by will be automatically set by the database trigger to auth.uid()
+    const { data: environment, error: envError } = await supabase
       .from('environments')
       .insert({
         name: sanitizedName,
         slug,
-        description: description || `Environment for ${sanitizedName}`,
-        created_by: user.id
+        description: description || `Environment for ${sanitizedName}`
+        // created_by will be automatically set by the database trigger
       })
       .select()
       .single()
@@ -80,8 +74,8 @@ export async function createEnvironmentAdmin(formData: FormData) {
       throw new Error('Environment was not created')
     }
 
-    // Add the current user as a member with store_manager role using service client
-    const { error: membershipError } = await serviceClient
+    // Add the current user as a member with store_manager role
+    const { error: membershipError } = await supabase
       .from('memberships')
       .insert({
         environment_id: environment.id,

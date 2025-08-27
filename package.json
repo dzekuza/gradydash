@@ -8,11 +8,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "clean-cache": "rm -rf .next/cache",
+    "clean-all": "rm -rf .next && rm -rf node_modules/.cache && rm -rf node_modules && rm -f package-lock.json",
+    "dev-clean": "npm run clean-cache && npm run dev",
+    "fresh-install": "npm run clean-all && npm install",
     "create-admin": "node scripts/create-admin-user.js",
     "test-db": "node scripts/test-db-connection.js",
     "seed-demo": "node scripts/seed-demo-data.js",
-    "apply-migrations": "node scripts/apply-migrations.js"
+    "apply-migrations": "node scripts/apply-migrations.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -23,14 +31,20 @@
     "supabase",
     "dashboard",
     "resale",
-    "returns"
+    "returns",
+    "typescript",
+    "tailwindcss"
   ],
-  "author": "",
+  "author": "Grady Team",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/dzekuza/gradydash/issues"
   },
   "homepage": "https://github.com/dzekuza/gradydash#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -81,6 +95,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.5",
     "postcss": "^8.4.38",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.2"
   }

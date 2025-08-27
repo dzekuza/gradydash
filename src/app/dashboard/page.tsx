@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/supabase/auth'
+import { getUser } from '@/lib/supabase/auth'
 import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
 import { NoEnvironments } from '@/components/auth/no-environments'
 
 export default async function DashboardRedirectPage() {
-  const session = await getSession()
+  const user = await getUser()
   
-  if (!session?.user) {
+  if (!user) {
     redirect('/login')
   }
 
   // Get user routing information
-  const routingInfo = await getUserRoutingInfo(session.user.id)
+  const routingInfo = await getUserRoutingInfo(user.id)
   
   // If user is system admin, redirect to admin panel
   if (routingInfo.isSystemAdmin) {
@@ -20,7 +20,7 @@ export default async function DashboardRedirectPage() {
 
   // If user has no memberships at all, show no environments message
   if (!routingInfo.hasEnvironments) {
-    return <NoEnvironments userEmail={session.user.email} />
+    return <NoEnvironments userEmail={user.email} />
   }
 
   // If user has assigned environments, redirect to the first one
@@ -29,5 +29,5 @@ export default async function DashboardRedirectPage() {
   }
 
   // Fallback: show no environments message
-  return <NoEnvironments userEmail={session.user.email} />
+  return <NoEnvironments userEmail={user.email} />
 }

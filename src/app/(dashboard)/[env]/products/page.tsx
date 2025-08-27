@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/supabase/auth'
+import { getUser } from '@/lib/supabase/auth'
 import { getProducts } from '@/lib/db/products/get-products'
 import { getDashboardStats } from '@/lib/db/products/get-dashboard-stats'
 import { getUserMembership } from '@/lib/db/environments/get-user-membership'
+import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
@@ -22,13 +23,17 @@ interface ProductsPageProps {
 }
 
 export default async function ProductsPage({ params }: ProductsPageProps) {
-  const session = await getSession()
+  const user = await getUser()
   
-  if (!session?.user) {
+  if (!user) {
     redirect('/login')
   }
 
-  const user = session.user
+  // Get the environment by slug
+  const environment = await getEnvironmentBySlug(params.env)
+  if (!environment) {
+    redirect('/dashboard')
+  }
 
   // Get user's membership in this environment
   const membership = await getUserMembership(user.id, params.env)
@@ -37,10 +42,10 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
     redirect('/dashboard')
   }
 
-  // Get products and stats
+  // Get products and stats using environment ID
   const [products, stats] = await Promise.all([
-    getProducts(params.env),
-    getDashboardStats(params.env)
+    getProducts(environment.id),
+    getDashboardStats(environment.id)
   ])
 
   const getStatusIcon = (status: string) => {

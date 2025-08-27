@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/supabase/auth'
+import { getUser } from '@/lib/supabase/auth'
 import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
 import { AccessDenied } from '@/components/auth/access-denied'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
@@ -9,14 +9,14 @@ interface AdminLayoutProps {
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-  const session = await getSession()
+  const user = await getUser()
   
-  if (!session?.user) {
+  if (!user) {
     redirect('/login')
   }
 
   // Get user routing information
-  const routingInfo = await getUserRoutingInfo(session.user.id)
+  const routingInfo = await getUserRoutingInfo(user.id)
   
   // Check if user can access admin panel
   if (!routingInfo.isSystemAdmin) {

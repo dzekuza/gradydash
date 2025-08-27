@@ -175,21 +175,19 @@ export interface DashboardStats {
   statusDistribution: Record<string, number>
 }
 
-export async function getDashboardStats(environmentSlug: string): Promise<DashboardStats> {
+export async function getDashboardStats(environmentId: string): Promise<DashboardStats> {
   const supabase = createClient()
 
-  // Get environment by slug
+  // Verify environment exists
   const { data: environment, error: envError } = await supabase
     .from('environments')
     .select('id')
-    .eq('slug', environmentSlug)
+    .eq('id', environmentId)
     .single()
 
   if (envError || !environment) {
     throw new Error('Environment not found')
   }
-
-  const environmentId = environment.id
 
   // Get all stats in parallel
   const [statusDistribution, totalRevenue, avgTimeToSale] = await Promise.all([

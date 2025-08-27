@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/supabase/auth'
+import { getUser } from '@/lib/supabase/auth'
 import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { AccessDenied } from '@/components/auth/access-denied'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -11,14 +12,17 @@ import { Building2, Users, Calendar, Mail, Shield } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 export default async function AdminEnvironmentsPage() {
-  const session = await getSession()
+  const user = await getUser()
   
-  if (!session?.user) {
+  if (!user) {
     redirect('/login')
   }
-
-  const user = session.user
-  const adminClient = createClient()
+  
+  // Use service client for admin operations to bypass RLS
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Get user routing information
   const routingInfo = await getUserRoutingInfo(user.id)
@@ -34,8 +38,8 @@ export default async function AdminEnvironmentsPage() {
     )
   }
 
-  // Get all environments with member counts using admin client
-  const { data: environments, error: envError } = await adminClient
+  // Get all environments with member counts using service client
+  const { data: environments, error: envError } = await serviceClient
     .from('environments')
     .select(`
       id,

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, MapPin, Edit, Trash2 } from 'lucide-react'
 import { getLocations } from '@/lib/db/locations/get-locations'
+import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 import { LocationDialog } from '@/components/location/location-dialog'
 import { LocationCard } from '@/components/location/location-card'
 
@@ -38,11 +39,17 @@ async function LocationsList({ environmentId }: { environmentId: string }) {
 }
 
 export default async function LocationsPage({ params }: LocationsPageProps) {
+  // Get the environment by slug
+  const environment = await getEnvironmentBySlug(params.env)
+  if (!environment) {
+    return <div>Environment not found</div>
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Locations</h2>
-        <LocationDialog environmentId={params.env} />
+        <LocationDialog environmentId={environment.id} />
       </div>
       
       <Suspense fallback={
@@ -61,7 +68,7 @@ export default async function LocationsPage({ params }: LocationsPageProps) {
           ))}
         </div>
       }>
-        <LocationsList environmentId={params.env} />
+        <LocationsList environmentId={environment.id} />
       </Suspense>
     </div>
   )

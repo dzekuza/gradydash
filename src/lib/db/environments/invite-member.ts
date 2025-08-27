@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client-server'
 import { inviteSchema } from '@/lib/utils/zod-schemas/invite'
 import { getUserAdminStatus } from './get-user-admin-status'
 import { EmailService } from '@/lib/email/email-service'
+import crypto from 'crypto'
 
 export async function inviteMember(formData: FormData) {
   const supabase = createClient()
@@ -132,6 +133,9 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
+    // Generate a unique token for the invitation
+    const token = crypto.randomBytes(32).toString('hex')
+
     const { data: invite, error: inviteError } = await supabase
       .from('environment_invites')
       .insert({
@@ -139,7 +143,8 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
         email,
         role: finalRole,
         invited_by: user.id,
-        expires_at: expiresAt.toISOString()
+        expires_at: expiresAt.toISOString(),
+        token: token
       })
       .select()
       .single()

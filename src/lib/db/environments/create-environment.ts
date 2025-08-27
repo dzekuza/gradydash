@@ -40,13 +40,14 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
   }
 
   // Create the environment
+  // Note: created_by will be automatically set by the database trigger to auth.uid()
   const { data: environment, error: createError } = await supabase
     .from('environments')
     .insert({
       name: data.name,
       slug: data.slug,
-      description: data.description,
-      created_by: userId
+      description: data.description
+      // created_by will be automatically set by the database trigger
     })
     .select()
     .single()

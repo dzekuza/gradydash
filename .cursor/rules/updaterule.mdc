@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+description: when updating code
+alwaysApply: false
 ---
 
 When updating code, don’t just append or inject partial snippets. If the update

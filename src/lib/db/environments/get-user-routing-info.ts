@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export interface UserRoutingInfo {
   isSystemAdmin: boolean
@@ -11,10 +12,16 @@ export interface UserRoutingInfo {
 
 export async function getUserRoutingInfo(userId: string): Promise<UserRoutingInfo> {
   const supabase = createClient()
+  
+  // Use service client to bypass RLS for routing determination
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   try {
-    // Get user's memberships to determine routing
-    const { data: memberships, error: membershipsError } = await supabase
+    // Get user's memberships to determine routing using service client
+    const { data: memberships, error: membershipsError } = await serviceClient
       .from('memberships')
       .select(`
         environment_id,
@@ -47,7 +54,8 @@ export async function getUserRoutingInfo(userId: string): Promise<UserRoutingInf
     } else if (hasEnvironments && firstEnvironmentSlug) {
       redirectTo = `/${firstEnvironmentSlug}`
     } else {
-      redirectTo = '/demo'
+      // If user has no environments and is not admin, redirect to dashboard
+      redirectTo = '/dashboard'
     }
 
     return {

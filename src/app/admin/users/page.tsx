@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { AdminInviteUserDialog } from '@/components/admin/admin-invite-user-dialog'
 import { 
   Users, 
   UserPlus, 
@@ -17,7 +19,7 @@ import {
 } from 'lucide-react'
 
 export default async function AdminUsersPage() {
-  // Use the server client for authentication and admin operations
+  // Use the server client for authentication
   const supabase = createClient()
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -32,8 +34,24 @@ export default async function AdminUsersPage() {
     redirect('/dashboard')
   }
 
+  // Use service client for admin operations to bypass RLS
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Get all environments for the invitation dialog
+  const { data: environments, error: environmentsError } = await serviceClient
+    .from('environments')
+    .select('id, name, slug')
+    .order('name', { ascending: true })
+
+  if (environmentsError) {
+    console.error('Error fetching environments:', environmentsError)
+  }
+
   // Get all users with their memberships using service role client for admin operations
-  const { data: users, error: usersError } = await supabase
+  const { data: users, error: usersError } = await serviceClient
     .from('profiles')
     .select(`
       id,
@@ -73,10 +91,7 @@ export default async function AdminUsersPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite User
-          </Button>
+          <AdminInviteUserDialog environments={environments || []} />
         </div>
       </div>
 
@@ -170,10 +185,15 @@ export default async function AdminUsersPage() {
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Invite
-                  </Button>
+                  <AdminInviteUserDialog 
+                    environments={environments || []}
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Invite
+                      </Button>
+                    }
+                  />
                   <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
@@ -189,10 +209,7 @@ export default async function AdminUsersPage() {
                   Get started by inviting your first user.
                 </p>
                 <div className="mt-6">
-                  <Button>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Invite User
-                  </Button>
+                  <AdminInviteUserDialog environments={environments || []} />
                 </div>
               </div>
             )}

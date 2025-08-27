@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getUser } from '@/lib/supabase/auth'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
 // Force dynamic rendering
@@ -9,6 +10,15 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
+    // Check authentication
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const environment = await getEnvironmentBySlug(params.slug)
     
     if (!environment) {
