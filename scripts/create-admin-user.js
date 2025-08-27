@@ -27,7 +27,7 @@ async function createAdminUser() {
         first_name: 'Grady',
         last_name: 'Master Admin',
         company_name: 'Grady ReSellOps',
-        role: 'grady_admin'
+        role: 'admin'
       }
     })
 
@@ -60,7 +60,7 @@ async function createAdminUser() {
       .from('memberships')
       .insert({
         user_id: authData.user.id,
-        role: 'grady_admin',
+        role: 'admin',
         environment_id: null // null for system-wide admin access
       })
       .select()
@@ -75,7 +75,7 @@ async function createAdminUser() {
     console.log('🎉 Master Admin User Created Successfully!')
     console.log('Email: admin@grady.app')
     console.log('Password: 7ftGiMiy.')
-    console.log('Role: grady_admin')
+    console.log('Role: admin')
     console.log('')
     console.log('This user can:')
     console.log('- Create new environments (stores)')

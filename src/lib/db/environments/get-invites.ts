@@ -8,6 +8,7 @@ export async function getEnvironmentInvites(environmentId: string) {
       .from('environment_invites')
       .select(`
         id,
+        environment_id,
         email,
         role,
         invited_by,
@@ -22,7 +23,7 @@ export async function getEnvironmentInvites(environmentId: string) {
 
     if (error) {
       console.error('Error fetching invites:', error)
-      throw new Error('Failed to fetch invitations')
+      return []
     }
 
     // Transform the data to match the expected interface
@@ -34,6 +35,6 @@ export async function getEnvironmentInvites(environmentId: string) {
     return transformedInvites
   } catch (error) {
     console.error('Error in getEnvironmentInvites:', error)
-    throw error
+    return []
   }
 }

@@ -52,20 +52,54 @@ export function LoginForm({
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login for:', data.email)
+      
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
       if (error) {
+        console.error('Login error:', error)
         setError(error.message)
         return
       }
 
-      // Redirect to dashboard after successful login
-      router.push('/dashboard')
-      router.refresh()
+      if (authData.user) {
+        console.log('Login successful for:', authData.user.email)
+        
+        // Check if user has any memberships (including system admin membership)
+        const { data: memberships } = await supabase
+          .from('memberships')
+          .select('id, role, environment_id')
+          .eq('user_id', authData.user.id)
+
+        if (!memberships || memberships.length === 0) {
+          // User has no memberships, sign them out and show error
+          await supabase.auth.signOut()
+          setError('Access denied. You must be invited to an environment before you can sign in.')
+          return
+        }
+
+        // Check if user is a system admin (has admin role with null environment_id)
+        const isSystemAdmin = memberships.some(m => m.role === 'admin' && m.environment_id === null)
+        
+        // If not system admin, ensure they have at least one environment membership
+        if (!isSystemAdmin && !memberships.some(m => m.environment_id !== null)) {
+          await supabase.auth.signOut()
+          setError('Access denied. You must be invited to an environment before you can sign in.')
+          return
+        }
+        
+        // Redirect to dashboard after successful login
+        router.push('/dashboard')
+        router.refresh()
+      } else {
+        console.error('No user data returned from login')
+        setError('Login failed. Please check your credentials and try again.')
+      }
     } catch (err) {
+      console.error('Unexpected login error:', err)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -175,11 +209,8 @@ export function LoginForm({
               </Button>
             </div>
             
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <a href="/register" className="underline underline-offset-4">
-                Sign up
-              </a>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              <p>Access is invitation-only. Contact your administrator to get invited.</p>
             </div>
           </form>
         </CardContent>

@@ -2,31 +2,47 @@
 
 import { createClient } from '@/lib/supabase/client-server'
 
-export async function getUserAdminStatus(userId: string) {
+export interface AdminStatus {
+  isSystemAdmin: boolean
+  isEnvironmentAdmin: boolean
+  canCreateEnvironments: boolean
+}
+
+export async function getUserAdminStatus(userId: string): Promise<AdminStatus> {
   const supabase = createClient()
 
-  try {
-    // Check if user has system-wide admin membership (null environment_id)
-    const { data: systemMembership, error: systemError } = await supabase
-      .from('memberships')
-      .select('role')
-      .eq('user_id', userId)
-      .is('environment_id', null)
-      .single()
+  // Check for system admin membership (null environment_id)
+  const { data: systemMembership, error: systemError } = await supabase
+    .from('memberships')
+    .select('role, environment_id')
+    .eq('user_id', userId)
+    .is('environment_id', null)
+    .single()
 
-    if (systemError && systemError.code !== 'PGRST116') {
-      console.error('Error checking system admin status:', systemError)
-      throw new Error('Failed to check admin status')
-    }
+  if (systemError && systemError.code !== 'PGRST116') {
+    console.error('Error checking system admin status:', systemError)
+  }
 
-    const isSystemAdmin = !!systemMembership && ['grady_admin', 'grady_staff'].includes(systemMembership.role)
+  // Check for environment admin membership
+  const { data: environmentMembership, error: envError } = await supabase
+    .from('memberships')
+    .select('role, environment_id')
+    .eq('user_id', userId)
+    .not('environment_id', 'is', null)
+    .eq('role', 'admin')
+    .single()
 
-    return {
-      isSystemAdmin,
-      role: systemMembership?.role || null
-    }
-  } catch (error) {
-    console.error('Error in getUserAdminStatus:', error)
-    throw error
+  if (envError && envError.code !== 'PGRST116') {
+    console.error('Error checking environment admin status:', envError)
+  }
+
+  const isSystemAdmin = !!systemMembership && systemMembership.role === 'admin'
+  const isEnvironmentAdmin = !!environmentMembership
+  const canCreateEnvironments = isSystemAdmin
+
+  return {
+    isSystemAdmin,
+    isEnvironmentAdmin,
+    canCreateEnvironments
   }
 }

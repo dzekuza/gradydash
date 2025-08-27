@@ -8,15 +8,15 @@ import { Separator } from '@/components/ui/separator'
 import { getSession, getCurrentUserProfile } from '@/lib/supabase/auth'
 import { getEnvironmentsForUser, getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
-interface DashboardLayoutProps {
+interface EnvironmentLayoutProps {
   children: React.ReactNode
   params: { env: string }
 }
 
-export default async function DashboardLayout({
+export default async function EnvironmentLayout({
   children,
   params,
-}: DashboardLayoutProps) {
+}: EnvironmentLayoutProps) {
   const session = await getSession()
   
   if (!session?.user) {

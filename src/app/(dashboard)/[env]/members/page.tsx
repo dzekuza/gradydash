@@ -44,8 +44,8 @@ async function MembersContent({ environmentSlug }: { environmentSlug: string }) 
     notFound()
   }
 
-  // Check if user can invite members
-  const canInvite = ['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)
+  // Check permissions
+  const canInvite = ['admin', 'store_manager'].includes(membership.role)
 
   // Fetch members and invites
   const [members, invites] = await Promise.all([

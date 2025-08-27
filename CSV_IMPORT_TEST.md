@@ -1,201 +1,234 @@
 # CSV Import Test Guide
 
-This guide will help you test the CSV import functionality to ensure it's
-working correctly.
+This guide helps you test the CSV import functionality for products in the Grady
+ReSellOps dashboard.
 
-## ✅ What's Been Fixed
+## Overview
 
-1. **Field Mapping Interface**: Users can now map CSV columns to app fields
-2. **Demo Mode Support**: CSV import now works in demo environment without
-   authentication
-3. **Proper Error Handling**: Better validation and error messages
-4. **Category Validation**: Validates categories against the system's category
-   list
-5. **Location Mapping**: Maps location names to existing location IDs
-6. **Batch Processing**: Handles large imports in batches
-7. **Auto-Mapping**: Automatically maps common column names
+The CSV import system allows you to bulk import products from a CSV file with
+the following features:
 
-## 🎯 New Field Mapping Feature
+1. **Multi-Environment Support**: CSV import works in any environment
+2. **Validation**: Comprehensive validation of all fields
+3. **Error Handling**: Detailed error reporting for failed imports
+4. **Category Support**: Import products with categories
+5. **Flexible Mapping**: Map CSV columns to product fields
 
-The import now has a 3-step process:
+## Test Setup
 
-1. **Upload CSV**: Select your CSV file
-2. **Map Fields**: Map CSV columns to app fields
-3. **Preview & Import**: Review data and import
+### 1. Prepare Test Data
 
-### How Field Mapping Works
+1. Download the template: `public/templates/products_template.csv`
+2. Open the template in Excel, Google Sheets, or any CSV editor
+3. Fill in test data following the format guidelines
 
-- Upload any CSV with your own column names
-- The system will auto-map common variations (e.g., "Product Name" → name)
-- Manually adjust mappings as needed
-- Only "Product Name" and "Status" are required
-- Skip columns you don't want to import
+### 2. Test the Import
 
-## 📋 Testing the Import
+1. Go to any environment's products page (e.g., `/your-env/products`)
+2. Click the "Import Products" button
+3. Select your CSV file
+4. Review the preview and click "Import"
 
-### ✅ Test File
-
-Use the updated test file: `public/templates/test_import.csv`
-
-This file contains:
-
-- User-friendly column names
-- 4 sample products
-- Valid categories from the system
-- Different statuses (taken, selling)
-
-### ✅ Valid Import
-
-The test file includes:
-
-- **iPhone 13 Pro** (taken status)
-- **MacBook Air M1** (selling status)
-- **Sony WH-1000XM4** (selling status)
-- **Nespresso Vertuo** (taken status)
-
-### ❌ Test Error Cases
-
-Try these to test validation:
-
-1. **Missing required fields**: Remove "Product Name" or "Status" columns
-2. **Invalid status**: Use status not in: `taken`, `in_repair`, `selling`,
-   `sold`, `returned`, `discarded`
-3. **Invalid categories**: Use category IDs not in the system
-4. **Invalid prices**: Use negative or non-numeric prices
-
-## 🔧 How to Test
-
-### 1. Access the Import Dialog
-
-1. Go to `/demo/products` or any environment's products page
-2. Click "Import CSV" button
-3. The dialog will open with the new 3-step interface
-
-### 2. Test the Field Mapping
-
-1. **Upload**: Select `public/templates/test_import.csv`
-2. **Mapping**: You'll see the CSV columns on the left, app fields on the right
-3. **Auto-mapping**: Notice how "Product Name" maps to "Product Name (Required)"
-4. **Manual mapping**: Try changing some mappings
-5. **Preview**: Click "Preview Import" to see the parsed data
-6. **Import**: Click "Import Products" to complete the import
-
-### 3. Verify Results
-
-- Check that products appear in the products table
-- Verify categories are correctly assigned
-- Confirm prices and statuses are correct
-- Check that locations are properly linked
-
-## ✅ Expected Behavior
-
-### ✅ Successful Import
-
-- Shows field mapping interface
-- Auto-maps common column names
-- Displays preview of first 5 rows
-- Shows validation success
-- Imports all products correctly
-- Shows success toast message
-
-### ❌ Failed Import
-
-- Shows validation errors in mapping step
-- Lists specific issues in preview step
-- Prevents import if errors exist
-- Shows error toast message
-
-## 📊 Supported Fields
+## CSV Format
 
 ### Required Fields
 
-- `name`: Product name (required)
-- `status`: Must be one of: `taken`, `in_repair`, `selling`, `sold`, `returned`,
-  `discarded`
+- `title` - Product title (required)
+- `status` - Product status (required, must be one of: taken, in_repair,
+  selling, sold, returned, discarded)
 
 ### Optional Fields
 
-- `id`: External ID
-- `type`: Product type
-- `sku`: Stock keeping unit
-- `gtin`: Global Trade Item Number
-- `upc`: Universal Product Code
-- `ean`: European Article Number
-- `isbn`: International Standard Book Number
-- `short_description`: Brief product description
-- `description`: Full product description
-- `purchase_price`: Cost price (numeric)
-- `selling_price`: Sale price (numeric)
-- `categories`: Semicolon-separated category IDs
-- `tags`: Semicolon-separated tags
-- `location_name`: Name of existing location
-- `in_stock`: Boolean (true/false, 1/0, yes/no)
-- `images`: Image URLs (comma-separated)
+- `sku` - Stock keeping unit
+- `barcode` - Product barcode
+- `description` - Product description
+- `location_id` - Location ID (must exist in the environment)
+- `purchase_price` - Purchase price (numeric)
+- `selling_price` - Selling price (numeric)
+- `categories` - Semicolon-separated category IDs (e.g.,
+  "mobile-phones-main;smartphones")
 
-## 🔍 Troubleshooting
+### Example CSV
 
-### "Invalid file type"
+```csv
+title,sku,barcode,description,status,location_id,purchase_price,selling_price,categories
+iPhone 13,IPH13-001,1234567890123,Excellent condition iPhone 13,selling,1,500.00,650.00,mobile-phones-main;smartphones
+MacBook Pro,MBP-001,9876543210987,MacBook Pro 2021 model,selling,1,800.00,1000.00,laptops-main;macbooks
+```
 
-- Make sure file has `.csv` extension
-- Check file is actually CSV format
+## Validation Rules
 
-### "Missing required field mappings"
+### Status Validation
 
-- Ensure CSV has columns that can be mapped to "Product Name" and "Status"
-- Check column names are clear and recognizable
-
-### "Invalid status"
-
-- Status must be exactly: `taken`, `in_repair`, `selling`, `sold`, `returned`,
+- Must be one of: `taken`, `in_repair`, `selling`, `sold`, `returned`,
   `discarded`
+- Case-sensitive
 
-### "Invalid category IDs"
+### Price Validation
 
-- Use category IDs from the system (e.g., `mobile-phones-main`, `laptops-main`)
-- Check the categories utility for valid IDs
+- Must be numeric values
+- Can include decimal places
+- Negative values are not allowed
 
-### "Location not found"
+### Location Validation
 
-- Location names must match existing locations exactly
-- Check case sensitivity
+- `location_id` must exist in the current environment
+- If not provided, product will be created without a location
 
-### "Invalid price"
+### Category Validation
 
-- Prices must be positive numbers
-- Use decimal format (e.g., "100.50")
+- Categories must be valid category IDs from the system
+- Multiple categories separated by semicolons
+- Invalid categories will be ignored
 
-## 📝 Test File Format
+## Error Handling
 
-The test file includes:
+### Import Errors
 
+The system provides detailed error messages for:
+
+1. **Validation Errors**: Invalid data format or values
+2. **Database Errors**: Issues with data insertion
+3. **Permission Errors**: User doesn't have permission to create products
+
+### Error Reporting
+
+- Each row with errors is reported individually
+- Import continues for valid rows
+- Summary shows total imported vs failed rows
+
+## Testing Scenarios
+
+### 1. Basic Import
+
+**Goal**: Test basic product import functionality
+
+**Steps**:
+
+1. Create a CSV with 5-10 products
+2. Include all required fields
+3. Use valid status values
+4. Import and verify products appear in the list
+
+**Expected Result**: All products imported successfully
+
+### 2. Validation Testing
+
+**Goal**: Test validation error handling
+
+**Steps**:
+
+1. Create a CSV with invalid data:
+   - Invalid status values
+   - Non-numeric prices
+   - Missing required fields
+2. Attempt import
+3. Review error messages
+
+**Expected Result**: Clear error messages for each invalid row
+
+### 3. Category Testing
+
+**Goal**: Test category import functionality
+
+**Steps**:
+
+1. Create a CSV with category IDs
+2. Use valid category IDs from the system
+3. Import and verify categories are assigned
+
+**Expected Result**: Products show correct category badges
+
+### 4. Large Import
+
+**Goal**: Test performance with large datasets
+
+**Steps**:
+
+1. Create a CSV with 100+ products
+2. Include various data types
+3. Monitor import performance
+4. Verify all products imported
+
+**Expected Result**: Import completes successfully within reasonable time
+
+### 5. Mixed Data
+
+**Goal**: Test import with mixed valid/invalid data
+
+**Steps**:
+
+1. Create a CSV with some valid and some invalid rows
+2. Import and check error reporting
+3. Verify only valid products are created
+
+**Expected Result**: Valid products imported, invalid ones reported as errors
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Invalid status" errors**
+   - Check that status values match exactly: `taken`, `in_repair`, `selling`,
+     `sold`, `returned`, `discarded`
+   - Status is case-sensitive
+
+2. **"Invalid price" errors**
+   - Ensure prices are numeric values
+   - Remove currency symbols and commas
+   - Use decimal points, not commas
+
+3. **"Location not found" errors**
+   - Verify location_id exists in the current environment
+   - Check that you're importing to the correct environment
+
+4. **"Category not found" errors**
+   - Use valid category IDs from the system
+   - Check spelling and format of category IDs
+   - Separate multiple categories with semicolons
+
+### Performance Tips
+
+1. **Batch Size**: For large imports, consider splitting into smaller files
+2. **Data Quality**: Clean data before import to reduce validation errors
+3. **Network**: Ensure stable internet connection for large imports
+
+## API Reference
+
+### Import Endpoint
+
+The import functionality uses the following server action:
+
+```typescript
+importProducts(products: ImportProduct[], environmentId?: string)
 ```
-Product Name,Status,Purchase Price,Selling Price,SKU,Categories,Location,Description
-"iPhone 13 Pro","taken","800.00","1200.00","IP13P001","mobile-phones-main;phone-case","Main Store","Excellent condition iPhone 13 Pro with 256GB storage"
-"MacBook Air M1","selling","900.00","1400.00","MBA001","laptops-main;laptop-accessories","Online Store","Like new MacBook Air with M1 chip"
+
+### ImportProduct Interface
+
+```typescript
+interface ImportProduct {
+   title: string;
+   sku?: string;
+   barcode?: string;
+   description?: string;
+   status: string;
+   location_id?: string;
+   purchase_price?: number;
+   selling_price?: number;
+   categories?: string[];
+}
 ```
 
-## 🚀 Production Usage
+## Conclusion
 
-For production environments:
+The import system now works in all environments with comprehensive validation
+and error handling!
 
-1. Create locations first
-2. Use valid category IDs
-3. Ensure proper authentication
-4. Test with small files first
-5. Use the field mapping to match your CSV format
+### Key Features
 
-## ✅ Summary
-
-The import system now works in both demo and production environments!
-
-**Key Features:**
-
-- ✅ Flexible field mapping
-- ✅ Auto-mapping of common column names
-- ✅ 3-step import process
+- ✅ Multi-environment support
 - ✅ Comprehensive validation
-- ✅ Demo mode support
-- ✅ Error handling and user feedback
-
-The field mapping makes the import much more user-friendly - users can upload
-any CSV format and map it to the app's fields!
+- ✅ Detailed error reporting
+- ✅ Category support
+- ✅ Flexible field mapping
+- ✅ Performance optimized

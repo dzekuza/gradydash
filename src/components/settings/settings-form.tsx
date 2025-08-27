@@ -34,12 +34,10 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: initialProfile?.first_name || 'Demo',
-    lastName: initialProfile?.last_name || 'User',
-    email: initialProfile?.email || 'demo@grady.com',
-    bio: initialProfile?.bio || 'Demo user for testing the Grady ReSellOps dashboard.',
-    envName: 'Demo Environment',
-    envDescription: 'A demo environment for testing product management features.',
+    firstName: initialProfile?.first_name || '',
+    lastName: initialProfile?.last_name || '',
+    email: initialProfile?.email || '',
+    bio: initialProfile?.bio || '',
     autoRefresh: true,
     showAnalytics: true,
     emailNotifications: true,
@@ -96,12 +94,10 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
   const handleResetDefaults = () => {
     setFormData({
-      firstName: 'Demo',
-      lastName: 'User',
-      email: 'demo@grady.com',
-      bio: 'Demo user for testing the Grady ReSellOps dashboard.',
-      envName: 'Demo Environment',
-      envDescription: 'A demo environment for testing product management features.',
+      firstName: initialProfile?.first_name || '',
+      lastName: initialProfile?.last_name || '',
+      email: initialProfile?.email || '',
+      bio: initialProfile?.bio || '',
       autoRefresh: true,
       showAnalytics: true,
       emailNotifications: true,
@@ -125,7 +121,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">
-            Manage your demo environment settings and preferences.
+            Manage your account settings and preferences.
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -200,63 +196,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
           </CardContent>
         </Card>
 
-        {/* Environment Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Environment Settings
-            </CardTitle>
-            <CardDescription>
-              Configure your demo environment preferences and behavior.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="envName">Environment Name</Label>
-              <Input 
-                id="envName" 
-                value={formData.envName}
-                onChange={(e) => handleInputChange('envName', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="envDescription">Description</Label>
-              <Textarea 
-                id="envDescription" 
-                placeholder="Describe your environment..."
-                value={formData.envDescription}
-                onChange={(e) => handleInputChange('envDescription', e.target.value)}
-                rows={2}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Auto-refresh Data</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically refresh data every 30 seconds
-                </p>
-              </div>
-              <Switch 
-                checked={formData.autoRefresh}
-                onCheckedChange={(checked) => handleInputChange('autoRefresh', checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Show Analytics</Label>
-                <p className="text-sm text-muted-foreground">
-                  Display analytics charts and metrics
-                </p>
-              </div>
-              <Switch 
-                checked={formData.showAnalytics}
-                onCheckedChange={(checked) => handleInputChange('showAnalytics', checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Notification Settings */}
         <Card>
           <CardHeader>
@@ -316,49 +255,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
                 checked={formData.salesNotifications}
                 onCheckedChange={(checked) => handleInputChange('salesNotifications', checked)}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Security Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security Settings
-            </CardTitle>
-            <CardDescription>
-              Manage your account security and access controls.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Two-Factor Authentication</Label>
-                <p className="text-sm text-muted-foreground">
-                  Add an extra layer of security to your account
-                </p>
-              </div>
-              <Badge variant="secondary">Demo Mode</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Session Timeout</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically log out after inactivity
-                </p>
-              </div>
-              <Badge variant="outline">8 hours</Badge>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label>Current Role</Label>
-              <div className="flex items-center gap-2">
-                <Badge variant="default">Demo User</Badge>
-                <span className="text-sm text-muted-foreground">
-                  Limited permissions for demo purposes
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -433,47 +329,9 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
               </Button>
               <Button variant="outline" className="w-full">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Reset Demo Data
+                Refresh Data
               </Button>
             </div>
-            <div className="space-y-2">
-              <Label>Demo Data Status</Label>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">Active</Badge>
-                <span className="text-sm text-muted-foreground">
-                  2 products, 1 location, 1 member
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Team Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Team Management
-            </CardTitle>
-            <CardDescription>
-              Manage team members and their permissions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Current Members</Label>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Demo User</Badge>
-                <span className="text-sm text-muted-foreground">
-                  You are the only member in demo mode
-                </span>
-              </div>
-            </div>
-            <Button variant="outline" disabled>
-              <Users className="mr-2 h-4 w-4" />
-              Invite Team Member
-              <Badge variant="secondary" className="ml-2">Demo Mode</Badge>
-            </Button>
           </CardContent>
         </Card>
       </div>

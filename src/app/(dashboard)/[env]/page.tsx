@@ -1,32 +1,41 @@
 import { Suspense } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { getProductsByStatus, getRevenueLast30Days, getAverageTimeToSale } from '@/lib/db/products/get-dashboard-stats'
+import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/supabase/auth'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
+import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
+import { getDashboardStats } from '@/lib/db/products/get-dashboard-stats'
+import { AccessDenied } from '@/components/auth/access-denied'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Package, TrendingUp, DollarSign, Clock } from 'lucide-react'
 
-interface DashboardPageProps {
+interface EnvironmentDashboardPageProps {
   params: { env: string }
 }
 
-async function DashboardStats({ environmentId }: { environmentId: string }) {
-  const [productsByStatus, revenue, avgTimeToSale] = await Promise.all([
-    getProductsByStatus(environmentId),
-    getRevenueLast30Days(environmentId),
-    getAverageTimeToSale(environmentId),
-  ])
+async function EnvironmentStats({ environmentId }: { environmentId: string }) {
+  const stats = await getDashboardStats(environmentId)
+  
+  const {
+    totalProducts,
+    statusDistribution,
+    totalRevenue,
+    avgTimeToSale
+  } = stats
+
+  const productsInRepair = statusDistribution.in_repair || 0
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {Object.values(productsByStatus).reduce((sum, count) => sum + count, 0)}
-          </div>
+          <div className="text-2xl font-bold">{totalProducts}</div>
           <p className="text-xs text-muted-foreground">
-            Across all statuses
+            Total inventory
           </p>
         </CardContent>
       </Card>
@@ -34,9 +43,10 @@ async function DashboardStats({ environmentId }: { environmentId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">In Repair</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{productsByStatus.in_repair || 0}</div>
+          <div className="text-2xl font-bold">{productsInRepair}</div>
           <p className="text-xs text-muted-foreground">
             Products being repaired
           </p>
@@ -46,9 +56,10 @@ async function DashboardStats({ environmentId }: { environmentId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Revenue (30d)</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">€{revenue.toFixed(2)}</div>
+          <div className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</div>
           <p className="text-xs text-muted-foreground">
             Last 30 days
           </p>
@@ -58,6 +69,7 @@ async function DashboardStats({ environmentId }: { environmentId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Avg Time to Sale</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{avgTimeToSale.toFixed(1)}d</div>
@@ -70,7 +82,7 @@ async function DashboardStats({ environmentId }: { environmentId: string }) {
   )
 }
 
-function DashboardStatsSkeleton() {
+function EnvironmentStatsSkeleton() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
@@ -88,21 +100,52 @@ function DashboardStatsSkeleton() {
   )
 }
 
-export default async function DashboardPage({ params }: DashboardPageProps) {
+export default async function EnvironmentDashboardPage({ params }: EnvironmentDashboardPageProps) {
+  const session = await getSession()
+  
+  if (!session?.user) {
+    redirect('/login')
+  }
+
+  // Get user routing information
+  const routingInfo = await getUserRoutingInfo(session.user.id)
+  
   // Get environment from slug
   const environment = await getEnvironmentBySlug(params.env)
   
   if (!environment) {
-    throw new Error('Environment not found')
+    return (
+      <AccessDenied
+        title="Environment Not Found"
+        message="The environment you're trying to access does not exist."
+        homeUrl="/dashboard"
+      />
+    )
+  }
+
+  // Check if user has access to this environment
+  // System admins have access to all environments
+  // Regular users need to have a membership in this environment
+  const hasAccess = routingInfo.isSystemAdmin || 
+    (routingInfo.hasEnvironments && routingInfo.firstEnvironmentSlug === params.env)
+
+  if (!hasAccess) {
+    return (
+      <AccessDenied
+        title="Access Denied"
+        message={`You don't have permission to access the "${environment.name}" environment.`}
+        homeUrl={routingInfo.redirectTo}
+      />
+    )
   }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Environment Dashboard</h2>
       </div>
-      <Suspense fallback={<DashboardStatsSkeleton />}>
-        <DashboardStats environmentId={environment.id} />
+      <Suspense fallback={<EnvironmentStatsSkeleton />}>
+        <EnvironmentStats environmentId={environment.id} />
       </Suspense>
     </div>
   )

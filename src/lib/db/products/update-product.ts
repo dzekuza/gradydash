@@ -1,13 +1,38 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { updateProductSchema } from '@/lib/utils/zod-schemas/product'
-import { CACHE_TAGS } from '@/lib/utils/cache'
 
 export async function updateProduct(productId: string, formData: FormData) {
   const supabase = createClient()
   
+  const title = formData.get('title') as string
+  const sku = formData.get('sku') as string
+  const barcode = formData.get('barcode') as string
+  const description = formData.get('description') as string
+  const locationId = formData.get('location_id') as string
+  const purchasePrice = formData.get('purchase_price') as string
+  const sellingPrice = formData.get('selling_price') as string
+  const categories = formData.get('categories') as string
+
+  // Validate input
+  const validation = updateProductSchema.safeParse({
+    id: productId,
+    title,
+    sku,
+    barcode,
+    description,
+    location_id: locationId,
+    purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
+    selling_price: sellingPrice ? parseFloat(sellingPrice) : undefined,
+    categories: categories ? JSON.parse(categories) : undefined
+  })
+
+  if (!validation.success) {
+    throw new Error('Invalid input: ' + validation.error.errors.map(e => e.message).join(', '))
+  }
+
   try {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -16,40 +41,22 @@ export async function updateProduct(productId: string, formData: FormData) {
       throw new Error('Authentication required')
     }
 
-    // Parse categories from form data
-    const categoriesJson = formData.get('categories') as string
-    let categories: string[] | undefined
-    
-    if (categoriesJson) {
-      try {
-        categories = JSON.parse(categoriesJson)
-      } catch (error) {
-        console.warn('Failed to parse categories JSON:', error)
-        categories = undefined
-      }
-    }
+    // Get the product to find its environment
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('environment_id, environments!inner(slug)')
+      .eq('id', productId)
+      .single()
 
-    // Parse and validate form data
-    const rawData = {
-      title: formData.get('title') as string,
-      sku: formData.get('sku') as string,
-      barcode: formData.get('barcode') as string,
-      description: formData.get('description') as string,
-      status: formData.get('status') as string,
-      location_id: formData.get('location_id') as string,
-      purchase_price: formData.get('purchase_price') ? parseFloat(formData.get('purchase_price') as string) : undefined,
-      selling_price: formData.get('selling_price') ? parseFloat(formData.get('selling_price') as string) : undefined,
-      categories,
+    if (fetchError || !existingProduct) {
+      throw new Error('Product not found')
     }
-
-    // Validate the data
-    const validatedData = updateProductSchema.parse(rawData)
 
     // Update the product
     const { data: product, error: productError } = await supabase
       .from('products')
       .update({
-        ...validatedData,
+        ...validation.data,
         updated_at: new Date().toISOString()
       })
       .eq('id', productId)
@@ -65,15 +72,11 @@ export async function updateProduct(productId: string, formData: FormData) {
       throw new Error('Product not found')
     }
 
-    console.log('Product updated successfully:', product.id)
 
-    // Invalidate relevant cache tags
-    revalidateTag(CACHE_TAGS.PRODUCTS)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
-    
-    // Also revalidate paths for immediate UI updates
-    revalidatePath('/demo/products')
-    revalidatePath('/demo')
+    // Revalidate paths for immediate UI updates
+    const environmentSlug = existingProduct.environments[0].slug
+    revalidatePath(`/${environmentSlug}/products`)
+    revalidatePath(`/${environmentSlug}`)
 
     return { success: true, product }
   } catch (error) {

@@ -1,9 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath, revalidateTag } from 'next/cache'
-import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
-import { CACHE_TAGS } from '@/lib/utils/cache'
+import { revalidatePath } from 'next/cache'
+import { createProductSchema } from '@/lib/utils/zod-schemas/product'
 
 interface ImportProduct {
   title: string
@@ -15,7 +14,6 @@ interface ImportProduct {
   purchase_price?: number
   selling_price?: number
   categories?: string[]
-  tags?: string[]
 }
 
 export async function importProducts(products: ImportProduct[], environmentId?: string) {
@@ -25,73 +23,85 @@ export async function importProducts(products: ImportProduct[], environmentId?: 
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Check if we're in demo mode
-    const isDemoMode = !environmentId || environmentId === 'demo' || !user
-    
-    if (userError) {
-      console.error('User authentication error:', userError)
-      // In demo mode, we'll continue without authentication
-      if (!isDemoMode) {
-        throw new Error('Authentication error: ' + userError.message)
-      }
-    }
-    
-    if (!user && !isDemoMode) {
+    if (userError || !user) {
       throw new Error('Authentication required')
     }
 
-    // Get the actual environment ID
-    const actualEnvironmentId = environmentId === 'demo' || !environmentId
-      ? await getDemoEnvironmentId() 
-      : environmentId
+    // Get user's environment if not provided
+    if (!environmentId) {
+      const { data: memberships } = await supabase
+        .from('memberships')
+        .select('environment_id')
+        .eq('user_id', user.id)
+        .limit(1)
+      
+      if (!memberships || memberships.length === 0) {
+        throw new Error('No environment found for user')
+      }
+      environmentId = memberships[0].environment_id
+    }
 
-    console.log('Importing products for environment:', actualEnvironmentId)
+    // Get environment slug for revalidation
+    const { data: environment } = await supabase
+      .from('environments')
+      .select('slug')
+      .eq('id', environmentId)
+      .single()
 
-    // Prepare products for insertion
-    const productsToInsert = products.map(product => ({
-      ...product,
-      environment_id: actualEnvironmentId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }))
-
-    // Insert products in batches to avoid hitting limits
-    const batchSize = 100
-    const batches = []
-    
-    for (let i = 0; i < productsToInsert.length; i += batchSize) {
-      batches.push(productsToInsert.slice(i, i + batchSize))
+    if (!environment) {
+      throw new Error('Environment not found')
     }
 
     let totalInserted = 0
     const errors: string[] = []
 
-    for (const batch of batches) {
-      const { data: insertedProducts, error: batchError } = await supabase
-        .from('products')
-        .insert(batch)
-        .select('id')
+    // Process each product
+    for (const product of products) {
+      try {
+        // Validate product data
+        const validation = createProductSchema.safeParse(product)
+        if (!validation.success) {
+          errors.push(`Product "${product.title}": ${validation.error.errors.map(e => e.message).join(', ')}`)
+          continue
+        }
 
-      if (batchError) {
-        console.error('Error inserting batch:', batchError)
-        errors.push(`Batch error: ${batchError.message}`)
-      } else {
-        totalInserted += insertedProducts?.length || 0
+        // Insert product
+        const { data: insertedProduct, error: insertError } = await supabase
+          .from('products')
+          .insert({
+            environment_id: environmentId,
+            ...validation.data,
+            created_by: user.id
+          })
+          .select()
+          .single()
+
+        if (insertError) {
+          errors.push(`Product "${product.title}": ${insertError.message}`)
+          continue
+        }
+
+        // Add status history entry
+        await supabase
+          .from('product_status_history')
+          .insert({
+            product_id: insertedProduct.id,
+            from_status: null,
+            to_status: validation.data.status,
+            changed_by: user.id,
+            note: 'Product imported'
+          })
+
+        totalInserted++
+      } catch (error) {
+        errors.push(`Product "${product.title}": ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
-    console.log(`Import completed: ${totalInserted} products imported`)
 
-    // Invalidate relevant cache tags
-    revalidateTag(CACHE_TAGS.PRODUCTS)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
-    revalidateTag(CACHE_TAGS.ENVIRONMENTS)
-    
-    // Also revalidate paths for immediate UI updates
-    revalidatePath('/demo/products')
-    revalidatePath('/demo')
-    revalidatePath(`/${environmentId}/products`)
-    revalidatePath(`/${environmentId}`)
+    // Revalidate paths for immediate UI updates
+    revalidatePath(`/${environment.slug}/products`)
+    revalidatePath(`/${environment.slug}`)
 
     return {
       success: true,

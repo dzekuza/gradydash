@@ -48,7 +48,7 @@ This will create a master admin user with:
 
 - **Email**: admin@grady.app
 - **Password**: 7ftGiMiy.
-- **Role**: grady_admin
+- **Role**: admin
 
 ### Option B: Manual Creation
 
@@ -69,7 +69,7 @@ If you prefer to create the admin user manually:
 3. **Create Admin Membership**:
    ```sql
    INSERT INTO memberships (user_id, role, environment_id)
-   VALUES ('user-uuid-from-auth', 'grady_admin', NULL);
+   VALUES ('user-uuid-from-auth', 'admin', NULL);
    ```
 
 ## Step 4: Access Admin Dashboard
@@ -126,7 +126,7 @@ The admin dashboard provides:
 
 ## Admin Roles
 
-### grady_admin (Master Admin)
+### admin (Master Admin)
 
 - Full system access
 - Can create/delete environments
@@ -178,7 +178,7 @@ Once you have admin access, you can create production environments:
 
 ### Can't Create Environments
 
-- Verify admin role is 'grady_admin'
+- Verify admin role is 'admin'
 - Check RLS policies are properly configured
 - Ensure user has system-wide admin membership
 

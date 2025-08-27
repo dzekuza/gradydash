@@ -1,9 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath } from 'next/cache'
 import { inviteSchema } from '@/lib/utils/zod-schemas/invite'
 import { getUserAdminStatus } from './get-user-admin-status'
+import { EmailService } from '@/lib/email/email-service'
 
 export async function inviteMember(formData: FormData) {
   const supabase = createClient()
@@ -14,11 +14,12 @@ export async function inviteMember(formData: FormData) {
   const inviteType = formData.get('inviteType') as string // 'environment' or 'system_admin'
   const targetEnvironmentId = formData.get('targetEnvironmentId') as string // for admin inviting to specific environment
 
-  // Validate input
+  // Validate input - handle null environment_id for system admin invites
+  const environmentIdToValidate = inviteType === 'environment' ? environmentId : targetEnvironmentId
   const validation = inviteSchema.safeParse({ 
     email, 
     role, 
-    environment_id: inviteType === 'environment' ? environmentId : targetEnvironmentId 
+    environmentId: environmentIdToValidate || ''
   })
   if (!validation.success) {
     throw new Error('Invalid input: ' + validation.error.errors.map(e => e.message).join(', '))
@@ -33,7 +34,7 @@ export async function inviteMember(formData: FormData) {
     }
 
     // Check user's admin status
-    const { isSystemAdmin, role: userRole } = await getUserAdminStatus(user.id)
+    const { isSystemAdmin } = await getUserAdminStatus(user.id)
 
     // Determine the target environment and role based on invite type
     let finalEnvironmentId: string | null = null
@@ -44,8 +45,8 @@ export async function inviteMember(formData: FormData) {
       if (!isSystemAdmin) {
         throw new Error('Only system admins can invite other system admins')
       }
-      if (role !== 'grady_admin' && role !== 'grady_staff') {
-        throw new Error('System admin invitations can only be for grady_admin or grady_staff roles')
+      if (role !== 'admin') {
+        throw new Error('System admin invitations can only be for admin role')
       }
       finalEnvironmentId = null
     } else {
@@ -57,7 +58,7 @@ export async function inviteMember(formData: FormData) {
       } else {
         // Regular user inviting to their environment
         finalEnvironmentId = environmentId
-        finalRole = 'reseller_manager' // Force manager role for environment invitations
+        finalRole = 'store_manager' // Force store_manager role for environment invitations
       }
 
       // Check if user has permission to invite to this environment
@@ -73,8 +74,8 @@ export async function inviteMember(formData: FormData) {
           throw new Error('You do not have permission to invite members to this environment')
         }
 
-        // Only allow reseller_manager and above to invite members
-        if (!['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)) {
+        // Only allow store_manager and admin to invite members
+if (!['store_manager', 'admin'].includes(membership.role)) {
           throw new Error('You do not have permission to invite members')
         }
       }
@@ -148,30 +149,42 @@ export async function inviteMember(formData: FormData) {
       throw new Error('Failed to create invitation: ' + inviteError.message)
     }
 
-    // TODO: Send email notification here
-    // For now, we'll just log it
+    // Send email notification
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${invite.id}`
     
-    console.log('Invitation created:', {
-      id: invite.id,
-      email,
-      environmentId: finalEnvironmentId,
-      role: finalRole,
-      inviteType,
-      expiresAt,
-      inviteUrl
-    })
+    try {
+      // Get user profile for display name
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
 
-    // TODO: Send email notification
-    // const emailTemplate = getInvitationEmailTemplate({
-    //   environmentName: environment.name,
-    //   role: finalRole,
-    //   inviteUrl,
-    //   expiresAt: expiresAt.toISOString()
-    // })
-    // await sendEmail(email, emailTemplate)
+      // Get environment name for email
+      let environmentName = 'System'
+      if (finalEnvironmentId) {
+        const { data: environmentData } = await supabase
+          .from('environments')
+          .select('name')
+          .eq('id', finalEnvironmentId)
+          .single()
+        environmentName = environmentData?.name || 'Unknown Environment'
+      }
 
-    revalidatePath(`/[env]/members`)
+      await EmailService.sendInviteEmail({
+        to: email,
+        from: process.env.EMAIL_FROM_ADDRESS || 'noreply@eventably.com',
+        inviterName: userProfile?.full_name || user.email,
+        environmentName,
+        inviteUrl,
+        role: finalRole
+      })
+    } catch (emailError) {
+      console.error('Error sending invitation email:', emailError)
+      // Don't fail the entire operation if email fails
+      // The invitation is still created and can be accessed via the URL
+    }
+
     return { success: true, inviteId: invite.id, inviteUrl }
   } catch (error) {
     console.error('Error in inviteMember:', error)

@@ -9,6 +9,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { updateProfile, UpdateProfileData } from '@/lib/db/profiles/update-profile'
 import { updateEnvironment, UpdateEnvironmentData } from '@/lib/db/environments/update-environment'
@@ -24,7 +35,9 @@ import {
   Settings as SettingsIcon,
   Save,
   RefreshCw,
-  Loader2
+  Loader2,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react'
 
 interface EnvironmentSettingsPageProps {
@@ -38,6 +51,7 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
   const [environment, setEnvironment] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -178,6 +192,39 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
       title: 'Settings Reset',
       description: 'Settings have been reset to default values.',
     })
+  }
+
+  const handleRemoveEnvironment = async () => {
+    setIsDeleting(true)
+    try {
+      if (!environment?.id) {
+        throw new Error('Environment ID not found')
+      }
+
+      if (!profile?.id) {
+        throw new Error('User profile not found')
+      }
+
+      // Import the delete function dynamically to avoid SSR issues
+      const { deleteEnvironment } = await import('@/lib/db/environments/delete-environment')
+      await deleteEnvironment(environment.id, profile.id)
+      
+      toast({
+        title: 'Environment Removed',
+        description: 'The environment has been successfully removed.',
+      })
+      
+      // Redirect to dashboard
+      window.location.href = '/dashboard'
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to remove environment.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   if (isLoading) {
@@ -544,6 +591,58 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
               <Users className="mr-2 h-4 w-4" />
               Manage Team Members
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Danger Zone */}
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Irreversible and destructive actions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Remove Environment</Label>
+              <p className="text-sm text-muted-foreground">
+                Permanently delete this environment and all its data. This action cannot be undone.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeleting}>
+                  {isDeleting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  {isDeleting ? 'Removing...' : 'Remove Environment'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the{' '}
+                    <strong>{environment?.name || 'environment'}</strong> and remove all its data
+                    including products, members, and settings.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleRemoveEnvironment}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Yes, remove environment
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </div>

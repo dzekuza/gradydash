@@ -28,6 +28,12 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
+  },
+  // Prevent static generation of problematic pages
+  trailingSlash: false,
+  // Disable static optimization for API routes
+  async rewrites() {
+    return []
   }
 }
 

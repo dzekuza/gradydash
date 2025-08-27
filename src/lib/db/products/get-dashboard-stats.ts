@@ -1,24 +1,14 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { ProductStatus } from '@/types/db'
-import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
-import { unstable_cache } from 'next/cache'
-import { CACHE_CONFIGS, CACHE_TAGS } from '@/lib/utils/cache'
-import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-// Internal function for getting products by status
-async function _getProductsByStatus(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<Record<ProductStatus, number>> {
-  const supabase = createClient(cookieStore)
+export async function getProductsByStatus(environmentId: string): Promise<Record<ProductStatus, number>> {
+  const supabase = createClient()
   
   try {
-    // Handle demo environment
-    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId(cookieStore) 
-      : environmentId
-
     const { data, error } = await supabase
       .from('products')
       .select('status')
-      .eq('environment_id', actualEnvironmentId)
+      .eq('environment_id', environmentId)
 
     if (error) {
       console.error('Error fetching products by status:', error)
@@ -59,16 +49,10 @@ async function _getProductsByStatus(environmentId: string, cookieStore?: Readonl
   }
 }
 
-// Internal function for getting revenue last 30 days
-async function _getRevenueLast30Days(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<number> {
-  const supabase = createClient(cookieStore)
+export async function getRevenueLast30Days(environmentId: string): Promise<number> {
+  const supabase = createClient()
   
   try {
-    // Handle demo environment
-    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId(cookieStore) 
-      : environmentId
-
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -79,7 +63,7 @@ async function _getRevenueLast30Days(environmentId: string, cookieStore?: Readon
         product_id,
         products!inner(environment_id)
       `)
-      .eq('products.environment_id', actualEnvironmentId)
+      .eq('products.environment_id', environmentId)
       .gte('sale_date', thirtyDaysAgo.toISOString())
 
     if (error) {
@@ -94,21 +78,15 @@ async function _getRevenueLast30Days(environmentId: string, cookieStore?: Readon
   }
 }
 
-// Internal function for getting average time to sale
-async function _getAverageTimeToSale(environmentId: string, cookieStore?: ReadonlyRequestCookies): Promise<number> {
-  const supabase = createClient(cookieStore)
+export async function getAverageTimeToSale(environmentId: string): Promise<number> {
+  const supabase = createClient()
   
   try {
-    // Handle demo environment
-    const actualEnvironmentId = environmentId === 'demo-env' || environmentId === 'temp-id'
-      ? await getDemoEnvironmentId(cookieStore) 
-      : environmentId
-
     // First get all products in the environment with their creation dates
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select('id, created_at')
-      .eq('environment_id', actualEnvironmentId)
+      .eq('environment_id', environmentId)
 
     if (productsError) {
       console.error('Error fetching products:', productsError)
@@ -189,30 +167,47 @@ async function _getAverageTimeToSale(environmentId: string, cookieStore?: Readon
   }
 }
 
-// Cached versions of the functions
-export const getProductsByStatus = unstable_cache(
-  _getProductsByStatus,
-  ['get-products-by-status'],
-  {
-    revalidate: CACHE_CONFIGS.SHORT.revalidate,
-    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.PRODUCTS, CACHE_TAGS.ENVIRONMENTS]
-  }
-)
+export interface DashboardStats {
+  totalProducts: number
+  sellingCount: number
+  totalRevenue: number
+  avgTimeToSale: number
+  statusDistribution: Record<string, number>
+}
 
-export const getRevenueLast30Days = unstable_cache(
-  _getRevenueLast30Days,
-  ['get-revenue-last-30-days'],
-  {
-    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
-    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.ENVIRONMENTS]
-  }
-)
+export async function getDashboardStats(environmentSlug: string): Promise<DashboardStats> {
+  const supabase = createClient()
 
-export const getAverageTimeToSale = unstable_cache(
-  _getAverageTimeToSale,
-  ['get-average-time-to-sale'],
-  {
-    revalidate: CACHE_CONFIGS.MEDIUM.revalidate,
-    tags: [CACHE_TAGS.DASHBOARD_STATS, CACHE_TAGS.PRODUCTS, CACHE_TAGS.ENVIRONMENTS]
+  // Get environment by slug
+  const { data: environment, error: envError } = await supabase
+    .from('environments')
+    .select('id')
+    .eq('slug', environmentSlug)
+    .single()
+
+  if (envError || !environment) {
+    throw new Error('Environment not found')
   }
-)
+
+  const environmentId = environment.id
+
+  // Get all stats in parallel
+  const [statusDistribution, totalRevenue, avgTimeToSale] = await Promise.all([
+    getProductsByStatus(environmentId),
+    getRevenueLast30Days(environmentId),
+    getAverageTimeToSale(environmentId)
+  ])
+
+  // Calculate total products and selling count
+  const totalProducts = Object.values(statusDistribution).reduce((sum, count) => sum + count, 0)
+  const sellingCount = statusDistribution.selling || 0
+
+  return {
+    totalProducts,
+    sellingCount,
+    totalRevenue,
+    avgTimeToSale: Math.round(avgTimeToSale),
+    statusDistribution
+  }
+}
+

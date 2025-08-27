@@ -39,15 +39,18 @@ interface MembersDataTableProps {
 
 const getRoleBadge = (role: string) => {
   const roleColors = {
-    grady_admin: 'bg-red-100 text-red-800',
-    grady_staff: 'bg-orange-100 text-orange-800',
-    reseller_manager: 'bg-blue-100 text-blue-800',
-    reseller_staff: 'bg-gray-100 text-gray-800',
+    admin: 'bg-red-100 text-red-800',
+    store_manager: 'bg-blue-100 text-blue-800',
+  }
+  
+  const roleLabels = {
+    admin: 'Admin',
+    store_manager: 'Store Manager',
   }
   
   return (
     <Badge className={roleColors[role as keyof typeof roleColors] || 'bg-gray-100 text-gray-800'}>
-      {role.replace('_', ' ')}
+      {roleLabels[role as keyof typeof roleLabels] || role.replace('_', ' ')}
     </Badge>
   )
 }
@@ -99,6 +102,21 @@ const memberColumns: ColumnDef<Member>[] = [
       </span>
     ),
   },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const member = row.original
+      return (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Mail className="h-4 w-4" />
+            Contact
+          </Button>
+        </div>
+      )
+    },
+  },
 ]
 
 const inviteColumns: ColumnDef<Invite>[] = [
@@ -129,14 +147,17 @@ const inviteColumns: ColumnDef<Invite>[] = [
   {
     accessorKey: 'expires_at',
     header: 'Expires',
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {formatDistanceToNow(new Date(row.original.expires_at), { addSuffix: true })}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const isExpired = new Date(row.original.expires_at) < new Date()
+      return (
+        <span className="text-muted-foreground">
+          {formatDistanceToNow(new Date(row.original.expires_at), { addSuffix: true })}
+        </span>
+      )
+    },
   },
   {
-    accessorKey: 'status',
+    id: 'status',
     header: 'Status',
     cell: ({ row }) => {
       const isExpired = new Date(row.original.expires_at) < new Date()
@@ -157,37 +178,55 @@ export function MembersDataTable({ members, invites }: MembersDataTableProps) {
     <div className="space-y-6">
       {/* Current Members */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <User className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Current Members ({members.length})</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Current Members</h3>
+            <p className="text-sm text-muted-foreground">
+              {members.length} member{members.length !== 1 ? 's' : ''} in this environment
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Active members with access to this environment
-        </p>
-        {members.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            No members yet. Invite someone to get started.
-          </p>
-        ) : (
-          <DataTable columns={memberColumns} data={members} />
+        
+        <DataTable 
+          columns={memberColumns} 
+          data={members}
+        />
+        
+        {members.length === 0 && (
+          <div className="text-center py-8">
+            <User className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-semibold">No members yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Get started by inviting your first team member.
+            </p>
+          </div>
         )}
       </div>
 
       {/* Pending Invitations */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Pending Invitations ({invites.length})</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Pending Invitations</h3>
+            <p className="text-sm text-muted-foreground">
+              {invites.length} pending invitation{invites.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Invitations that have been sent but not yet accepted
-        </p>
-        {invites.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            No pending invitations
-          </p>
-        ) : (
-          <DataTable columns={inviteColumns} data={invites} />
+        
+        <DataTable 
+          columns={inviteColumns} 
+          data={invites}
+        />
+        
+        {invites.length === 0 && (
+          <div className="text-center py-8">
+            <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-semibold">No pending invitations</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              All invitations have been accepted or expired.
+            </p>
+          </div>
         )}
       </div>
     </div>

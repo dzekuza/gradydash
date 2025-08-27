@@ -1,109 +1,162 @@
-import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client-server'
+import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/supabase/auth'
 import { getProducts } from '@/lib/db/products/get-products'
-import { getLocations } from '@/lib/db/locations/get-locations'
-import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
-import { getUserEnvironments } from '@/lib/db/environments/get-user-environments'
-import { ImportProductsDialog } from '@/components/product/import-products-dialog'
-import { ProductDialog } from '@/components/product/product-dialog'
-import { DataTable } from '@/components/data-table/data-table'
-import { columns } from '@/components/data-table/data'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
-import Link from 'next/link'
+import { getDashboardStats } from '@/lib/db/products/get-dashboard-stats'
+import { getUserMembership } from '@/lib/db/environments/get-user-membership'
+import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Package, 
+  TrendingUp, 
+  DollarSign, 
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle
+} from 'lucide-react'
 
 interface ProductsPageProps {
-  params: { env: string }
+  params: {
+    env: string
+  }
 }
 
-async function ProductsContent({ environmentSlug }: { environmentSlug: string }) {
-  const supabase = createClient()
-
-  // Get the environment
-  const environment = await getEnvironmentBySlug(environmentSlug)
-  if (!environment) {
-    notFound()
+export default async function ProductsPage({ params }: ProductsPageProps) {
+  const session = await getSession()
+  
+  if (!session?.user) {
+    redirect('/login')
   }
 
-  // Get current user's membership to check permissions
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    notFound()
-  }
+  const user = session.user
 
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('role')
-    .eq('environment_id', environment.id)
-    .eq('user_id', user.id)
-    .single()
-
+  // Get user's membership in this environment
+  const membership = await getUserMembership(user.id, params.env)
+  
   if (!membership) {
-    notFound()
+    redirect('/dashboard')
   }
 
-  // Check if user can manage products
-  const canManageProducts = ['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)
-
-  // Fetch products, locations, and environments for the environment
-  const [products, locations, environments] = await Promise.all([
-    getProducts(environment.id),
-    getLocations(environment.id),
-    getUserEnvironments()
+  // Get products and stats
+  const [products, stats] = await Promise.all([
+    getProducts(params.env),
+    getDashboardStats(params.env)
   ])
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'sold':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'selling':
+        return <TrendingUp className="h-4 w-4 text-blue-600" />
+      case 'in_repair':
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />
+      case 'returned':
+      case 'discarded':
+        return <XCircle className="h-4 w-4 text-red-600" />
+      default:
+        return <Package className="h-4 w-4 text-gray-600" />
+    }
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Products</h2>
-        {canManageProducts && (
-          <div className="flex items-center space-x-2">
-            <ImportProductsDialog environmentId={environment.id} />
-            <ProductDialog locations={locations} environmentId={environment.id} environments={environments} />
-          </div>
-        )}
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Products</h2>
+          <p className="text-muted-foreground">
+            Manage your product inventory and track their status
+          </p>
+        </div>
       </div>
-      
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Product Management</h3>
-            <p className="text-sm text-muted-foreground">
-              Manage products for {environment.name}. You can add, edit, and track the status of products here.
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            <p className="text-xs text-muted-foreground">
+              In inventory
             </p>
-          </div>
-        </div>
-        
-        <DataTable columns={columns} data={products} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Currently Selling</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.sellingCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Available for sale
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">€{stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              From sales
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Time to Sale</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgTimeToSale}d</div>
+            <p className="text-xs text-muted-foreground">
+              Days on average
+            </p>
+          </CardContent>
+        </Card>
       </div>
-    </div>
-  )
-}
 
-function ProductsSkeleton() {
-  return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <Skeleton className="h-8 w-32" />
-        <div className="flex items-center space-x-2">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+      {/* Status Distribution */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        {Object.entries(stats.statusDistribution).map(([status, count]) => (
+          <Card key={status}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium capitalize">
+                {status.replace('_', ' ')}
+              </CardTitle>
+              {getStatusIcon(status)}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{count}</div>
+              <p className="text-xs text-muted-foreground">
+                {((count / stats.totalProducts) * 100).toFixed(1)}% of total
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    </div>
-  )
-}
 
-export default function ProductsPage({ params }: ProductsPageProps) {
-  return (
-    <Suspense fallback={<ProductsSkeleton />}>
-      <ProductsContent environmentSlug={params.env} />
-    </Suspense>
+      {/* Products Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Product Inventory</CardTitle>
+          <CardDescription>
+            View and manage all products in this environment
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProductsTableWrapper 
+            products={products} 
+            environmentSlug={params.env}
+          />
+        </CardContent>
+      </Card>
+    </div>
   )
 }

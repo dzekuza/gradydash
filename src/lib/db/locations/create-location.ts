@@ -1,60 +1,74 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { createLocationSchema } from '@/lib/utils/zod-schemas/environment'
-import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
-import { CACHE_TAGS } from '@/lib/utils/cache'
 
 export async function createLocation(formData: FormData) {
   const supabase = createClient()
   
+  const name = formData.get('name') as string
+  const description = formData.get('description') as string
+  const address = formData.get('address') as string
+  const contactEmail = formData.get('contact_email') as string
+  const contactPhone = formData.get('contact_phone') as string
+
+  // Validate input
+  const validation = createLocationSchema.safeParse({
+    name,
+    description,
+    address,
+    contact_email: contactEmail,
+    contact_phone: contactPhone
+  })
+
+  if (!validation.success) {
+    throw new Error('Invalid input: ' + validation.error.errors.map(e => e.message).join(', '))
+  }
+
   try {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Check if we're in demo mode
-    const environmentId = formData.get('environment_id') as string || 'demo'
-    const isDemoMode = environmentId === 'demo' || !user
-    
-    if (userError) {
-      console.error('User authentication error:', userError)
-      // In demo mode, we'll continue without authentication
-      if (!isDemoMode) {
-        throw new Error('Authentication error: ' + userError.message)
-      }
-    }
-    
-    if (!user && !isDemoMode) {
+    if (userError || !user) {
       throw new Error('Authentication required')
     }
 
-    // Parse and validate form data
-    const rawData = {
-      name: formData.get('name') as string,
-      description: formData.get('description') as string,
-      address: formData.get('address') as string,
-      contact_person_name: formData.get('contact_person_name') as string,
-      contact_email: formData.get('contact_email') as string,
-      contact_phone: formData.get('contact_phone') as string,
+    // Get user's environment
+    const { data: memberships } = await supabase
+      .from('memberships')
+      .select('environment_id')
+      .eq('user_id', user.id)
+      .limit(1)
+
+    if (!memberships || memberships.length === 0) {
+      throw new Error('No environment found for user')
     }
 
-    // Validate the data
-    const validatedData = createLocationSchema.parse(rawData)
+    const environmentId = memberships[0].environment_id
 
-    // Get environment ID from form or use demo
-    const actualEnvironmentId = environmentId === 'demo' 
-      ? await getDemoEnvironmentId() 
-      : environmentId
+    // Get environment slug for revalidation
+    const { data: environment } = await supabase
+      .from('environments')
+      .select('slug')
+      .eq('id', environmentId)
+      .single()
 
-    console.log('Creating location with:', { ...validatedData, environmentId: actualEnvironmentId })
+    if (!environment) {
+      throw new Error('Environment not found')
+    }
 
     // Create the location
     const { data: location, error: locationError } = await supabase
       .from('locations')
       .insert({
-        ...validatedData,
-        environment_id: actualEnvironmentId
+        environment_id: environmentId,
+        name: validation.data.name,
+        description: validation.data.description,
+        address: validation.data.address,
+        contact_email: validation.data.contact_email,
+        contact_phone: validation.data.contact_phone,
+        created_by: user.id
       })
       .select()
       .single()
@@ -64,21 +78,10 @@ export async function createLocation(formData: FormData) {
       throw new Error('Failed to create location: ' + locationError.message)
     }
 
-    if (!location) {
-      throw new Error('Location was not created')
-    }
 
-    console.log('Location created successfully:', location.id)
-
-    // Invalidate relevant cache tags
-    revalidateTag(CACHE_TAGS.LOCATIONS)
-    revalidateTag(CACHE_TAGS.ENVIRONMENTS)
-    
-    // Also revalidate paths for immediate UI updates
-    revalidatePath('/demo/locations')
-    revalidatePath('/demo')
-    revalidatePath(`/${environmentId}/locations`)
-    revalidatePath(`/${environmentId}`)
+    // Revalidate paths for immediate UI updates
+    revalidatePath(`/${environment.slug}/locations`)
+    revalidatePath(`/${environment.slug}`)
 
     return { success: true, location }
   } catch (error) {

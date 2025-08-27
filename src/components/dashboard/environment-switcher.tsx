@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createEnvironment } from '@/lib/db/environments/create-environment'
+import { createEnvironmentAction } from '@/lib/db/environments/create-environment-action'
 
 interface Environment {
   id: string
@@ -66,12 +66,13 @@ export function EnvironmentSwitcher({
     setIsCreating(true)
     
     try {
-      await createEnvironment(formData)
+      await createEnvironmentAction(formData)
       setShowCreateDialog(false)
       toast({
         title: 'Environment created',
         description: 'Your new environment has been created successfully.',
       })
+      router.refresh()
     } catch (error) {
       console.error('Failed to create environment:', error)
       toast({

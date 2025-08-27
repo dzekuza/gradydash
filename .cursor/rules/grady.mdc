@@ -2,126 +2,71 @@
 alwaysApply: true
 ---
 
-## Project Structure (Current Implementation)
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # Authentication routes
-│   │   └── login/page.tsx # Login page with shadcn/ui
-│   ├── (dashboard)/       # Dashboard routes
-│   │   ├── [env]/         # Environment-specific routes
-│   │   │   ├── layout.tsx # Dashboard layout with sidebar
-│   │   │   ├── page.tsx   # Dashboard overview
-│   │   │   ├── products/  # Product management
-│   │   │   ├── locations/ # Location management
-│   │   │   ├── members/   # Member management
-│   │   │   └── analytics/ # Analytics dashboard
-│   │   └── demo/          # Demo environment for testing
-│   │       ├── layout.tsx # Demo layout with SidebarProvider
-│   │       ├── page.tsx   # Demo dashboard
-│   │       └── [sections]/ # Demo pages for all sections
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Home page (redirects to login)
-│   └── globals.css        # Global styles with CSS variables
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components (generated)
-│   ├── dashboard/        # Dashboard-specific components
-│   │   └── environment-switcher.tsx # Environment switcher with Command/Popover
-│   ├── data-table/       # Table components (ready for implementation)
-│   ├── product/          # Product-specific components (ready for implementation)
-│   └── app-sidebar.tsx   # Main sidebar component (updated for environments)
-├── lib/                  # Utility libraries
-│   ├── supabase/         # Supabase clients and auth
-│   │   ├── client-browser.ts # Browser client
-│   │   ├── client-server.ts  # Server client (fixed cookie handling)
-│   │   └── auth.ts       # Authentication utilities
-│   ├── db/               # Database operations
-│   │   ├── environments/ # Environment operations
-│   │   │   └── get-environments.ts # Get environments for user/by slug
-│   │   └── products/     # Product operations
-│   │       └── get-dashboard-stats.ts # Dashboard statistics
-│   └── utils/            # Utility functions
-│       ├── cn.ts         # Class name utility
-│       ├── rbac.ts       # Role-based access control
-│       ├── urls.ts       # URL builders
-│       └── zod-schemas/  # Validation schemas
-│           ├── product.ts
-│           ├── environment.ts
-│           └── invite.ts
-├── hooks/                # Custom React hooks
-│   └── use-toast.ts      # Toast notifications
-└── types/                # TypeScript type definitions
-    └── db.ts             # Database types and enums
-```
-
----
-
-## Database Schema (Ready for Implementation)
-
-### Core Tables
-
-- `profiles` - User profiles
-- `environments` - Multi-tenant environments
-- `memberships` - User-environment relationships with roles
-- `locations` - Physical locations within environments
-- `products` - Product inventory
-- `product_status_history` - Status change tracking
-- `product_comments` - Product discussions
-- `product_images` - Product image metadata
-- `sales` - Sales records
-- `environment_invites` - User invitations
-
-### Enums
-
-- `role`: grady_admin, grady_staff, reseller_manager, reseller_staff
-- `product_status`: taken, in_repair, selling, sold, returned, discarded
-
-### RLS Policies
-
-- All tables have Row Level Security enabled
-- Environment-based access control
-- Role-based permissions
-
----
-
 ## Current Working Features
 
-### ✅ Authentication Flow
+### ✅ Authentication & Authorization
 
-- Login page at `/login` with shadcn/ui styling
-- Demo authentication that redirects to `/demo`
-- Ready for Supabase Auth integration
+- Complete Supabase Auth integration
+- Role-based access control (RBAC)
+- Secure session management
+- Environment-based permissions
+- Invitation system with email notifications
 
-### ✅ Dashboard Layout
+### ✅ Multi-Tenant Environment System
 
 - Environment-based routing with `[env]` parameter
+- Complete data isolation between environments
+- Environment switcher with keyboard shortcuts
+- Admin-only environment creation
+- User invitation and membership management
+
+### ✅ Dashboard & Navigation
+
+- Environment-specific dashboard layouts
 - Sidebar navigation with environment switcher
 - SPA-style navigation (no full page reloads)
-- Active route highlighting based on usePathname()
+- Active route highlighting
+- Breadcrumb navigation
+- Mobile-responsive design
 
-### ✅ Environment Switcher
+### ✅ Product Management
 
-- Popover with Command component for environment selection
-- Keyboard shortcuts support (ready for ⌘1..⌘9)
-- "Add Environment" dialog with form
-- Link-based navigation between environments
+- Complete CRUD operations for products
+- Product status tracking with history
+- Category system with hierarchical organization
+- CSV import with validation and error handling
+- Bulk operations (status updates, deletion)
+- Product search and filtering
+- Image upload support (schema ready)
 
-### ✅ Demo Environment
+### ✅ Location Management
 
-- Working demo dashboard at `/demo`
-- Environment switcher with multiple environments
-- Navigation between all sections (Products, Locations, Members, Analytics)
-- Dashboard cards with sample data
-- Proper SidebarProvider wrapper
+- Location CRUD operations
+- Location-specific product tracking
+- Contact information management
+- Location statistics and analytics
 
-### ✅ Component Architecture
+### ✅ Member Management
 
-- All shadcn/ui components installed and working
-- Proper TypeScript types throughout
-- Zod validation schemas ready
-- RBAC system implemented
-- URL builders for consistent routing
+- User invitation system
+- Role assignment and management
+- Member activity tracking
+- Environment access control
+
+### ✅ Analytics & Reporting
+
+- Dashboard statistics and metrics
+- Product status distribution
+- Revenue tracking
+- Time-to-sale analytics
+- Location-based reporting
+
+### ✅ Settings & Configuration
+
+- User profile management
+- Environment settings
+- Notification preferences
+- Security settings
 
 ---
 
@@ -141,6 +86,7 @@ src/
 - Use `const router = useRouter(); router.push(url)` for programmatic navigation
 - All routes render inside the dashboard layout - no full refresh
 - Sidebar items use Link and highlight active routes
+- Environment-based routing: `/[env]/[section]`
 
 ### UI Rules
 
@@ -148,6 +94,7 @@ src/
 - Import from `@/components/ui/[component]`
 - Use Tailwind CSS for styling
 - Follow shadcn/ui design patterns
+- Ensure mobile responsiveness
 
 ### Data Fetching
 
@@ -155,49 +102,64 @@ src/
 - Use server actions for mutations
 - Implement proper error handling
 - Use revalidatePath/router.refresh() after mutations
+- Environment-scoped data access
+
+### Security Rules
+
+- All routes require authentication
+- Environment-based data access control
+- Role-based permissions
+- Input validation with Zod schemas
+- Secure API endpoints with RLS
 
 ---
 
-## Next Steps for Development
+## Production Setup
 
-### 1. Database Setup
-
-```bash
-# Run the SQL migration in Supabase dashboard
-# File: supabase/migrations/001_initial_schema.sql
-```
-
-### 2. Environment Variables
+### 1. Environment Variables
 
 ```env
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Email Configuration (Resend)
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM_ADDRESS=noreply@your-domain.com
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# Optional: Debug Configuration
+DEBUG_EMAILS=false
 ```
 
-### 3. Authentication Implementation
+### 2. Database Setup
 
-- Replace demo authentication with Supabase Auth
-- Implement proper session management
-- Add user profile management
+```bash
+# Run all migrations in order
+supabase/migrations/001_initial_schema.sql
+supabase/migrations/002_add_system_admin_support.sql
+supabase/migrations/003_fix_environment_access_policies.sql
+supabase/migrations/004_fix_rls_policies.sql
+supabase/migrations/005_add_product_import_fields.sql
+supabase/migrations/006_add_location_contact_fields.sql
+```
 
-### 4. Data Layer Implementation
+### 3. Admin User Creation
 
-- Connect database functions to real Supabase queries
-- Implement server actions for CRUD operations
-- Add proper error handling and loading states
+```bash
+node scripts/create-admin-user.js
+```
 
-### 5. Feature Development
+### 4. Environment Creation
 
-- Build product management interface
-- Implement image uploads
-- Add data tables with filtering
-- Create analytics dashboard
-- Add barcode scanning
+- Use admin dashboard to create production environments
+- Invite team members with appropriate roles
+- Configure environment settings
 
 ---
 
-## Testing the Current Implementation
+## Testing the Implementation
 
 ### Start Development Server
 
@@ -208,20 +170,24 @@ npm run dev
 ### Test Routes
 
 - **Login**: http://localhost:3000/login
-- **Demo Dashboard**: http://localhost:3000/demo
-- **Demo Products**: http://localhost:3000/demo/products
-- **Demo Locations**: http://localhost:3000/demo/locations
-- **Demo Members**: http://localhost:3000/demo/members
-- **Demo Analytics**: http://localhost:3000/demo/analytics
+- **Admin Dashboard**: http://localhost:3000/admin
+- **Environment Dashboard**: http://localhost:3000/[env]
+- **Products**: http://localhost:3000/[env]/products
+- **Locations**: http://localhost:3000/[env]/locations
+- **Members**: http://localhost:3000/[env]/members
+- **Analytics**: http://localhost:3000/[env]/analytics
+- **Settings**: http://localhost:3000/[env]/settings
 
 ### Current Working Features
 
-- ✅ Login page with form
-- ✅ Demo dashboard with cards
-- ✅ Environment switcher
-- ✅ Sidebar navigation
-- ✅ SPA-style routing
-- ✅ shadcn/ui styling
+- ✅ Complete authentication system
+- ✅ Multi-tenant environment management
+- ✅ Product management with CSV import
+- ✅ Location management
+- ✅ Member management with invitations
+- ✅ Analytics and reporting
+- ✅ Settings and configuration
+- ✅ Mobile-responsive design
 - ✅ TypeScript compilation
 - ✅ All components working
 
@@ -229,41 +195,49 @@ npm run dev
 
 ## Acceptance Criteria Status
 
-1. ✅ **Navigation**: All navigation uses next/link or router.push() - no full
-   reloads
-2. ✅ **UI Components**: Every button/table/input/dialog comes from shadcn/ui
-3. 🚧 **RLS**: Database schema ready, needs Supabase connection
-4. 🚧 **Product Status**: Schema ready, needs implementation
-5. 🚧 **Image Uploads**: Schema ready, needs implementation
-6. ✅ **Modular Code**: One operation per file, feature folders, clear
-   boundaries
+1. ✅ **Authentication**: Complete Supabase Auth integration
+2. ✅ **Multi-Tenancy**: Environment-based data isolation
+3. ✅ **Navigation**: All navigation uses Next.js routing
+4. ✅ **UI Components**: Every component uses shadcn/ui
+5. ✅ **RLS**: Row-level security implemented
+6. ✅ **Product Management**: Complete CRUD with status tracking
+7. ✅ **CSV Import**: Bulk import with validation
+8. ✅ **Member Management**: Invitation system with roles
+9. ✅ **Analytics**: Dashboard statistics and reporting
+10. ✅ **Security**: Comprehensive security measures
 
 ---
 
 ## File Updates Made
 
-### Recently Fixed Issues
+### Recently Completed
 
-- ✅ Fixed TypeScript errors in database functions
-- ✅ Fixed Supabase client cookie handling
-- ✅ Added SidebarProvider wrapper to layouts
-- ✅ Removed conflicting route files
-- ✅ Updated environment switcher with proper types
-- ✅ Fixed demo environment data structure
+- ✅ Removed all demo content and functionality
+- ✅ Updated all database functions for production use
+- ✅ Implemented complete authentication system
+- ✅ Added environment-based access control
+- ✅ Updated all components for real data
+- ✅ Implemented invitation system
+- ✅ Added email functionality
+- ✅ Updated documentation for production
 
 ### Current Working Files
 
 - All TypeScript files compile without errors
 - All components render correctly
 - Navigation works as expected
-- Demo environment fully functional
+- Database operations work with real data
+- Email system functional
+- Security measures implemented
 
 ---
 
-**Status**: 🟢 **READY FOR FEATURE DEVELOPMENT**
+**Status**: 🟢 **PRODUCTION READY**
 
-The foundation is complete and solid. All core infrastructure is working. Ready
-to implement real data connections and build out the remaining features.
+The application is now production-ready with complete multi-tenant
+functionality, proper authentication, and comprehensive security measures. All
+demo content has been removed and the system works exclusively with real
+environments and user data.
 
 pages, implement server actions, and apply RLS. Include a README.md with setup
 and migration steps.

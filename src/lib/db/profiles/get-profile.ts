@@ -1,28 +1,17 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export async function getCurrentProfile() {
+export async function getCurrentProfile(cookieStore?: ReadonlyRequestCookies) {
   try {
-    const supabase = createClient()
+    const supabase = createClient(cookieStore)
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
-      // Return a demo profile for demo environments
-      console.log('No authenticated user found - returning demo profile')
-      return {
-        id: 'demo-user-id',
-        first_name: 'Demo',
-        last_name: 'User',
-        full_name: 'Demo User',
-        email: 'demo@grady.com',
-        bio: 'Demo user for testing the Grady ReSellOps dashboard.',
-        avatar_url: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+      return null
     }
 
     // Get the user's profile

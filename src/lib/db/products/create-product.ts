@@ -1,85 +1,68 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createProductSchema } from '@/lib/utils/zod-schemas/product'
-import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
-import { CACHE_TAGS } from '@/lib/utils/cache'
+import { getEnvironmentsForUser } from '@/lib/db/environments/get-environments'
 
 export async function createProduct(formData: FormData) {
   const supabase = createClient()
-  let redirectTo: string | undefined
   
+  const title = formData.get('title') as string
+  const sku = formData.get('sku') as string
+  const barcode = formData.get('barcode') as string
+  const description = formData.get('description') as string
+  const status = formData.get('status') as string
+  const locationId = formData.get('location_id') as string
+  const purchasePrice = formData.get('purchase_price') as string
+  const sellingPrice = formData.get('selling_price') as string
+  const categories = formData.get('categories') as string
+  const redirectTo = formData.get('redirectTo') as string
+
+  // Validate input
+  const validation = createProductSchema.safeParse({
+    title,
+    sku,
+    barcode,
+    description,
+    status,
+    location_id: locationId,
+    purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
+    selling_price: sellingPrice ? parseFloat(sellingPrice) : undefined,
+    categories: categories ? JSON.parse(categories) : undefined
+  })
+
+  if (!validation.success) {
+    throw new Error('Invalid input: ' + validation.error.errors.map((e: any) => e.message).join(', '))
+  }
+
   try {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Check if we're in demo mode
-    const environmentId = formData.get('environment_id') as string || 'demo'
-    const isDemoMode = environmentId === 'demo' || !user
-    
-    if (userError) {
-      console.error('User authentication error:', userError)
-      // In demo mode, we'll continue without authentication
-      if (!isDemoMode) {
-        throw new Error('Authentication error: ' + userError.message)
-      }
-    }
-    
-    if (!user && !isDemoMode) {
+    if (userError || !user) {
       throw new Error('Authentication required')
     }
 
-    // Parse categories from form data
-    const categoriesJson = formData.get('categories') as string
-    let categories: string[] | undefined
-    
-    if (categoriesJson) {
-      try {
-        categories = JSON.parse(categoriesJson)
-      } catch (error) {
-        console.warn('Failed to parse categories JSON:', error)
-        categories = undefined
-      }
+    // Get user's environment
+    const environments = await getEnvironmentsForUser(user.id)
+    const environment = environments[0] // Use first environment for now
+    const environmentId = environment?.id
+
+    if (!environmentId) {
+      throw new Error('No environment found')
     }
 
-    // Parse and validate form data
-    const rawData = {
-      title: formData.get('title') as string,
-      sku: formData.get('sku') as string,
-      barcode: formData.get('barcode') as string,
-      description: formData.get('description') as string,
-      status: formData.get('status') as string,
-      location_id: formData.get('location_id') as string,
-      purchase_price: formData.get('purchase_price') ? parseFloat(formData.get('purchase_price') as string) : undefined,
-      selling_price: formData.get('selling_price') ? parseFloat(formData.get('selling_price') as string) : undefined,
-      categories,
-    }
-
-    // Validate the data
-    const validatedData = createProductSchema.parse(rawData)
-
-    // Get environment ID from form or use demo
-    const actualEnvironmentId = environmentId === 'demo' 
-      ? await getDemoEnvironmentId() 
-      : environmentId
-
-    // Compute environment slug for routing
-    const environmentSlug = formData.get('environment_slug') as string || 
-      (environmentId === 'demo' ? 'demo' : environmentId)
-
-    // Build base path dynamically
-    const basePath = `/${environmentSlug}`
-
-    console.log('Creating product with:', { ...validatedData, environmentId: actualEnvironmentId })
+    const basePath = `/${environment.slug}`
 
     // Create the product
     const { data: product, error: productError } = await supabase
       .from('products')
       .insert({
-        ...validatedData,
-        environment_id: actualEnvironmentId
+        environment_id: environmentId,
+        ...validation.data,
+        created_by: user.id
       })
       .select()
       .single()
@@ -89,21 +72,24 @@ export async function createProduct(formData: FormData) {
       throw new Error('Failed to create product: ' + productError.message)
     }
 
-    if (!product) {
-      throw new Error('Product was not created')
+    // Add status history entry
+    const { error: historyError } = await supabase
+      .from('product_status_history')
+      .insert({
+        product_id: product.id,
+        from_status: null,
+        to_status: validation.data.status,
+        changed_by: user.id,
+        note: 'Product created'
+      })
+
+    if (historyError) {
+      console.error('Error creating status history:', historyError)
+      // Don't throw error here as the main product creation succeeded
     }
 
-    console.log('Product created successfully:', product.id)
 
-    // Set redirect path
-    redirectTo = `${basePath}/products/${product.id}`
-
-    // Invalidate relevant cache tags
-    revalidateTag(CACHE_TAGS.PRODUCTS)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
-    revalidateTag(CACHE_TAGS.ENVIRONMENTS)
-    
-    // Also revalidate paths for immediate UI updates
+    // Revalidate paths for immediate UI updates
     revalidatePath(`${basePath}/products`)
     revalidatePath(basePath)
 

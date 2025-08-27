@@ -1,84 +1,55 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client-server'
-import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
-import { AppSidebar } from '@/components/app-sidebar'
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
-import { Separator } from '@/components/ui/separator'
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
-import { Badge } from '@/components/ui/badge'
-import { Shield } from 'lucide-react'
+import { getSession } from '@/lib/supabase/auth'
+import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
+import { AccessDenied } from '@/components/auth/access-denied'
+import { AdminSidebar } from '@/components/admin/admin-sidebar'
 
-export default async function AdminLayout({
-  children,
-}: {
+interface AdminLayoutProps {
   children: React.ReactNode
-}) {
-  const supabase = createClient()
+}
+
+export default async function AdminLayout({ children }: AdminLayoutProps) {
+  const session = await getSession()
   
-  // Get the current user
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
-  if (userError || !user) {
+  if (!session?.user) {
     redirect('/login')
   }
 
-  // Check if user is a system admin
-  const adminStatus = await getUserAdminStatus(user.id)
+  // Get user routing information
+  const routingInfo = await getUserRoutingInfo(session.user.id)
   
-  if (!adminStatus.isSystemAdmin) {
-    redirect('/dashboard')
+  // Check if user can access admin panel
+  if (!routingInfo.isSystemAdmin) {
+    return (
+      <AccessDenied
+        title="Admin Access Required"
+        message="You need administrator privileges to access this area."
+        homeUrl={routingInfo.redirectTo}
+      />
+    )
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
   return (
-    <SidebarProvider>
-      <AppSidebar
-        currentEnvironment={null}
-        userProfile={profile}
-        showAdminBadge={true}
-        adminRole={adminStatus.role}
-      />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/admin">
-                    Admin Dashboard
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>System Administration</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-            <Badge variant="secondary" className="ml-2 flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              {adminStatus.role === 'grady_admin' ? 'Master Admin' : 'Staff Admin'}
-            </Badge>
+    <div className="flex h-screen bg-background">
+      {/* Admin Sidebar */}
+      <div className="w-64 border-r bg-muted/40">
+        <AdminSidebar userRole="admin" />
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex h-14 items-center gap-4 px-4">
+            <div className="text-sm font-medium">Admin Panel</div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
           {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </main>
+      </div>
+    </div>
   )
 }

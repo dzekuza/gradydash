@@ -33,13 +33,15 @@ interface ProductDetailDialogProps {
   location?: Location | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  environmentSlug?: string
 }
 
 export function ProductDetailDialog({ 
   product, 
   location, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  environmentSlug
 }: ProductDetailDialogProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -79,12 +81,14 @@ export function ProductDetailDialog({
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/demo/products/${product.id}/edit`}>
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-              </Link>
+              {environmentSlug && (
+                <Link href={`/${environmentSlug}/products/${product.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </DialogHeader>

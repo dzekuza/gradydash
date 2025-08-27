@@ -1,39 +1,41 @@
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/supabase/auth'
+import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
 import { createClient } from '@/lib/supabase/client-server'
-import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
+import { AccessDenied } from '@/components/auth/access-denied'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Building2, 
-  Users, 
-  Plus, 
-  Settings,
-  Eye,
-  Edit,
-  Trash2
-} from 'lucide-react'
-import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { CreateEnvironmentDialog } from '@/components/admin/create-environment-dialog'
+import { Building2, Users, Calendar, Mail, Shield } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 
 export default async function AdminEnvironmentsPage() {
-  const supabase = createClient()
+  const session = await getSession()
   
-  // Get the current user
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
-  if (userError || !user) {
+  if (!session?.user) {
     redirect('/login')
   }
 
-  // Check if user is a system admin
-  const adminStatus = await getUserAdminStatus(user.id)
+  const user = session.user
+  const adminClient = createClient()
+
+  // Get user routing information
+  const routingInfo = await getUserRoutingInfo(user.id)
   
-  if (!adminStatus.isSystemAdmin) {
-    redirect('/dashboard')
+  // Check if user can access admin panel
+  if (!routingInfo.isSystemAdmin) {
+    return (
+      <AccessDenied
+        title="Admin Access Required"
+        message="You need administrator privileges to access this page."
+        homeUrl={routingInfo.redirectTo}
+      />
+    )
   }
 
-  // Get all environments with member counts
-  const { data: environments, error: envError } = await supabase
+  // Get all environments with member counts using admin client
+  const { data: environments, error: envError } = await adminClient
     .from('environments')
     .select(`
       id,
@@ -68,10 +70,7 @@ export default async function AdminEnvironmentsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Environment
-          </Button>
+          <CreateEnvironmentDialog />
         </div>
       </div>
 
@@ -127,66 +126,65 @@ export default async function AdminEnvironmentsPage() {
         <CardHeader>
           <CardTitle>All Environments</CardTitle>
           <CardDescription>
-            Manage environments and their members
+            View and manage all environments in the system
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {environments?.map((environment) => (
-              <div key={environment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-lg">{environment.name}</h3>
-                    <Badge variant="outline">{environment.slug}</Badge>
+            {environments?.map((environment) => {
+              const memberCount = environment.memberships?.length || 0
+              const adminCount = environment.memberships?.filter(m => m.role === 'admin').length || 0
+              const managerCount = environment.memberships?.filter(m => m.role === 'store_manager').length || 0
+
+              return (
+                <div key={environment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <h3 className="font-semibold">{environment.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {environment.description || 'No description'}
+                        </p>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                          <span>Slug: {environment.slug}</span>
+                          <span>Created: {formatDistanceToNow(new Date(environment.created_at), { addSuffix: true })}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {environment.description || 'No description provided'}
-                  </p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {environment.memberships?.length || 0} members
-                    </span>
-                    <span>
-                      Created {new Date(environment.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/${environment.slug}`}>
-                    <Button variant="outline" size="sm">
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{memberCount}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Shield className="h-3 w-3" />
+                        <span>{adminCount} admin</span>
+                        <span>•</span>
+                        <span>{managerCount} manager</span>
+                      </div>
+                    </div>
+                    
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/${environment.slug}`}>
+                        View
+                      </a>
                     </Button>
-                  </Link>
-                  <Button variant="outline" size="sm">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+            
             {(!environments || environments.length === 0) && (
               <div className="text-center py-8">
                 <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-2 text-sm font-semibold">No environments</h3>
+                <h3 className="mt-2 text-sm font-semibold">No environments yet</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Get started by creating your first environment.
+                  Create your first environment to get started.
                 </p>
-                <div className="mt-6">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Environment
-                  </Button>
-                </div>
               </div>
             )}
           </div>

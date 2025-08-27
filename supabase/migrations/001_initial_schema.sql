@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create custom types
 CREATE TYPE ROLE AS
-  ENUM ('grady_admin', 'grady_staff', 'reseller_manager', 'reseller_staff');
+  ENUM ('admin', 'grady_staff', 'reseller_manager', 'reseller_staff');
   CREATE TYPE PRODUCT_STATUS AS
     ENUM ('taken', 'in_repair', 'selling', 'sold', 'returned', 'discarded');
  
@@ -76,7 +76,7 @@ CREATE TYPE ROLE AS
           MEMBERSHIPS M
         WHERE
           M.USER_ID = AUTH.UID()
-          AND M.ROLE IN ('grady_admin', 'grady_staff')
+          AND M.ROLE IN ('admin', 'grady_staff')
       ) );
  
     -- Environments: Members can read their environments, admins can read all
@@ -100,7 +100,7 @@ CREATE TYPE ROLE AS
           MEMBERSHIPS M
         WHERE
           M.USER_ID = AUTH.UID()
-          AND M.ROLE IN ('grady_admin', 'grady_staff')
+          AND M.ROLE IN ('admin', 'grady_staff')
       ) );
  
     -- Allow authenticated users to create environments
@@ -117,7 +117,7 @@ CREATE TYPE ROLE AS
     -- Allow admins to update any environment
     CREATE POLICY "Admins can update any environment" ON ENVIRONMENTS FOR
     UPDATE USING (
-      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff') )
+      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff') )
     );
  
     -- Memberships: Users can read memberships in their environments
@@ -165,7 +165,7 @@ CREATE TYPE ROLE AS
       WHERE
         M.ENVIRONMENT_ID = PRODUCTS.ENVIRONMENT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Locations: Members can read locations in their environments
@@ -190,7 +190,7 @@ CREATE TYPE ROLE AS
       WHERE
         M.ENVIRONMENT_ID = LOCATIONS.ENVIRONMENT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Product Status History: Members can read history in their environments
@@ -210,7 +210,7 @@ CREATE TYPE ROLE AS
  
     -- Staff and admins can create status history entries
     CREATE POLICY "Staff can create product status history" ON PRODUCT_STATUS_HISTORY FOR INSERT WITH CHECK (
-      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = PRODUCT_STATUS_HISTORY.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = PRODUCT_STATUS_HISTORY.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Product Comments: Members can read comments in their environments
@@ -242,7 +242,7 @@ CREATE TYPE ROLE AS
     -- Staff and admins can update any comment
     CREATE POLICY "Staff can update any comment" ON PRODUCT_COMMENTS FOR
     UPDATE USING (
-      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Users can delete their own comments
@@ -261,7 +261,7 @@ CREATE TYPE ROLE AS
       WHERE
         P.ID = PRODUCT_COMMENTS.PRODUCT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Product Images: Members can read images in their environments
@@ -300,7 +300,7 @@ CREATE TYPE ROLE AS
       WHERE
         P.ID = PRODUCT_IMAGES.PRODUCT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Sales: Members can read sales in their environments
@@ -320,13 +320,13 @@ CREATE TYPE ROLE AS
  
     -- Staff and admins can create sales records
     CREATE POLICY "Staff can create sales records" ON SALES FOR INSERT WITH CHECK (
-      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = SALES.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = SALES.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Staff and admins can update sales records
     CREATE POLICY "Staff can update sales records" ON SALES FOR
     UPDATE USING (
-      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = SALES.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM PRODUCTS P JOIN MEMBERSHIPS M ON M.ENVIRONMENT_ID = P.ENVIRONMENT_ID WHERE P.ID = SALES.PRODUCT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Staff and admins can delete sales records
@@ -341,7 +341,7 @@ CREATE TYPE ROLE AS
       WHERE
         P.ID = SALES.PRODUCT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Environment Invites: Members can read invites for their environments
@@ -371,13 +371,13 @@ CREATE TYPE ROLE AS
  
     -- Staff and admins can create invites
     CREATE POLICY "Staff can create environment invites" ON ENVIRONMENT_INVITES FOR INSERT WITH CHECK (
-      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.ENVIRONMENT_ID = ENVIRONMENT_INVITES.ENVIRONMENT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.ENVIRONMENT_ID = ENVIRONMENT_INVITES.ENVIRONMENT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Staff and admins can update invites
     CREATE POLICY "Staff can update environment invites" ON ENVIRONMENT_INVITES FOR
     UPDATE USING (
-      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.ENVIRONMENT_ID = ENVIRONMENT_INVITES.ENVIRONMENT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager') )
+      EXISTS ( SELECT 1 FROM MEMBERSHIPS M WHERE M.ENVIRONMENT_ID = ENVIRONMENT_INVITES.ENVIRONMENT_ID AND M.USER_ID = AUTH.UID() AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager') )
     );
  
     -- Staff and admins can delete invites
@@ -390,7 +390,7 @@ CREATE TYPE ROLE AS
       WHERE
         M.ENVIRONMENT_ID = ENVIRONMENT_INVITES.ENVIRONMENT_ID
         AND M.USER_ID = AUTH.UID()
-        AND M.ROLE IN ('grady_admin', 'grady_staff', 'reseller_manager')
+        AND M.ROLE IN ('admin', 'grady_staff', 'reseller_manager')
     ) );
  
     -- Create functions for automatic timestamps

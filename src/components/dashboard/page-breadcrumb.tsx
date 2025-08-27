@@ -29,10 +29,10 @@ export function PageBreadcrumb({ environmentName, environmentSlug }: PageBreadcr
       'locations': 'Locations',
       'members': 'Members',
       'analytics': 'Analytics',
-      'settings': 'Settings',
+      'settings': 'Environment Settings',
     }
     
-    return pageNames[lastSegment] || 'Dashboard'
+    return pageNames[lastSegment] || 'Environment Dashboard'
   }
   
   const pageName = getPageName()

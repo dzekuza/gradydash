@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import { Product } from "@/types/db"
-import { getCategoryById, getCategoryPath } from "@/lib/utils/categories"
 
 export const statuses = [
   {
@@ -67,21 +66,6 @@ export const columns: ColumnDef<Product>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "external_id",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[80px] truncate font-mono text-sm text-muted-foreground">
-            {row.getValue("external_id") || "N/A"}
-          </span>
-        </div>
-      )
-    },
-  },
-  {
     accessorKey: "title",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
@@ -91,21 +75,6 @@ export const columns: ColumnDef<Product>[] = [
         <div className="flex space-x-2">
           <span className="max-w-[300px] truncate font-medium">
             {row.getValue("title")}
-          </span>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "product_type",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Type" />
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[100px] truncate text-sm text-muted-foreground">
-            {row.getValue("product_type") || "N/A"}
           </span>
         </div>
       )
@@ -122,47 +91,6 @@ export const columns: ColumnDef<Product>[] = [
           <span className="max-w-[100px] truncate font-mono text-sm">
             {row.getValue("sku") || "N/A"}
           </span>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "categories",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Categories" />
-    ),
-    cell: ({ row }) => {
-      const categories = row.getValue("categories") as string[] | undefined
-      
-      const getCategoryDisplayName = (categoryId: string) => {
-        const category = getCategoryById(categoryId)
-        if (!category) return categoryId
-
-        const path = getCategoryPath(categoryId)
-        if (path.length <= 2) return category.name
-        
-        // For deeper categories, show the full path
-        return path.map(cat => cat.name).join(' > ')
-      }
-      
-      return (
-        <div className="flex space-x-2">
-          {categories && categories.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {categories.slice(0, 2).map((categoryId, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {getCategoryDisplayName(categoryId)}
-                </Badge>
-              ))}
-              {categories.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{categories.length - 2}
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">N/A</span>
-          )}
         </div>
       )
     },

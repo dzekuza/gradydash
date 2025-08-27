@@ -59,10 +59,10 @@ export function AppSidebar({
   let navMain: NavItem[] = []
   
   if (showAdminBadge && pathname.startsWith('/admin')) {
-    // Admin navigation
+    // System Admin navigation
     navMain = [
       {
-        title: "Admin Dashboard",
+        title: "System Dashboard",
         url: "/admin",
         icon: Shield,
         isActive: pathname === "/admin",
@@ -96,7 +96,7 @@ export function AppSidebar({
     // Environment-specific navigation
     navMain = [
       {
-        title: "Dashboard",
+        title: "Environment Dashboard",
         url: `/${currentEnvironment.slug}`,
         icon: BarChart3,
         isActive: pathname === `/${currentEnvironment.slug}`,
@@ -126,7 +126,7 @@ export function AppSidebar({
         isActive: pathname.startsWith(`/${currentEnvironment.slug}/analytics`),
       },
       {
-        title: "Settings",
+        title: "Environment Settings",
         url: `/${currentEnvironment.slug}/settings`,
         icon: Settings2,
         isActive: pathname.startsWith(`/${currentEnvironment.slug}/settings`),
@@ -134,16 +134,16 @@ export function AppSidebar({
     ]
   }
 
-  // Use real user profile data or fallback to demo data
+  // Use real user profile data
   const user = userProfile ? {
     name: userProfile.full_name || userProfile.email,
     email: userProfile.email,
     avatar: userProfile.avatar_url || "/avatars/default.jpg",
     role: showAdminBadge ? adminRole : undefined,
   } : {
-    name: "Demo User",
-    email: "demo@example.com",
-    avatar: "/avatars/demo.jpg",
+    name: "User",
+    email: "user@example.com",
+    avatar: "/avatars/default.jpg",
   }
 
   return (

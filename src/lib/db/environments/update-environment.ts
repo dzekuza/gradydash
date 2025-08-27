@@ -15,13 +15,8 @@ export async function updateEnvironment(environmentId: string, data: UpdateEnvir
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // If no user is authenticated, this might be a demo environment
     if (userError || !user) {
-      console.log('No authenticated user found - treating as demo environment')
-      
-      // In demo mode, we'll just return success without actually updating the database
-      // This allows the demo to work without requiring authentication
-      return { success: true }
+      throw new Error('Authentication required')
     }
 
     // Prepare the update data
@@ -42,9 +37,7 @@ export async function updateEnvironment(environmentId: string, data: UpdateEnvir
     }
 
     // Revalidate relevant paths
-    revalidatePath('/demo/settings')
     revalidatePath('/[env]/settings')
-    revalidatePath('/demo')
     revalidatePath('/[env]')
 
     return { success: true }

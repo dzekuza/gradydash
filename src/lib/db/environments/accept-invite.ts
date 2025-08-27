@@ -103,13 +103,6 @@ export async function acceptInvite(formData: FormData) {
       throw new Error('Failed to create membership')
     }
 
-    console.log('Invitation accepted successfully:', {
-      inviteId,
-      environmentId: invite.environment_id,
-      userId: user.id,
-      role: invite.role
-    })
-
     revalidatePath('/')
     return { 
       success: true, 

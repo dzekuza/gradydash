@@ -90,7 +90,7 @@ Only users with the following roles can import products:
 
 - `reseller_manager`
 - `grady_staff`
-- `grady_admin`
+- `admin`
 
 ## Error Handling
 

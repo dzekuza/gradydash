@@ -1,47 +1,56 @@
-import { Role, ProductStatus } from '@/types/db'
+import { Role } from '@/types/db'
 
-// Role hierarchy (higher = more permissions)
+// Role hierarchy (higher number = more permissions)
 const roleHierarchy: Record<Role, number> = {
-  grady_admin: 4,
-  grady_staff: 3,
-  reseller_manager: 2,
-  reseller_staff: 1,
+  admin: 2,
+  store_manager: 1
 }
 
-// Product status transition matrix
-const statusTransitions: Record<ProductStatus, ProductStatus[]> = {
-  taken: ['in_repair', 'selling', 'discarded'],
-  in_repair: ['selling', 'discarded', 'returned'],
-  selling: ['sold', 'returned'],
-  sold: [], // terminal state
-  returned: [], // terminal state
-  discarded: [], // terminal state
-}
-
+// Check if user has a specific role or higher
 export function hasRole(userRole: Role, requiredRole: Role): boolean {
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
 }
 
-export function canTransitionStatus(fromStatus: ProductStatus, toStatus: ProductStatus): boolean {
-  return statusTransitions[fromStatus].includes(toStatus)
-}
-
+// Check if user can manage products
 export function canManageProducts(userRole: Role): boolean {
-  return hasRole(userRole, 'grady_staff')
+  return hasRole(userRole, 'store_manager')
 }
 
-export function canManageUsers(userRole: Role): boolean {
-  return hasRole(userRole, 'reseller_manager')
+// Check if user can invite members
+export function canInviteMembers(userRole: Role): boolean {
+  return hasRole(userRole, 'store_manager')
 }
 
-export function canViewAnalytics(userRole: Role): boolean {
-  return hasRole(userRole, 'reseller_staff')
+// Check if user can delete products
+export function canDeleteProducts(userRole: Role): boolean {
+  return hasRole(userRole, 'store_manager')
 }
 
-export function canManageEnvironments(userRole: Role): boolean {
-  return hasRole(userRole, 'grady_admin')
+// Check if user is admin
+export function isAdmin(userRole: Role): boolean {
+  return hasRole(userRole, 'admin')
 }
 
-export function getAvailableStatusTransitions(currentStatus: ProductStatus): ProductStatus[] {
-  return statusTransitions[currentStatus]
+// Get role display name
+export function getRoleDisplayName(role: Role): string {
+  switch (role) {
+    case 'admin':
+      return 'Admin'
+    case 'store_manager':
+      return 'Store Manager'
+    default:
+      return role
+  }
+}
+
+// Get role description
+export function getRoleDescription(role: Role): string {
+  switch (role) {
+    case 'admin':
+      return 'Full system access and management capabilities'
+    case 'store_manager':
+      return 'Manage store operations, products, and team members'
+    default:
+      return ''
+  }
 }

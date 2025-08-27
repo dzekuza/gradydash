@@ -27,9 +27,10 @@ interface Location {
 
 interface LocationCardProps {
   location: Location
+  environmentId: string
 }
 
-export function LocationCard({ location }: LocationCardProps) {
+export function LocationCard({ location, environmentId }: LocationCardProps) {
   const [productCount, setProductCount] = React.useState<number>(0)
 
   React.useEffect(() => {
@@ -66,7 +67,7 @@ export function LocationCard({ location }: LocationCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
                 <LocationDialog 
-                  environmentId="demo" 
+                  environmentId={environmentId} 
                   location={location}
                   trigger={<span>Edit Location</span>}
                 />

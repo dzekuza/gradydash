@@ -44,6 +44,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    - `supabase/migrations/001_initial_schema.sql`
    - `supabase/migrations/002_add_system_admin_support.sql`
    - `supabase/migrations/003_fix_environment_access_policies.sql`
+   - `supabase/migrations/004_fix_rls_policies.sql`
+   - `supabase/migrations/005_add_product_import_fields.sql`
+   - `supabase/migrations/006_add_location_contact_fields.sql`
 
 **Option B: Using Supabase CLI**
 
@@ -58,18 +61,25 @@ supabase link --project-ref your_project_ref
 supabase db push
 ```
 
-### 4. Start Development Server
+### 4. Create Admin User
+
+Run the admin user creation script:
+
+```bash
+node scripts/create-admin-user.js
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-### 5. Test the Application
+### 6. Test the Application
 
 - **Login**: http://localhost:3000/login
-- **Demo Dashboard**: http://localhost:3000/demo
-- **Create New Environment**: Use the "Add Environment" button in the
-  environment switcher
+- **Admin Dashboard**: http://localhost:3000/admin
+- **Create New Environment**: Use the admin dashboard to create environments
 
 ## Project Structure
 
@@ -78,8 +88,8 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Authentication routes
 │   ├── (dashboard)/       # Dashboard routes
-│   │   ├── [env]/         # Environment-specific routes
-│   │   └── demo/          # Demo environment
+│   │   └── [env]/         # Environment-specific routes
+│   ├── admin/             # Admin routes
 │   └── layout.tsx         # Root layout
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
@@ -146,7 +156,7 @@ Categories use kebab-case IDs (e.g., `mobile-phones-main`, `laptops-main`). See
 
 ### Roles
 
-- `grady_admin` - Full system access
+- `admin` - Full system access
 - `grady_staff` - System-wide staff access
 - `reseller_manager` - Environment manager
 - `reseller_staff` - Environment staff
@@ -159,6 +169,22 @@ Categories use kebab-case IDs (e.g., `mobile-phones-main`, `laptops-main`). See
 - `sold` - Product sold
 - `returned` - Product returned
 - `discarded` - Product discarded
+
+## Environment Management
+
+### Creating Environments
+
+1. **Admin Access**: Only system admins can create new environments
+2. **Environment Setup**: Each environment is isolated with its own data
+3. **User Management**: Invite users to environments with specific roles
+4. **Data Isolation**: All data is scoped to the environment level
+
+### Environment Access
+
+- Users must be authenticated to access any environment
+- Users can only access environments they have been invited to
+- Environment creators automatically get access to their environments
+- System admins have access to all environments
 
 ## Troubleshooting
 
@@ -186,6 +212,8 @@ If you get a 404 error when trying to access a newly created environment:
    correct
 2. **RLS Policy Errors**: Ensure all migrations have been applied
 3. **TypeScript Errors**: Run `npm run build` to check for type issues
+4. **No Environments**: If no environments exist, users will be redirected to
+   the admin dashboard to create one
 
 ## Development
 

@@ -84,7 +84,7 @@ async function verifyAdminSetup() {
         .from('memberships')
         .insert({
           user_id: adminUser.id,
-          role: 'grady_admin',
+          role: 'admin',
           environment_id: null // null for system-wide admin access
         })
         .select()
@@ -118,7 +118,7 @@ async function verifyAdminSetup() {
     console.log('\n📋 Admin User Details:')
     console.log('   Email: admin@grady.app')
     console.log('   Password: 7ftGiMiy.')
-    console.log('   Role: grady_admin')
+    console.log('   Role: admin')
     console.log('   Access: System-wide admin')
     console.log('\n🔗 Access URLs:')
     console.log('   Login: http://localhost:3000/login')

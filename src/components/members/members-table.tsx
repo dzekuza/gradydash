@@ -47,11 +47,9 @@ interface MembersTableProps {
 export function MembersTable({ members, invites }: MembersTableProps) {
   const getRoleBadge = (role: string) => {
     const roleColors = {
-      grady_admin: 'bg-red-100 text-red-800',
-      grady_staff: 'bg-orange-100 text-orange-800',
-      reseller_manager: 'bg-blue-100 text-blue-800',
-      reseller_staff: 'bg-gray-100 text-gray-800',
-    }
+      admin: 'bg-red-100 text-red-800',
+      store_manager: 'bg-blue-100 text-blue-800',
+    } as const
     
     return (
       <Badge className={roleColors[role as keyof typeof roleColors] || 'bg-gray-100 text-gray-800'}>

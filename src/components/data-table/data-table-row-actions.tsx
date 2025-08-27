@@ -29,14 +29,15 @@ import {
 } from "@/components/ui/dialog"
 import { Product } from "@/types/db"
 import { statuses } from "./data"
-import { deleteProduct } from "@/lib/db/products/delete-product"
+import { deleteProductAction } from "@/lib/db/products/delete-product-action"
 import { useToast } from "@/hooks/use-toast"
 
 interface DataTableRowActionsProps {
   row: Row<Product>
+  environmentSlug?: string
 }
 
-export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, environmentSlug }: DataTableRowActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const product = row.original
@@ -44,21 +45,35 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { toast } = useToast()
 
   const handleEdit = () => {
-    router.push(`/demo/products/${product.id}/edit`)
+    if (environmentSlug) {
+      router.push(`/${environmentSlug}/products/${product.id}/edit`)
+    }
   }
 
   const handleView = () => {
-    router.push(`/demo/products/${product.id}`)
+    if (environmentSlug) {
+      router.push(`/${environmentSlug}/products/${product.id}`)
+    }
   }
 
   const handleDelete = async () => {
+    if (!environmentSlug) {
+      toast({
+        title: "Error",
+        description: "Environment not found",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsDeleting(true)
     try {
-      await deleteProduct(product.id)
+      await deleteProductAction(product.id, environmentSlug)
       toast({
         title: "Product deleted",
         description: "The product has been successfully deleted.",
       })
+      router.refresh()
     } catch (error) {
       toast({
         title: "Error",

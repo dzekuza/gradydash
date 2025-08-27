@@ -18,7 +18,7 @@ async function LocationsList({ environmentId }: { environmentId: string }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {locations.map((location) => (
-        <LocationCard key={location.id} location={location} />
+        <LocationCard key={location.id} location={location} environmentId={environmentId} />
       ))}
       
       {locations.length === 0 && (

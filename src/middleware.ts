@@ -32,72 +32,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Allow access to demo environment without authentication
-  if (request.nextUrl.pathname.startsWith('/demo')) {
+  const { pathname } = request.nextUrl
+
+  // Always allow access to public routes
+  if (['/login', '/register', '/auth/callback'].includes(pathname)) {
     return supabaseResponse
   }
 
-  // Allow access to admin routes for authenticated users
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  // Require authentication for admin routes
+  if (pathname.startsWith('/admin')) {
     if (!user) {
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/login'
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(new URL('/login', request.url))
     }
     return supabaseResponse
   }
 
-  // If user is not signed in and the current path is not /login or /register,
-  // redirect the user to /login
-  if (!user && !['/login', '/register'].includes(request.nextUrl.pathname)) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // If user is signed in and the current path is /login or /register,
-  // redirect the user to /dashboard
-  if (user && ['/login', '/register'].includes(request.nextUrl.pathname)) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/dashboard'
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // If user is signed in and accessing /dashboard directly, redirect to their first environment
-  if (user && request.nextUrl.pathname === '/dashboard') {
-    // Get user's environments and redirect to the first one
-    const { data: memberships } = await supabase
-      .from('memberships')
-      .select('environment_id')
-      .eq('user_id', user.id)
-      .limit(1)
-
-    if (memberships && memberships.length > 0) {
-      const { data: environment } = await supabase
-        .from('environments')
-        .select('slug')
-        .eq('id', memberships[0].environment_id)
-        .single()
-
-      if (environment) {
-        const redirectUrl = request.nextUrl.clone()
-        redirectUrl.pathname = `/${environment.slug}`
-        return NextResponse.redirect(redirectUrl)
-      }
-    }
-
-    // If no environments found, redirect to demo
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/demo'
-    return NextResponse.redirect(redirectUrl)
+  // Require authentication for all other routes
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return supabaseResponse

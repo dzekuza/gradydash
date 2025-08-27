@@ -1,4 +1,4 @@
-export type Role = 'grady_admin' | 'grady_staff' | 'reseller_manager' | 'reseller_staff'
+export type Role = 'admin' | 'store_manager'
 
 export type ProductStatus = 'taken' | 'in_repair' | 'selling' | 'sold' | 'returned' | 'discarded'
 

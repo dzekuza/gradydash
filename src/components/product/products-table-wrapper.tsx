@@ -5,13 +5,14 @@ import { DataTable } from '@/components/data-table/data-table'
 import { columns } from '@/components/data-table/data'
 import { Product, Location } from '@/types/db'
 import { ProductDetailDialog } from '@/components/product/product-detail-dialog'
-import { handleBulkAction } from '@/lib/db/products/bulk-actions'
+import { bulkUpdateProductStatus, bulkDeleteProducts } from '@/lib/db/products/bulk-actions'
 
 interface ProductsTableWrapperProps {
   products: Product[]
+  environmentSlug: string
 }
 
-export function ProductsTableWrapper({ products }: ProductsTableWrapperProps) {
+export function ProductsTableWrapper({ products, environmentSlug }: ProductsTableWrapperProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [productLocation, setProductLocation] = useState<Location | null>(null)
@@ -39,7 +40,13 @@ export function ProductsTableWrapper({ products }: ProductsTableWrapperProps) {
 
   const handleBulkActionWrapper = async (action: string, data: any) => {
     try {
-      await handleBulkAction(action, data)
+      if (action === 'updateStatus' && data.productIds && data.status) {
+        await bulkUpdateProductStatus(data.productIds, data.status, environmentSlug)
+      } else if (action === 'delete' && data.productIds) {
+        await bulkDeleteProducts(data.productIds, environmentSlug)
+      } else {
+        throw new Error(`Unknown bulk action: ${action}`)
+      }
     } catch (error) {
       console.error('Bulk action error:', error)
       throw error

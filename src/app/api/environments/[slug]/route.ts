@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { slug: string } }
