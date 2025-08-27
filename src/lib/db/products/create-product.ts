@@ -14,12 +14,19 @@ export async function createProduct(formData: FormData) {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
+    // Check if we're in demo mode
+    const environmentId = formData.get('environment_id') as string || 'demo'
+    const isDemoMode = environmentId === 'demo' || !user
+    
     if (userError) {
       console.error('User authentication error:', userError)
-      throw new Error('Authentication error: ' + userError.message)
+      // In demo mode, we'll continue without authentication
+      if (!isDemoMode) {
+        throw new Error('Authentication error: ' + userError.message)
+      }
     }
     
-    if (!user) {
+    if (!user && !isDemoMode) {
       throw new Error('Authentication required')
     }
 
@@ -53,7 +60,6 @@ export async function createProduct(formData: FormData) {
     const validatedData = createProductSchema.parse(rawData)
 
     // Get environment ID from form or use demo
-    const environmentId = formData.get('environment_id') as string || 'demo'
     const actualEnvironmentId = environmentId === 'demo' 
       ? await getDemoEnvironmentId() 
       : environmentId
@@ -105,7 +111,7 @@ export async function createProduct(formData: FormData) {
     throw new Error('An unexpected error occurred while creating the product')
   }
 
-  // Redirect outside of try/catch to avoid swallowing Next.js redirect error
+  // Redirect to the product detail page
   if (redirectTo) {
     redirect(redirectTo)
   }

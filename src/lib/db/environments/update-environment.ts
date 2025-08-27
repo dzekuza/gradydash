@@ -3,15 +3,12 @@
 import { createClient } from '@/lib/supabase/client-server'
 import { revalidatePath } from 'next/cache'
 
-export interface UpdateProfileData {
-  first_name?: string
-  last_name?: string
-  full_name?: string
-  bio?: string
-  avatar_url?: string
+export interface UpdateEnvironmentData {
+  name?: string
+  description?: string
 }
 
-export async function updateProfile(data: UpdateProfileData) {
+export async function updateEnvironment(environmentId: string, data: UpdateEnvironmentData) {
   try {
     const supabase = createClient()
     
@@ -20,8 +17,6 @@ export async function updateProfile(data: UpdateProfileData) {
     
     // If no user is authenticated, this might be a demo environment
     if (userError || !user) {
-      // Check if we're in demo mode by looking at the request headers or environment
-      // For now, we'll assume if there's no user, it's a demo environment
       console.log('No authenticated user found - treating as demo environment')
       
       // In demo mode, we'll just return success without actually updating the database
@@ -32,30 +27,29 @@ export async function updateProfile(data: UpdateProfileData) {
     // Prepare the update data
     const updateData: any = {}
     
-    if (data.first_name) updateData.first_name = data.first_name
-    if (data.last_name) updateData.last_name = data.last_name
-    if (data.full_name) updateData.full_name = data.full_name
-    if (data.bio) updateData.bio = data.bio
-    if (data.avatar_url) updateData.avatar_url = data.avatar_url
+    if (data.name) updateData.name = data.name.trim()
+    if (data.description) updateData.description = data.description.trim()
 
-    // Update the profile
+    // Update the environment
     const { error } = await supabase
-      .from('profiles')
+      .from('environments')
       .update(updateData)
-      .eq('id', user.id)
+      .eq('id', environmentId)
 
     if (error) {
-      console.error('Error updating profile:', error)
-      throw new Error('Failed to update profile')
+      console.error('Error updating environment:', error)
+      throw new Error('Failed to update environment')
     }
 
-    // Revalidate the settings page
+    // Revalidate relevant paths
     revalidatePath('/demo/settings')
     revalidatePath('/[env]/settings')
+    revalidatePath('/demo')
+    revalidatePath('/[env]')
 
     return { success: true }
   } catch (error) {
-    console.error('Profile update error:', error)
+    console.error('Environment update error:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

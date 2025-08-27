@@ -10,7 +10,19 @@ export async function getCurrentProfile() {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
-      return null
+      // Return a demo profile for demo environments
+      console.log('No authenticated user found - returning demo profile')
+      return {
+        id: 'demo-user-id',
+        first_name: 'Demo',
+        last_name: 'User',
+        full_name: 'Demo User',
+        email: 'demo@grady.com',
+        bio: 'Demo user for testing the Grady ReSellOps dashboard.',
+        avatar_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
     }
 
     // Get the user's profile

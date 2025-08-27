@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client-server'
+import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 import { AppSidebar } from '@/components/app-sidebar'
-import { EnvironmentSwitcher } from '@/components/dashboard/environment-switcher'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -10,38 +12,44 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { getCurrentUserProfile } from '@/lib/supabase/auth'
-import { getOrCreateDemoEnvironment } from '@/lib/db/environments/get-demo-environment'
-import { getUserEnvironments } from '@/lib/db/environments/get-user-environments'
+import { Badge } from '@/components/ui/badge'
+import { Shield } from 'lucide-react'
 
-export default async function DemoLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Get real user profile data
-  const userProfile = await getCurrentUserProfile()
+  const supabase = createClient()
   
-  // Get the real demo environment from database
-  const demoEnvironment = await getOrCreateDemoEnvironment()
+  // Get the current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    redirect('/login')
+  }
 
-  // Get all environments the user has access to
-  const userEnvironments = await getUserEnvironments()
+  // Check if user is a system admin
+  const adminStatus = await getUserAdminStatus(user.id)
   
-  // Use user environments if available, otherwise fall back to just demo environment
-  const environments = userEnvironments.length > 0 ? userEnvironments : [demoEnvironment]
+  if (!adminStatus.isSystemAdmin) {
+    redirect('/dashboard')
+  }
+
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
   return (
     <SidebarProvider>
       <AppSidebar
-        environmentSwitcher={
-          <EnvironmentSwitcher
-            environments={environments}
-            currentEnvironment={demoEnvironment}
-          />
-        }
-        currentEnvironment={demoEnvironment}
-        userProfile={userProfile}
+        currentEnvironment={null}
+        userProfile={profile}
+        showAdminBadge={true}
+        adminRole={adminStatus.role}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -51,16 +59,20 @@ export default async function DemoLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/demo">
-                    {demoEnvironment.name}
+                  <BreadcrumbLink href="/admin">
+                    Admin Dashboard
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                  <BreadcrumbPage>System Administration</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+            <Badge variant="secondary" className="ml-2 flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              {adminStatus.role === 'grady_admin' ? 'Master Admin' : 'Staff Admin'}
+            </Badge>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

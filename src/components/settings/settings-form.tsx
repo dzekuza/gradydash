@@ -11,8 +11,6 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { updateProfile, UpdateProfileData } from '@/lib/db/profiles/update-profile'
-import { updateEnvironment, UpdateEnvironmentData } from '@/lib/db/environments/update-environment'
-import { getCurrentProfile } from '@/lib/db/profiles/get-profile'
 import { 
   User, 
   Building2, 
@@ -27,24 +25,21 @@ import {
   Loader2
 } from 'lucide-react'
 
-interface EnvironmentSettingsPageProps {
-  params: {
-    env: string
-  }
+interface SettingsFormProps {
+  initialProfile?: any
 }
 
-export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsPageProps) {
-  const [profile, setProfile] = useState<any>(null)
-  const [environment, setEnvironment] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export function SettingsForm({ initialProfile }: SettingsFormProps) {
+  const [profile, setProfile] = useState<any>(initialProfile)
+  const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    bio: '',
-    envName: '',
-    envDescription: '',
+    firstName: initialProfile?.first_name || 'Demo',
+    lastName: initialProfile?.last_name || 'User',
+    email: initialProfile?.email || 'demo@grady.com',
+    bio: initialProfile?.bio || 'Demo user for testing the Grady ReSellOps dashboard.',
+    envName: 'Demo Environment',
+    envDescription: 'A demo environment for testing product management features.',
     autoRefresh: true,
     showAnalytics: true,
     emailNotifications: true,
@@ -57,50 +52,6 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
   })
   const { toast } = useToast()
 
-  // Load profile and environment data on component mount
-  useEffect(() => {
-    async function loadData() {
-      try {
-        // Load profile data
-        const profileData = await getCurrentProfile()
-        if (profileData) {
-          setProfile(profileData)
-          setFormData(prev => ({
-            ...prev,
-            firstName: profileData.first_name || '',
-            lastName: profileData.last_name || '',
-            email: profileData.email || '',
-            bio: profileData.bio || ''
-          }))
-        }
-
-        // Load environment data from the current environment
-        // We'll get this from the URL params and fetch the environment data
-        const response = await fetch(`/api/environments/${params.env}`)
-        if (response.ok) {
-          const envData = await response.json()
-          setEnvironment(envData)
-          setFormData(prev => ({
-            ...prev,
-            envName: envData.name || '',
-            envDescription: envData.description || ''
-          }))
-        }
-      } catch (error) {
-        console.error('Error loading data:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load settings data.',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [params.env, toast])
-
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -108,42 +59,27 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
     }))
   }
 
-  const handleSaveAll = async () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true)
     try {
-      // Save profile data
-      const profileUpdateData: UpdateProfileData = {
+      const updateData: UpdateProfileData = {
         first_name: formData.firstName,
         last_name: formData.lastName,
         full_name: `${formData.firstName} ${formData.lastName}`,
         bio: formData.bio
       }
 
-      const profileResult = await updateProfile(profileUpdateData)
+      const result = await updateProfile(updateData)
       
-      // Save environment data
-      let environmentResult: { success: boolean; error?: string } = { success: true }
-      if (environment?.id) {
-        const envUpdateData: UpdateEnvironmentData = {
-          name: formData.envName,
-          description: formData.envDescription
-        }
-        environmentResult = await updateEnvironment(environment.id, envUpdateData)
-      }
-      
-      if (profileResult.success && environmentResult.success) {
+      if (result.success) {
         toast({
-          title: 'Settings Updated',
-          description: 'Your profile and environment settings have been successfully updated.',
+          title: 'Profile Updated',
+          description: 'Your profile has been successfully updated.',
         })
       } else {
-        const errors = []
-        if (!profileResult.success) errors.push('Profile: ' + profileResult.error)
-        if (!environmentResult.success) errors.push('Environment: ' + environmentResult.error)
-        
         toast({
           title: 'Error',
-          description: 'Failed to update some settings: ' + errors.join(', '),
+          description: result.error || 'Failed to update profile.',
           variant: 'destructive',
         })
       }
@@ -159,10 +95,13 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
   }
 
   const handleResetDefaults = () => {
-    setFormData(prev => ({
-      ...prev,
-      envName: environment?.name || '',
-      envDescription: environment?.description || '',
+    setFormData({
+      firstName: 'Demo',
+      lastName: 'User',
+      email: 'demo@grady.com',
+      bio: 'Demo user for testing the Grady ReSellOps dashboard.',
+      envName: 'Demo Environment',
+      envDescription: 'A demo environment for testing product management features.',
       autoRefresh: true,
       showAnalytics: true,
       emailNotifications: true,
@@ -172,22 +111,12 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
       darkMode: false,
       compactView: false,
       showAvatars: true
-    }))
+    })
     
     toast({
       title: 'Settings Reset',
       description: 'Settings have been reset to default values.',
     })
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -196,7 +125,7 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">
-            Manage your environment settings and preferences.
+            Manage your demo environment settings and preferences.
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -204,7 +133,7 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
             <RefreshCw className="mr-2 h-4 w-4" />
             Reset to Defaults
           </Button>
-          <Button size="sm" onClick={handleSaveAll} disabled={isSaving}>
+          <Button size="sm" onClick={handleSaveProfile} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -279,7 +208,7 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
               Environment Settings
             </CardTitle>
             <CardDescription>
-              Configure your environment preferences and behavior.
+              Configure your demo environment preferences and behavior.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -410,7 +339,7 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
                   Add an extra layer of security to your account
                 </p>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              <Badge variant="secondary">Demo Mode</Badge>
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -425,9 +354,9 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
             <div className="space-y-2">
               <Label>Current Role</Label>
               <div className="flex items-center gap-2">
-                <Badge variant="default">Environment User</Badge>
+                <Badge variant="default">Demo User</Badge>
                 <span className="text-sm text-muted-foreground">
-                  Manage your environment settings
+                  Limited permissions for demo purposes
                 </span>
               </div>
             </div>
@@ -504,15 +433,15 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
               </Button>
               <Button variant="outline" className="w-full">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Reset Data
+                Reset Demo Data
               </Button>
             </div>
             <div className="space-y-2">
-              <Label>Environment Status</Label>
+              <Label>Demo Data Status</Label>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Active</Badge>
                 <span className="text-sm text-muted-foreground">
-                  Environment is running normally
+                  2 products, 1 location, 1 member
                 </span>
               </div>
             </div>
@@ -534,15 +463,16 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
             <div className="space-y-2">
               <Label>Current Members</Label>
               <div className="flex items-center gap-2">
-                <Badge variant="outline">You</Badge>
+                <Badge variant="outline">Demo User</Badge>
                 <span className="text-sm text-muted-foreground">
-                  Manage team members from the Members page
+                  You are the only member in demo mode
                 </span>
               </div>
             </div>
-            <Button variant="outline">
+            <Button variant="outline" disabled>
               <Users className="mr-2 h-4 w-4" />
-              Manage Team Members
+              Invite Team Member
+              <Badge variant="secondary" className="ml-2">Demo Mode</Badge>
             </Button>
           </CardContent>
         </Card>

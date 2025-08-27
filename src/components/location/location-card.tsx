@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MapPin, Edit, Trash2, Package } from 'lucide-react'
+import { MapPin, Edit, Trash2, Package, User, Mail, Phone } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +18,9 @@ interface Location {
   name: string
   description?: string
   address?: string
+  contact_person_name?: string
+  contact_email?: string
+  contact_phone?: string
   created_at: string
   updated_at: string
 }
@@ -83,6 +86,31 @@ export function LocationCard({ location }: LocationCardProps) {
         {location.address && (
           <div className="text-sm text-muted-foreground">
             <strong>Address:</strong> {location.address}
+          </div>
+        )}
+        
+        {/* Contact Information */}
+        {(location.contact_person_name || location.contact_email || location.contact_phone) && (
+          <div className="space-y-2 pt-2 border-t">
+            <div className="text-sm font-medium text-muted-foreground">Contact Information</div>
+            {location.contact_person_name && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <User className="h-3 w-3" />
+                <span>{location.contact_person_name}</span>
+              </div>
+            )}
+            {location.contact_email && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Mail className="h-3 w-3" />
+                <span>{location.contact_email}</span>
+              </div>
+            )}
+            {location.contact_phone && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Phone className="h-3 w-3" />
+                <span>{location.contact_phone}</span>
+              </div>
+            )}
           </div>
         )}
         

@@ -19,9 +19,10 @@ import { Plus } from 'lucide-react'
 interface ProductDialogProps {
   locations: Location[]
   environmentId: string
+  environments?: Array<{ id: string; name: string; slug: string; description?: string }>
 }
 
-export function ProductDialog({ locations, environmentId }: ProductDialogProps) {
+export function ProductDialog({ locations, environmentId, environments }: ProductDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -50,6 +51,7 @@ export function ProductDialog({ locations, environmentId }: ProductDialogProps) 
         <ProductForm
           locations={locations}
           environmentId={environmentId}
+          environments={environments}
           onSuccess={handleSuccess}
           isLoading={isLoading}
           setIsLoading={setIsLoading}

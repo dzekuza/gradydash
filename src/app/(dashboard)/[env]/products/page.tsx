@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client-server'
 import { getProducts } from '@/lib/db/products/get-products'
 import { getLocations } from '@/lib/db/locations/get-locations'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
+import { getUserEnvironments } from '@/lib/db/environments/get-user-environments'
 import { ImportProductsDialog } from '@/components/product/import-products-dialog'
 import { ProductDialog } from '@/components/product/product-dialog'
 import { DataTable } from '@/components/data-table/data-table'
@@ -46,10 +47,11 @@ async function ProductsContent({ environmentSlug }: { environmentSlug: string })
   // Check if user can manage products
   const canManageProducts = ['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)
 
-  // Fetch products and locations for the environment
-  const [products, locations] = await Promise.all([
+  // Fetch products, locations, and environments for the environment
+  const [products, locations, environments] = await Promise.all([
     getProducts(environment.id),
-    getLocations(environment.id)
+    getLocations(environment.id),
+    getUserEnvironments()
   ])
 
   return (
@@ -59,7 +61,7 @@ async function ProductsContent({ environmentSlug }: { environmentSlug: string })
         {canManageProducts && (
           <div className="flex items-center space-x-2">
             <ImportProductsDialog environmentId={environment.id} />
-            <ProductDialog locations={locations} environmentId={environment.id} />
+            <ProductDialog locations={locations} environmentId={environment.id} environments={environments} />
           </div>
         )}
       </div>

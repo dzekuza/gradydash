@@ -17,6 +17,7 @@ interface ProductFormProps {
   product?: Product
   locations: Location[]
   environmentId?: string
+  environments?: Array<{ id: string; name: string; slug: string; description?: string }>
   onSuccess?: () => void
   isLoading?: boolean
   setIsLoading?: (loading: boolean) => void
@@ -35,6 +36,7 @@ export function ProductForm({
   product, 
   locations, 
   environmentId, 
+  environments, 
   onSuccess, 
   isLoading: externalIsLoading, 
   setIsLoading: externalSetIsLoading 
@@ -43,6 +45,7 @@ export function ProductForm({
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<ProductStatus>(product?.status || 'taken')
   const [locationId, setLocationId] = useState<string>(product?.location_id || 'none')
+  const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>(environmentId || '')
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     product?.categories || []
   )
@@ -59,8 +62,8 @@ export function ProductForm({
     setError(null)
 
     try {
-      if (environmentId) {
-        formData.append('environment_id', environmentId)
+      if (selectedEnvironmentId) {
+        formData.append('environment_id', selectedEnvironmentId)
       }
 
       // Add the select values to form data
@@ -121,6 +124,24 @@ export function ProductForm({
               />
             </div>
           </div>
+
+          {environments && environments.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="environment_id">Environment *</Label>
+              <Select value={selectedEnvironmentId} onValueChange={setSelectedEnvironmentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select environment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {environments.map((env) => (
+                    <SelectItem key={env.id} value={env.id}>
+                      {env.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

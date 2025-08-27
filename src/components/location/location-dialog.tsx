@@ -25,6 +25,9 @@ interface LocationDialogProps {
     name: string
     description?: string
     address?: string
+    contact_person_name?: string
+    contact_email?: string
+    contact_phone?: string
   }
   trigger?: React.ReactNode
 }
@@ -95,7 +98,7 @@ export function LocationDialog({ environmentId, location, trigger }: LocationDia
                 placeholder="Brief description of the location"
                 defaultValue={location?.description}
                 disabled={isCreating}
-                rows={3}
+                rows={2}
               />
             </div>
             <div className="grid gap-2">
@@ -108,6 +111,46 @@ export function LocationDialog({ environmentId, location, trigger }: LocationDia
                 disabled={isCreating}
                 rows={2}
               />
+            </div>
+            
+            {/* Contact Information Section */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Contact Information</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="contact_person_name" className="text-xs">Contact Person</Label>
+                  <Input
+                    id="contact_person_name"
+                    name="contact_person_name"
+                    type="text"
+                    placeholder="Full name"
+                    defaultValue={location?.contact_person_name}
+                    disabled={isCreating}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="contact_email" className="text-xs">Email</Label>
+                  <Input
+                    id="contact_email"
+                    name="contact_email"
+                    type="email"
+                    placeholder="contact@example.com"
+                    defaultValue={location?.contact_email}
+                    disabled={isCreating}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact_phone" className="text-xs">Phone</Label>
+                <Input
+                  id="contact_phone"
+                  name="contact_phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  defaultValue={location?.contact_phone}
+                  disabled={isCreating}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

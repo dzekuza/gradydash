@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getProducts } from '@/lib/db/products/get-products'
 import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
 import { getLocations } from '@/lib/db/locations/get-locations'
+import { getUserEnvironments } from '@/lib/db/environments/get-user-environments'
 import { ImportProductsDialog } from '@/components/product/import-products-dialog'
 import { ProductDialog } from '@/components/product/product-dialog'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
@@ -13,10 +14,11 @@ export default async function DemoProductsPage() {
   // Get the demo environment ID
   const demoEnvironmentId = await getDemoEnvironmentId()
   
-  // Fetch products and locations for the demo environment
-  const [products, locations] = await Promise.all([
+  // Fetch products, locations, and environments for the demo environment
+  const [products, locations, environments] = await Promise.all([
     getProducts(demoEnvironmentId),
-    getLocations(demoEnvironmentId)
+    getLocations(demoEnvironmentId),
+    getUserEnvironments()
   ])
 
   return (
@@ -25,7 +27,7 @@ export default async function DemoProductsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
         <div className="flex items-center space-x-2">
           <ImportProductsDialog environmentId={demoEnvironmentId} />
-          <ProductDialog locations={locations} environmentId={demoEnvironmentId} />
+          <ProductDialog locations={locations} environmentId={demoEnvironmentId} environments={environments} />
         </div>
       </div>
       

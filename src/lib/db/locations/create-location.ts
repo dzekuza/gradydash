@@ -10,6 +10,9 @@ export async function createLocation(formData: FormData) {
   const name = formData.get('name') as string
   const description = formData.get('description') as string
   const address = formData.get('address') as string
+  const contactPersonName = formData.get('contact_person_name') as string
+  const contactEmail = formData.get('contact_email') as string
+  const contactPhone = formData.get('contact_phone') as string
   const environmentId = formData.get('environmentId') as string
 
   if (!name || !environmentId) {
@@ -20,58 +23,42 @@ export async function createLocation(formData: FormData) {
     // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
+    // Check if we're in demo mode
+    const isDemoMode = environmentId === 'demo' || !user
+    
     if (userError) {
       console.error('User authentication error:', userError)
-      throw new Error('Authentication error: ' + userError.message)
+      // In demo mode, we'll continue without authentication
+      if (!isDemoMode) {
+        throw new Error('Authentication error: ' + userError.message)
+      }
     }
     
-    if (!user) {
-      // For demo purposes, we'll create the location without a specific user
-      console.log('No authenticated user found, creating location with demo user')
-      
-      const { data: location, error: locError } = await supabase
-        .from('locations')
-        .insert({
-          name,
-          description,
-          address,
-          environment_id: environmentId
-        })
-        .select()
+    if (!user && !isDemoMode) {
+      throw new Error('Authentication required')
+    }
+
+    console.log('Creating location with:', { name, description, address, environmentId, isDemoMode })
+
+    // In demo mode, skip membership checks
+    if (!isDemoMode) {
+      // Check if user has access to this environment
+      const { data: membership, error: membershipError } = await supabase
+        .from('memberships')
+        .select('role')
+        .eq('environment_id', environmentId)
+        .eq('user_id', user.id)
         .single()
 
-      if (locError) {
-        console.error('Error creating location:', locError)
-        throw new Error('Failed to create location: ' + locError.message)
+      if (membershipError || !membership) {
+        console.error('Error checking membership:', membershipError)
+        throw new Error('You do not have access to this environment')
       }
 
-      if (!location) {
-        throw new Error('Location was not created')
+      // Only allow reseller_manager and above to create locations
+      if (!['reseller_manager', 'grady_admin', 'grady_staff'].includes(membership.role)) {
+        throw new Error('You do not have permission to create locations')
       }
-
-      console.log('Demo location created successfully:', location.id)
-      revalidatePath('/')
-      return location
-    }
-
-    console.log('Creating location with:', { name, description, address, environmentId, userId: user.id })
-
-    // Check if user has access to this environment
-    const { data: membership, error: membershipError } = await supabase
-      .from('memberships')
-      .select('role')
-      .eq('environment_id', environmentId)
-      .eq('user_id', user.id)
-      .single()
-
-    if (membershipError || !membership) {
-      console.error('Error checking membership:', membershipError)
-      throw new Error('You do not have access to this environment')
-    }
-
-    // Only allow reseller_manager and above to create locations
-    if (!['reseller_manager', 'grady_admin', 'grady_staff'].includes(membership.role)) {
-      throw new Error('You do not have permission to create locations')
     }
 
     // Create the location
@@ -81,6 +68,9 @@ export async function createLocation(formData: FormData) {
         name,
         description,
         address,
+        contact_person_name: contactPersonName || null,
+        contact_email: contactEmail || null,
+        contact_phone: contactPhone || null,
         environment_id: environmentId
       })
       .select()
@@ -96,10 +86,22 @@ export async function createLocation(formData: FormData) {
     }
 
     console.log('Location created successfully:', location.id)
-    revalidatePath('/')
+
+    // Revalidate relevant paths
+    revalidatePath('/demo/locations')
+    revalidatePath('/demo')
+    revalidatePath(`/${environmentId}/locations`)
+    revalidatePath(`/${environmentId}`)
+
     return location
+
   } catch (error) {
     console.error('Error in createLocation:', error)
-    throw error
+    
+    if (error instanceof Error) {
+      throw new Error(error.message)
+    }
+    
+    throw new Error('An unexpected error occurred while creating the location')
   }
 }

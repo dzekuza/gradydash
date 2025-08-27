@@ -19,6 +19,9 @@ export async function getLocations(environmentId: string): Promise<Location[]> {
         name,
         description,
         address,
+        contact_person_name,
+        contact_email,
+        contact_phone,
         created_at,
         updated_at
       `)

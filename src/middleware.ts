@@ -40,6 +40,21 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Allow access to demo environment without authentication
+  if (request.nextUrl.pathname.startsWith('/demo')) {
+    return supabaseResponse
+  }
+
+  // Allow access to admin routes for authenticated users
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!user) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      return NextResponse.redirect(redirectUrl)
+    }
+    return supabaseResponse
+  }
+
   // If user is not signed in and the current path is not /login or /register,
   // redirect the user to /login
   if (!user && !['/login', '/register'].includes(request.nextUrl.pathname)) {
