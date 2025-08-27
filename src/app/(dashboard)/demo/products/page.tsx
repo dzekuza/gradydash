@@ -1,70 +1,31 @@
-'use client'
-
-import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
-import { DataTable } from '@/components/data-table/data-table'
-import { columns } from '@/components/data-table/data'
-import { Product, Location } from '@/types/db'
+import { getProducts } from '@/lib/db/products/get-products'
+import { getDemoEnvironmentId } from '@/lib/db/environments/get-demo-environment'
+import { getLocations } from '@/lib/db/locations/get-locations'
 import { ImportProductsDialog } from '@/components/product/import-products-dialog'
-import { ProductDetailDialog } from '@/components/product/product-detail-dialog'
-import { handleBulkAction } from '@/lib/db/products/bulk-actions'
-import { useToast } from '@/hooks/use-toast'
+import { ProductDialog } from '@/components/product/product-dialog'
+import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
 
-interface DemoProductsPageProps {
-  products: Product[]
-}
-
-export default function DemoProductsPage({ products }: DemoProductsPageProps) {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-  const [productLocation, setProductLocation] = useState<Location | null>(null)
-  const { toast } = useToast()
-
-  const handleRowClick = async (product: Product) => {
-    setSelectedProduct(product)
-    
-    // Fetch location data for the product
-    if (product.location_id) {
-      try {
-        const response = await fetch(`/api/locations/${product.location_id}/product-count`)
-        if (response.ok) {
-          const locationData = await response.json()
-          setProductLocation(locationData.location)
-        }
-      } catch (error) {
-        console.error('Error fetching location:', error)
-      }
-    } else {
-      setProductLocation(null)
-    }
-    
-    setIsDetailDialogOpen(true)
-  }
-
-  const handleBulkActionWrapper = async (action: string, data: any) => {
-    try {
-      await handleBulkAction(action, data)
-    } catch (error) {
-      console.error('Bulk action error:', error)
-      throw error
-    }
-  }
+export default async function DemoProductsPage() {
+  // Get the demo environment ID
+  const demoEnvironmentId = await getDemoEnvironmentId()
+  
+  // Fetch products and locations for the demo environment
+  const [products, locations] = await Promise.all([
+    getProducts(demoEnvironmentId),
+    getLocations(demoEnvironmentId)
+  ])
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
         <div className="flex items-center space-x-2">
-          <ImportProductsDialog environmentId="demo" />
-          <Link href="/demo/products/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
-          </Link>
+          <ImportProductsDialog environmentId={demoEnvironmentId} />
+          <ProductDialog locations={locations} environmentId={demoEnvironmentId} />
         </div>
       </div>
       
@@ -78,20 +39,8 @@ export default function DemoProductsPage({ products }: DemoProductsPageProps) {
           </div>
         </div>
         
-        <DataTable 
-          columns={columns} 
-          data={products} 
-          onBulkAction={handleBulkActionWrapper}
-          onRowClick={handleRowClick}
-        />
+        <ProductsTableWrapper products={products} />
       </div>
-
-      <ProductDetailDialog
-        product={selectedProduct}
-        location={productLocation}
-        open={isDetailDialogOpen}
-        onOpenChange={setIsDetailDialogOpen}
-      />
     </div>
   )
 }

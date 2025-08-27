@@ -2,8 +2,10 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-server'
 import { getProducts } from '@/lib/db/products/get-products'
+import { getLocations } from '@/lib/db/locations/get-locations'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 import { ImportProductsDialog } from '@/components/product/import-products-dialog'
+import { ProductDialog } from '@/components/product/product-dialog'
 import { DataTable } from '@/components/data-table/data-table'
 import { columns } from '@/components/data-table/data'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -44,8 +46,11 @@ async function ProductsContent({ environmentSlug }: { environmentSlug: string })
   // Check if user can manage products
   const canManageProducts = ['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)
 
-  // Fetch products for the environment
-  const products = await getProducts(environment.id)
+  // Fetch products and locations for the environment
+  const [products, locations] = await Promise.all([
+    getProducts(environment.id),
+    getLocations(environment.id)
+  ])
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -54,12 +59,7 @@ async function ProductsContent({ environmentSlug }: { environmentSlug: string })
         {canManageProducts && (
           <div className="flex items-center space-x-2">
             <ImportProductsDialog environmentId={environment.id} />
-            <Link href={`/${environmentSlug}/products/new`}>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Product
-              </Button>
-            </Link>
+            <ProductDialog locations={locations} environmentId={environment.id} />
           </div>
         )}
       </div>

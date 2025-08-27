@@ -10,9 +10,7 @@ export function buildProductsUrl(envSlug: string): string {
   return buildEnvironmentUrl(envSlug, '/products')
 }
 
-export function buildNewProductUrl(envSlug: string): string {
-  return buildEnvironmentUrl(envSlug, '/products/new')
-}
+
 
 export function buildLocationsUrl(envSlug: string): string {
   return buildEnvironmentUrl(envSlug, '/locations')

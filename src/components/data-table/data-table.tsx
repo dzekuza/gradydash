@@ -69,7 +69,13 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
-  const handleRowClick = (row: any) => {
+  const handleRowClick = (row: any, event: React.MouseEvent) => {
+    // Don't trigger row click if clicking on checkbox or action buttons
+    const target = event.target as HTMLElement
+    if (target.closest('input[type="checkbox"]') || target.closest('[data-action]')) {
+      return
+    }
+    
     if (onRowClick) {
       onRowClick(row.original)
     }
@@ -110,7 +116,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
-                  onClick={() => handleRowClick(row)}
+                  onClick={(event) => handleRowClick(row, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

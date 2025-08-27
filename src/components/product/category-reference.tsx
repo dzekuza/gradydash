@@ -80,12 +80,12 @@ export function CategoryReference({ className }: CategoryReferenceProps) {
           {filteredCategories.length > 0 ? (
             filteredCategories.map(category => renderCategory(category))
           ) : (
-            <p className="text-sm text-muted-foreground">No categories found matching "{searchTerm}"</p>
+            <p className="text-sm text-muted-foreground">No categories found matching &quot;{searchTerm}&quot;</p>
           )}
         </div>
         <div className="mt-4 pt-4 border-t">
           <p className="text-xs text-muted-foreground">
-            Use category IDs in CSV imports separated by semicolons (e.g., "mobile-phones-main;phone-case")
+            Use category IDs in CSV imports separated by semicolons (e.g., &quot;mobile-phones-main;phone-case&quot;)
           </p>
         </div>
       </CardContent>

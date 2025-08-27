@@ -160,7 +160,7 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
         const categoryIds = product.categories.split(';').map((cat: string) => cat.trim()).filter(Boolean)
         // Validate category IDs against our category system
         const validCategories = getAllCategories().map(cat => cat.id)
-        const invalidCategories = categoryIds.filter(id => !validCategories.includes(id))
+        const invalidCategories = categoryIds.filter((id: string) => !validCategories.includes(id))
         if (invalidCategories.length > 0) {
           validationErrors.push(`Row ${i + 1}: Invalid category IDs: ${invalidCategories.join(', ')}`)
           continue

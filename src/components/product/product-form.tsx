@@ -17,6 +17,9 @@ interface ProductFormProps {
   product?: Product
   locations: Location[]
   environmentId?: string
+  onSuccess?: () => void
+  isLoading?: boolean
+  setIsLoading?: (loading: boolean) => void
 }
 
 const productStatuses: { value: ProductStatus; label: string }[] = [
@@ -28,8 +31,15 @@ const productStatuses: { value: ProductStatus; label: string }[] = [
   { value: 'discarded', label: 'Discarded' },
 ]
 
-export function ProductForm({ product, locations, environmentId }: ProductFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
+export function ProductForm({ 
+  product, 
+  locations, 
+  environmentId, 
+  onSuccess, 
+  isLoading: externalIsLoading, 
+  setIsLoading: externalSetIsLoading 
+}: ProductFormProps) {
+  const [internalIsLoading, setInternalIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<ProductStatus>(product?.status || 'taken')
   const [locationId, setLocationId] = useState<string>(product?.location_id || 'none')
@@ -37,6 +47,10 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
     product?.categories || []
   )
   const router = useRouter()
+
+  // Use external loading state if provided, otherwise use internal
+  const isLoading = externalIsLoading !== undefined ? externalIsLoading : internalIsLoading
+  const setIsLoading = externalSetIsLoading || setInternalIsLoading
 
   const isEditing = !!product
 
@@ -60,6 +74,14 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
         await updateProduct(product.id, formData)
       } else {
         await createProduct(formData)
+      }
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        // Default behavior: navigate back
+        router.back()
       }
     } catch (err) {
       console.error('Error saving product:', err)
@@ -208,14 +230,16 @@ export function ProductForm({ product, locations, environmentId }: ProductFormPr
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product')}
             </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => router.back()}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
+            {!onSuccess && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => router.back()}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            )}
           </div>
         </form>
       </CardContent>
