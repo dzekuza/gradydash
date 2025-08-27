@@ -88,9 +88,8 @@ The import system validates your data and will show errors for:
 
 Only users with the following roles can import products:
 
-- `reseller_manager`
-- `grady_staff`
-- `grady_admin`
+- `store_manager`
+- `admin`
 
 ## Error Handling
 

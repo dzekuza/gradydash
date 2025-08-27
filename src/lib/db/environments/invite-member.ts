@@ -44,8 +44,8 @@ export async function inviteMember(formData: FormData) {
       if (!isSystemAdmin) {
         throw new Error('Only system admins can invite other system admins')
       }
-      if (role !== 'grady_admin' && role !== 'grady_staff') {
-        throw new Error('System admin invitations can only be for grady_admin or grady_staff roles')
+      if (role !== 'admin') {
+        throw new Error('System admin invitations can only be for admin role')
       }
       finalEnvironmentId = null
     } else {
@@ -57,7 +57,7 @@ export async function inviteMember(formData: FormData) {
       } else {
         // Regular user inviting to their environment
         finalEnvironmentId = environmentId
-        finalRole = 'reseller_manager' // Force manager role for environment invitations
+        finalRole = 'store_manager' // Force manager role for environment invitations
       }
 
       // Check if user has permission to invite to this environment
@@ -73,8 +73,8 @@ export async function inviteMember(formData: FormData) {
           throw new Error('You do not have permission to invite members to this environment')
         }
 
-        // Only allow reseller_manager and above to invite members
-        if (!['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)) {
+        // Only allow store_manager and admin to invite members
+        if (!['store_manager', 'admin'].includes(membership.role)) {
           throw new Error('You do not have permission to invite members')
         }
       }

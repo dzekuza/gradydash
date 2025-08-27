@@ -45,7 +45,7 @@ async function ProductsContent({ environmentSlug }: { environmentSlug: string })
   }
 
   // Check if user can manage products
-  const canManageProducts = ['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)
+  const canManageProducts = ['store_manager', 'admin'].includes(membership.role)
 
   // Fetch products, locations, and environments for the environment
   const [products, locations, environments] = await Promise.all([

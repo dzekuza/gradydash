@@ -48,7 +48,7 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState('reseller_manager')
+  const [role, setRole] = useState('store_manager')
   const [inviteType, setInviteType] = useState<'environment' | 'system_admin'>('environment')
   const [targetEnvironmentId, setTargetEnvironmentId] = useState(environmentId)
   const [isLoading, setIsLoading] = useState(false)
@@ -110,7 +110,7 @@ export function InviteMemberDialog({
       }
 
       setEmail('')
-      setRole('reseller_manager')
+      setRole('store_manager')
       setInviteType('environment')
       setTargetEnvironmentId(environmentId)
       setOpen(false)
@@ -129,16 +129,11 @@ export function InviteMemberDialog({
   const getRoleOptions = () => {
     if (inviteType === 'system_admin') {
       return [
-        { value: 'grady_admin', label: 'Grady Admin' },
-        { value: 'grady_staff', label: 'Grady Staff' }
+        { value: 'admin', label: 'Admin' }
       ]
     }
-    
     return [
-      { value: 'reseller_staff', label: 'Reseller Staff' },
-      { value: 'reseller_manager', label: 'Reseller Manager' },
-      { value: 'grady_staff', label: 'Grady Staff' },
-      { value: 'grady_admin', label: 'Grady Admin' }
+      { value: 'store_manager', label: 'Store Manager' }
     ]
   }
 
@@ -182,9 +177,9 @@ export function InviteMemberDialog({
                   onValueChange={(value: 'environment' | 'system_admin') => {
                     setInviteType(value)
                     if (value === 'environment') {
-                      setRole('reseller_manager')
+                      setRole('store_manager')
                     } else {
-                      setRole('grady_admin')
+                      setRole('admin')
                     }
                   }}
                 >

@@ -37,8 +37,8 @@ export async function deleteProduct(productId: string) {
       throw new Error('You do not have permission to delete this product')
     }
 
-    // Only allow reseller_manager and above to delete products
-    if (!['reseller_manager', 'grady_staff', 'grady_admin'].includes(membership.role)) {
+    // Only allow store_manager and admin to delete products
+    if (!['store_manager', 'admin'].includes(membership.role)) {
       throw new Error('You do not have permission to delete products')
     }
 

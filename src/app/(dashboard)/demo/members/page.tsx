@@ -5,7 +5,7 @@ import { MembersDataTable } from '@/components/members/members-data-table'
 const demoMembers = [
   {
     id: '1',
-    role: 'reseller_manager',
+    role: 'store_manager',
     created_at: '2024-01-15T10:00:00Z',
     profiles: {
       id: '1',
@@ -16,7 +16,7 @@ const demoMembers = [
   },
   {
     id: '2',
-    role: 'reseller_staff',
+    role: 'store_manager',
     created_at: '2024-01-20T14:30:00Z',
     profiles: {
       id: '2',
@@ -31,7 +31,7 @@ const demoInvites = [
   {
     id: '1',
     email: 'newmember@demo.com',
-    role: 'reseller_staff',
+    role: 'store_manager',
     created_at: '2024-01-25T09:00:00Z',
     expires_at: '2024-02-01T09:00:00Z',
     environments: {
