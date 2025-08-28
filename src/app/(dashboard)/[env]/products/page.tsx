@@ -6,6 +6,7 @@ import { getLocations } from '@/lib/db/locations/get-locations'
 import { getLocationById } from '@/lib/db/locations/get-location-by-id'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
 import { ProductDialog } from '@/components/product/product-dialog'
+import { ImportProductsDialog } from '@/components/product/import-products-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -182,10 +183,15 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
             products={products} 
             environmentSlug={params.env}
             actionButtons={
-              <ProductDialog 
-                locations={locations} 
-                environmentId={environment.id}
-              />
+              <div className="flex gap-2">
+                <ProductDialog 
+                  locations={locations} 
+                  environmentId={environment.id}
+                />
+                <ImportProductsDialog 
+                  environmentId={environment.id}
+                />
+              </div>
             }
           />
         </CardContent>

@@ -5,12 +5,17 @@ shadcn/ui with comprehensive partner management and invitation systems.
 
 ## Features
 
-- ✅ **Two-Tier Registration System**: Business Owner and Platform Admin account types
-- ✅ **Multi-Tenant Collaboration**: Business owners and partners can see each other's data within the same business
+- ✅ **Two-Tier Registration System**: Business Owner and Platform Admin account
+  types
+- ✅ **Multi-Tenant Collaboration**: Business owners and partners can see each
+  other's data within the same business
 - ✅ **Invite Codes System**: Secure partner invitation with usage tracking
-- ✅ **Multi-tenant Partner System**: Isolated partner dashboards with logo support
-- ✅ **Role-based Access Control (RBAC)**: Admin, Partner Manager, and Store Manager roles
-- ✅ **Partner Switching**: Environment switching with keyboard shortcuts and partner logos
+- ✅ **Multi-tenant Partner System**: Isolated partner dashboards with logo
+  support
+- ✅ **Role-based Access Control (RBAC)**: Admin, Partner Manager, and Store
+  Manager roles
+- ✅ **Partner Switching**: Environment switching with keyboard shortcuts and
+  partner logos
 - ✅ **Product Management**: Complete CRUD with status tracking and CSV import
 - ✅ **Location Management**: Multi-location support with contact information
 - ✅ **Member Management**: Invitation system with email notifications
@@ -107,7 +112,8 @@ The system supports two distinct account types:
 
 #### 1. Business Owner Accounts
 
-- **Capabilities**: Create and manage their own business dashboard, invite partners, track products
+- **Capabilities**: Create and manage their own business dashboard, invite
+  partners, track products
 - **Registration**: Requires company name and personal details
 - **Dashboard**: Business dashboard with partner management
 - **Access**: Can invite partners to their business and see all business data
@@ -115,7 +121,8 @@ The system supports two distinct account types:
 
 #### 2. Platform Admin Accounts
 
-- **Capabilities**: Access system admin dashboard to manage all partners and businesses
+- **Capabilities**: Access system admin dashboard to manage all partners and
+  businesses
 - **Registration**: Requires company name and personal details
 - **Dashboard**: System admin dashboard with full platform access
 - **Access**: Can see all partners and businesses across the platform
@@ -146,7 +153,8 @@ The system supports two distinct account types:
 
 3. **Data Access**:
    - Business owners and partners share the same `BUSINESS_ID`
-   - All users in the same business can see each other's products, locations, sales
+   - All users in the same business can see each other's products, locations,
+     sales
    - Complete isolation between different businesses
    - Platform admins can see all data across all businesses
 
@@ -161,7 +169,8 @@ The system supports two distinct account types:
 
 #### For Partners
 
-- **Receive Code**: Get invite code from business owner via email, link, or direct sharing
+- **Receive Code**: Get invite code from business owner via email, link, or
+  direct sharing
 - **Register**: Use code during registration process
 - **Join Business**: Automatically join the business owner's business
 - **Activate Account**: Complete email verification and partner activation
@@ -231,9 +240,12 @@ src/
 
 ### Multi-Tenant Structure
 
-- `profiles.business_id` - Links users to their business (NULL for platform admins)
-- `profiles.is_partner_admin` - TRUE for business owners, FALSE for platform admins
-- `profiles.primary_partner_id` - Business owner's partner ID (NULL for platform admins)
+- `profiles.business_id` - Links users to their business (NULL for platform
+  admins)
+- `profiles.is_partner_admin` - TRUE for business owners, FALSE for platform
+  admins
+- `profiles.primary_partner_id` - Business owner's partner ID (NULL for platform
+  admins)
 
 ### Roles
 
@@ -254,7 +266,8 @@ src/
 
 ### Creating Partners
 
-1. **Business Owner Registration**: New business owners automatically get their own business dashboard
+1. **Business Owner Registration**: New business owners automatically get their
+   own business dashboard
 2. **Partner Setup**: Each business is isolated with its own data and settings
 3. **Logo Support**: Partners can upload and display their logos
 4. **Member Management**: Invite team members with specific roles
@@ -277,7 +290,8 @@ src/
 
 #### Partners
 
-- Can see all data from the business owner and other partners in the same business
+- Can see all data from the business owner and other partners in the same
+  business
 - Can contribute products, locations, and sales data
 - Can view analytics and reports for the entire business
 - Have collaborative access to business data

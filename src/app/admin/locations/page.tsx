@@ -65,6 +65,13 @@ export default function AdminLocationsPage() {
         // Check admin status via API
         const adminStatusResponse = await fetch('/api/admin/user-status')
         if (!adminStatusResponse.ok) {
+          const errorData = await adminStatusResponse.json()
+          console.error('Admin status check failed:', errorData)
+          toast({
+            title: 'Access Error',
+            description: errorData.error || 'Error checking user permissions. Please try again.',
+            variant: 'destructive',
+          })
           router.push('/dashboard')
           return
         }
@@ -72,6 +79,11 @@ export default function AdminLocationsPage() {
         const adminStatus = await adminStatusResponse.json()
         
         if (!adminStatus.isSystemAdmin) {
+          toast({
+            title: 'Access Denied',
+            description: 'You need administrator privileges to access this page.',
+            variant: 'destructive',
+          })
           router.push('/dashboard')
           return
         }

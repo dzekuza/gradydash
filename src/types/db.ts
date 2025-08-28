@@ -6,9 +6,15 @@ export interface Profile {
   id: string
   email: string
   full_name?: string
+  first_name?: string
+  last_name?: string
+  bio?: string
+  phone?: string
+  company_name?: string
   avatar_url?: string
   is_partner_admin?: boolean
   primary_partner_id?: string | null
+  business_id?: string | null
   created_at: string
   updated_at: string
 }

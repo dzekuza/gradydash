@@ -1,14 +1,24 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Building2, Users, BarChart3, Settings, MapPin, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { 
+  Building2, 
+  Users, 
+  MapPin, 
+  BarChart3, 
+  ExternalLink,
+  TrendingUp,
+  DollarSign,
+  Package
+} from 'lucide-react'
 
-export default async function AdminDashboardPage() {
+export default async function AdminPage() {
   const supabase = createClient()
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -23,14 +33,20 @@ export default async function AdminDashboardPage() {
     redirect('/dashboard')
   }
 
+  // Use service client to bypass RLS for admin queries
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   // Get system statistics and data
   const [partnersCount, usersCount, locationsCount, partners, users, locations] = await Promise.all([
-    supabase.from('partners').select('id', { count: 'exact', head: true }),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('locations').select('id', { count: 'exact', head: true }),
-    supabase.from('partners').select('id, name, slug, created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('profiles').select('id, full_name, email, created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('locations').select('id, name, partner_id, created_at').order('created_at', { ascending: false }).limit(5)
+    serviceClient.from('partners').select('id', { count: 'exact', head: true }),
+    serviceClient.from('profiles').select('id', { count: 'exact', head: true }),
+    serviceClient.from('locations').select('id', { count: 'exact', head: true }),
+    serviceClient.from('partners').select('id, name, slug, created_at').order('created_at', { ascending: false }).limit(5),
+    serviceClient.from('profiles').select('id, full_name, email, created_at').order('created_at', { ascending: false }).limit(5),
+    serviceClient.from('locations').select('id, name, partner_id, created_at').order('created_at', { ascending: false }).limit(5)
   ])
 
   return (
@@ -122,24 +138,15 @@ export default async function AdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {partners?.data?.map((partner) => (
+                {partners.data?.map((partner) => (
                   <TableRow key={partner.id}>
                     <TableCell className="font-medium">{partner.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{partner.slug}</Badge>
+                      <Badge variant="secondary">{partner.slug}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(partner.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(partner.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
-                {(!partners?.data || partners.data.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
-                      No partners yet
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -156,7 +163,7 @@ export default async function AdminDashboardPage() {
                 </Button>
               </Link>
             </CardTitle>
-            <CardDescription>Latest registered users</CardDescription>
+            <CardDescription>Latest user registrations</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -164,26 +171,17 @@ export default async function AdminDashboardPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users?.data?.map((user) => (
+                {users.data?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
-                    <TableCell className="text-sm">{user.email}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
-                {(!users?.data || users.data.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
-                      No users yet
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -200,7 +198,7 @@ export default async function AdminDashboardPage() {
                 </Button>
               </Link>
             </CardTitle>
-            <CardDescription>Latest created locations</CardDescription>
+            <CardDescription>Latest location additions</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -212,29 +210,56 @@ export default async function AdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {locations?.data?.map((location) => (
+                {locations.data?.map((location) => (
                   <TableRow key={location.id}>
                     <TableCell className="font-medium">{location.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">ID: {location.partner_id}</Badge>
+                      <Badge variant="outline">{location.partner_id}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(location.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(location.created_at).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
-                {(!locations?.data || locations.data.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
-                      No locations yet
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common administrative tasks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Link href="/admin/partners">
+              <Button variant="outline" className="w-full">
+                <Building2 className="mr-2 h-4 w-4" />
+                Manage Partners
+              </Button>
+            </Link>
+            <Link href="/admin/users">
+              <Button variant="outline" className="w-full">
+                <Users className="mr-2 h-4 w-4" />
+                Manage Users
+              </Button>
+            </Link>
+            <Link href="/admin/locations">
+              <Button variant="outline" className="w-full">
+                <MapPin className="mr-2 h-4 w-4" />
+                Manage Locations
+              </Button>
+            </Link>
+            <Link href="/admin/settings">
+              <Button variant="outline" className="w-full">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                System Settings
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

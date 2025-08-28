@@ -1,38 +1,158 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client-server'
-import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
-import { getCurrentProfile } from '@/lib/db/profiles/get-profile'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+import { updateProfile, UpdateProfileData } from '@/lib/db/profiles/update-profile'
+import { getCurrentProfile } from '@/lib/db/profiles/get-profile'
+import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 import { 
   Settings, 
   User,
   Shield,
   Mail,
   Phone,
-  Building
+  Building,
+  Save,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react'
 
-export default async function AdminSettingsPage() {
-  const supabase = createClient()
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
-  if (userError || !user) {
-    redirect('/login')
+export default function AdminSettingsPage() {
+  const [profile, setProfile] = useState<any>(null)
+  const [adminStatus, setAdminStatus] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isUnauthorized, setIsUnauthorized] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    fullName: '',
+    email: '',
+    phone: '',
+    companyName: ''
+  })
+  const { toast } = useToast()
+  const router = useRouter()
+
+  // Load profile data and check admin status on component mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // First check admin status
+        const profileData = await getCurrentProfile()
+        if (!profileData) {
+          router.push('/login')
+          return
+        }
+
+        const adminData = await getUserAdminStatus(profileData.id)
+        if (!adminData.isSystemAdmin) {
+          setIsUnauthorized(true)
+          setIsLoading(false)
+          return
+        }
+
+        setAdminStatus(adminData)
+        setProfile(profileData)
+        setFormData({
+          firstName: profileData.first_name || '',
+          lastName: profileData.last_name || '',
+          fullName: profileData.full_name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          companyName: profileData.company_name || ''
+        })
+      } catch (error) {
+        console.error('Error loading data:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load profile data.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [toast, router])
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
-  const adminStatus = await getUserAdminStatus(user.id)
-  
-  if (!adminStatus.isSystemAdmin) {
-    redirect('/dashboard')
+  const handleSaveProfile = async () => {
+    setIsSaving(true)
+    try {
+      const updateData: UpdateProfileData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        full_name: formData.fullName,
+        bio: profile?.bio || ''
+      }
+
+      const result = await updateProfile(updateData)
+      
+      if (result.success) {
+        toast({
+          title: 'Profile Updated',
+          description: 'Your profile has been successfully updated.',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to update profile.',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  // Get current user profile
-  const profile = await getCurrentProfile()
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    )
+  }
+
+  if (isUnauthorized) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+            <h2 className="text-2xl font-bold">Access Denied</h2>
+            <p className="text-muted-foreground">
+              You don't have permission to access this page. Only system administrators can view admin settings.
+            </p>
+            <Button onClick={() => router.push('/dashboard')}>
+              Go to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -44,8 +164,6 @@ export default async function AdminSettingsPage() {
           </p>
         </div>
       </div>
-
-
 
       {/* Profile Settings */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -61,70 +179,84 @@ export default async function AdminSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form action="/api/profile/update" method="POST" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first-name">First Name</Label>
-                  <Input 
-                    id="first-name" 
-                    name="first_name"
-                    placeholder="Enter first name"
-                    defaultValue={profile?.first_name || ''}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last-name">Last Name</Label>
-                  <Input 
-                    id="last-name" 
-                    name="last_name"
-                    placeholder="Enter last name"
-                    defaultValue={profile?.last_name || ''}
-                  />
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="full-name">Full Name</Label>
+                <Label htmlFor="first-name">First Name</Label>
                 <Input 
-                  id="full-name" 
-                  name="full_name"
-                  placeholder="Enter full name"
-                  defaultValue={profile?.full_name || ''}
+                  id="first-name" 
+                  placeholder="Enter first name"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="last-name">Last Name</Label>
                 <Input 
-                  id="email" 
-                  type="email"
-                  value={user.email || ''}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email address cannot be changed
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  name="phone"
-                  type="tel"
-                  placeholder="Enter phone number"
-                  defaultValue={profile?.phone || ''}
+                  id="last-name" 
+                  placeholder="Enter last name"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name</Label>
-                <Input 
-                  id="company" 
-                  name="company_name"
-                  placeholder="Enter company name"
-                  defaultValue={profile?.company_name || ''}
-                />
-              </div>
-              <Button type="submit" className="w-full">Update Profile</Button>
-            </form>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="full-name">Full Name</Label>
+              <Input 
+                id="full-name" 
+                placeholder="Enter full name"
+                value={formData.fullName}
+                onChange={(e) => handleInputChange('fullName', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input 
+                id="email" 
+                type="email"
+                value={formData.email}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Email address cannot be changed
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input 
+                id="phone" 
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company">Company Name</Label>
+              <Input 
+                id="company" 
+                placeholder="Enter company name"
+                value={formData.companyName}
+                onChange={(e) => handleInputChange('companyName', e.target.value)}
+              />
+            </div>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Update Profile
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
 
@@ -200,40 +332,83 @@ export default async function AdminSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Security
+            Security Settings
           </CardTitle>
           <CardDescription>
-            Manage your account security settings
+            Manage your account security and access controls
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <Input 
-                id="current-password" 
-                type="password" 
-                placeholder="Enter current password"
-              />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Two-Factor Authentication</h4>
+                <p className="text-sm text-muted-foreground">
+                  Add an extra layer of security to your account
+                </p>
+              </div>
+              <Badge variant="secondary">Not Enabled</Badge>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input 
-                id="new-password" 
-                type="password" 
-                placeholder="Enter new password"
-              />
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Session Management</h4>
+                <p className="text-sm text-muted-foreground">
+                  View and manage your active sessions
+                </p>
+              </div>
+              <Button variant="outline" size="sm">Manage Sessions</Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Password</h4>
+                <p className="text-sm text-muted-foreground">
+                  Change your account password
+                </p>
+              </div>
+              <Button variant="outline" size="sm">Change Password</Button>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input 
-              id="confirm-password" 
-              type="password" 
-              placeholder="Confirm new password"
-            />
+        </CardContent>
+      </Card>
+
+      {/* Account Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            Account Information
+          </CardTitle>
+          <CardDescription>
+            View your account details and status
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Account Type</Label>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">System Administrator</Badge>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Account Status</Label>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">Active</Badge>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Member Since</Label>
+              <p className="text-sm text-muted-foreground">
+                {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Last Updated</Label>
+              <p className="text-sm text-muted-foreground">
+                {profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
           </div>
-          <Button className="w-full">Change Password</Button>
         </CardContent>
       </Card>
     </div>

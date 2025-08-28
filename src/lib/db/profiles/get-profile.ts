@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
 export async function getCurrentProfile(cookieStore?: ReadonlyRequestCookies) {
@@ -14,8 +15,14 @@ export async function getCurrentProfile(cookieStore?: ReadonlyRequestCookies) {
       return null
     }
 
-    // Get the user's profile
-    const { data: profile, error } = await supabase
+    // Use service client to bypass RLS for profile fetching
+    const serviceClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Get the user's profile using service client
+    const { data: profile, error } = await serviceClient
       .from('profiles')
       .select('*')
       .eq('id', user.id)

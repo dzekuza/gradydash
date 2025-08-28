@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export async function getMembers(environmentSlug: string) {
   const supabase = createClient()
@@ -14,8 +15,14 @@ export async function getMembers(environmentSlug: string) {
     return []
   }
 
-  // Get members for this partner
-  const { data: members, error } = await supabase
+  // Use service client to bypass RLS for members fetching
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Get members for this partner using service client
+  const { data: members, error } = await serviceClient
     .from('memberships')
     .select(`
       id,

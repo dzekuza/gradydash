@@ -61,11 +61,28 @@ export function NavUser({
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return null
-  }
-
   const isAdmin = user.role === 'admin'
+
+  if (!mounted) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+            <Avatar className="h-8 w-8 rounded-lg">
+              <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            </Avatar>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="flex items-center gap-2">
+                <span className="truncate font-semibold">Loading...</span>
+              </div>
+              <span className="truncate text-xs">Loading...</span>
+            </div>
+            <ChevronsUpDown className="ml-auto size-4" />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true)

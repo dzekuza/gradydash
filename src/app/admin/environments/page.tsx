@@ -38,7 +38,7 @@ export default async function AdminPartnersPage() {
     )
   }
 
-  // Get all partners with member counts using service client
+  // Get partners created by this admin user
   const { data: partners, error: partnersError } = await serviceClient
     .from('partners')
     .select(`
@@ -48,6 +48,7 @@ export default async function AdminPartnersPage() {
       description,
       created_at,
       updated_at,
+      created_by,
       memberships (
         id,
         role,
@@ -58,6 +59,7 @@ export default async function AdminPartnersPage() {
         )
       )
     `)
+    .eq('created_by', user.id)
     .order('created_at', { ascending: false })
 
   if (partnersError) {
@@ -68,9 +70,9 @@ export default async function AdminPartnersPage() {
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Partner Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight">My Partners</h2>
           <p className="text-muted-foreground">
-            Manage all partners and their settings
+            Manage partners you have created
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -88,7 +90,7 @@ export default async function AdminPartnersPage() {
           <CardContent>
             <div className="text-2xl font-bold">{partners?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Active partners
+              Your partners
             </p>
           </CardContent>
         </Card>
@@ -102,7 +104,7 @@ export default async function AdminPartnersPage() {
               {partners?.reduce((total, partner) => total + (partner.memberships?.length || 0), 0) || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Across all partners
+              Across your partners
             </p>
           </CardContent>
         </Card>
@@ -119,7 +121,7 @@ export default async function AdminPartnersPage() {
               }
             </div>
             <p className="text-xs text-muted-foreground">
-              Per partner
+              Per your partner
             </p>
           </CardContent>
         </Card>
@@ -128,59 +130,34 @@ export default async function AdminPartnersPage() {
       {/* Partners List */}
       <Card>
         <CardHeader>
-          <CardTitle>All Partners</CardTitle>
+          <CardTitle>My Partners</CardTitle>
           <CardDescription>
-            View and manage all partners in the system
+            View and manage partners you have created
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {partners?.map((partner) => {
-              const memberCount = partner.memberships?.length || 0
-              const adminCount = partner.memberships?.filter(m => m.role === 'admin').length || 0
-              const managerCount = partner.memberships?.filter(m => m.role === 'store_manager').length || 0
-
-              return (
-                <div key={partner.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <h3 className="font-semibold">{partner.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {partner.description || 'No description'}
-                        </p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>Slug: {partner.slug}</span>
-                          <span>Created: {formatDistanceToNow(new Date(partner.created_at), { addSuffix: true })}</span>
-                        </div>
-                      </div>
+            {partners?.map((partner) => (
+              <div key={partner.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h3 className="font-semibold">{partner.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {partner.description || 'No description'}
+                      </p>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{memberCount}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Shield className="h-3 w-3" />
-                        <span>{adminCount} admin</span>
-                        <span>•</span>
-                        <span>{managerCount} manager</span>
-                      </div>
-                    </div>
-                    
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/${partner.slug}`}>
-                        View
-                      </a>
-                    </Button>
                   </div>
                 </div>
-              )
-            })}
+                
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`/${partner.slug}`}>
+                    View
+                  </a>
+                </Button>
+              </div>
+            ))}
             
             {(!partners || partners.length === 0) && (
               <div className="text-center py-8">

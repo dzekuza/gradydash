@@ -12,10 +12,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if environment variables are set
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing required environment variables for admin status check')
+      return NextResponse.json(
+        { error: 'Server configuration error' }, 
+        { status: 500 }
+      )
+    }
+
     // Use service client to bypass RLS for admin status checks
     const serviceClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
     // Check for system admin membership (null partner_id)
@@ -28,6 +37,10 @@ export async function GET(request: NextRequest) {
 
     if (systemError && systemError.code !== 'PGRST116') {
       console.error('Error checking system admin status:', systemError)
+      return NextResponse.json(
+        { error: 'Error checking user permissions. Please try again.' }, 
+        { status: 500 }
+      )
     }
 
     // Check for environment admin membership
@@ -55,7 +68,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in admin user status API:', error)
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Error checking user permissions. Please try again.' }, 
       { status: 500 }
     )
   }

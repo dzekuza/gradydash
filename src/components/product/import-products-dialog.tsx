@@ -209,8 +209,8 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
       const line = lines[i]
       const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
       
-      if (values.length < headers.length) {
-        validationErrors.push(`Row ${i + 1}: Insufficient columns`)
+      // Skip empty rows
+      if (values.length === 0 || (values.length === 1 && values[0] === '')) {
         continue
       }
 
@@ -219,8 +219,11 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
       // Map CSV values to app fields using fieldMapping
       headers.forEach((header, index) => {
         const appField = fieldMapping[header]
-        if (appField) {
-          product[appField] = values[index] || undefined
+        if (appField && appField !== 'skip') {
+          // Only set the value if the index exists in the values array
+          if (index < values.length) {
+            product[appField] = values[index] || undefined
+          }
         }
       })
 
@@ -283,7 +286,8 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
 
     if (validationErrors.length > 0) {
       setErrors(validationErrors)
-      throw new Error(`Validation errors found: ${validationErrors.length} errors`)
+      // Don't throw an error, just return empty array and let the UI show the errors
+      return []
     }
 
     return products
@@ -337,9 +341,10 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
   }
 
   const downloadTemplate = () => {
-    const template = `Product Name,Status,Purchase Price,Selling Price,SKU,Categories,Location
-"iPhone 13 Pro","taken","800.00","1200.00","IP13P001","mobile-phones-main;phone-case","Main Store"
-"MacBook Air M1","selling","900.00","1400.00","MBA001","laptops-main;laptop-accessories","Online Store"`
+    const template = `Product Name,Status,Purchase Price,Selling Price,SKU,Description,Location
+"iPhone 13 Pro","taken","800.00","1200.00","IP13P001","Excellent condition iPhone 13 Pro with 256GB storage","Main Store"
+"MacBook Air M1","selling","900.00","1400.00","MBA001","Like new MacBook Air with M1 chip","Online Store"
+"Samsung Galaxy S21","in_repair","600.00","900.00","SGS21-001","Good condition Samsung Galaxy S21 with 128GB storage","Repair Center"`
     
     const blob = new Blob([template], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
@@ -382,6 +387,10 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
             >
               Download template
             </Button>
+            <br />
+            <span className="text-xs text-muted-foreground">
+              Required fields: Product Name, Status. Valid statuses: taken, in_repair, selling, sold, returned, discarded
+            </span>
           </DialogDescription>
         </DialogHeader>
         
@@ -420,14 +429,14 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
                      </div>
                     <div className="flex-1">
                       <Select
-                        value={fieldMapping[csvColumn] || ''}
+                        value={fieldMapping[csvColumn] || 'skip'}
                         onValueChange={(value) => handleMappingChange(csvColumn, value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select field..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Skip this column</SelectItem>
+                          <SelectItem value="skip">Skip this column</SelectItem>
                           {APP_FIELDS.map((field) => (
                             <SelectItem key={field.value} value={field.value}>
                               {field.label} {field.required && '*'}
@@ -447,9 +456,12 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
                     <div className="space-y-1">
                       <p className="font-medium">Mapping errors:</p>
                       <ul className="text-sm space-y-1">
-                        {errors.map((error, index) => (
+                        {errors.slice(0, 5).map((error, index) => (
                           <li key={index}>• {error}</li>
                         ))}
+                        {errors.length > 5 && (
+                          <li>• ... and {errors.length - 5} more errors</li>
+                        )}
                       </ul>
                     </div>
                   </AlertDescription>
@@ -512,7 +524,7 @@ export function ImportProductsDialog({ environmentId }: ImportProductsDialogProp
           </Button>
           
           {currentStep === 'mapping' && (
-            <Button onClick={handlePreview} disabled={errors.length > 0}>
+            <Button onClick={handlePreview}>
               Preview Import
             </Button>
           )}
