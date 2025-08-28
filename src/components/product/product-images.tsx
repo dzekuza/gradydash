@@ -8,6 +8,7 @@ import { uploadProductImages, deleteProductImage } from '@/lib/db/products/uploa
 import { ProductImage } from '@/types/db'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import Image from 'next/image'
 
 interface ProductImagesProps {
   productId: string
@@ -32,7 +33,12 @@ export function ProductImages({
 
     setIsUploading(true)
     try {
-      await uploadProductImages(productId, files)
+      console.log('Starting image upload for product:', productId)
+      console.log('Files to upload:', files.map(f => ({ name: f.name, size: f.size, type: f.type })))
+      
+      const result = await uploadProductImages(productId, files)
+      console.log('Upload result:', result)
+      
       toast({
         title: 'Images uploaded',
         description: `${files.length} image(s) uploaded successfully.`,
@@ -41,6 +47,13 @@ export function ProductImages({
       setShowUpload(false)
     } catch (error) {
       console.error('Error uploading images:', error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        productId,
+        fileCount: files.length
+      })
+      
       toast({
         title: 'Upload failed',
         description: error instanceof Error ? error.message : 'Failed to upload images',
@@ -139,9 +152,11 @@ export function ProductImages({
       {showUpload && (
         <ImageUpload
           onImagesChange={handleUploadImages}
+          onSave={handleUploadImages}
           maxFiles={5}
           maxFileSize={5}
           acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+          showSaveButton={true}
         />
       )}
 
@@ -150,12 +165,16 @@ export function ProductImages({
           {images.map((image) => (
             <div key={image.id} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={image.public_url}
-                  alt={image.file_name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                {image.public_url && (
+                  <Image
+                    src={image.public_url}
+                    alt={image.file_name}
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                )}
               </div>
               {canEdit && (
                 <Button

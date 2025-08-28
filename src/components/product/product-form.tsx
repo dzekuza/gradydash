@@ -117,7 +117,7 @@ export function ProductForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form id="product-form" action={handleSubmit} className="space-y-6">
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
               {error}
@@ -265,11 +265,13 @@ export function ProductForm({
             acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
           />
 
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product')}
-            </Button>
-          </div>
+          {!inDialog && (
+            <div className="flex gap-4 pt-4">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product')}
+              </Button>
+            </div>
+          )}
         </form>
   )
 }

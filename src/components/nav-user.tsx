@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import {
@@ -50,11 +50,20 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
 
   const isAdmin = user.role === 'admin'
 
@@ -101,7 +110,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg bg-popover border border-border shadow-xl [&>*]:bg-popover"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -130,7 +139,7 @@ export function NavUser({
             {isAdmin && (
               <>
                 <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem asChild className="hover:bg-accent focus:bg-accent">
                     <a href="/admin">
                       <Shield className="mr-2 h-4 w-4" />
                       Admin Dashboard
@@ -141,7 +150,7 @@ export function NavUser({
               </>
             )}
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
+              <DropdownMenuItem asChild className="hover:bg-accent focus:bg-accent">
                 <a href="/upgrade">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Upgrade to Pro
@@ -150,15 +159,15 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-accent focus:bg-accent">
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-accent focus:bg-accent">
                 <CreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-accent focus:bg-accent">
                 <Bell />
                 Notifications
               </DropdownMenuItem>
@@ -167,7 +176,7 @@ export function NavUser({
             <DropdownMenuItem 
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="text-red-600 focus:text-red-600"
+              className="hover:bg-red-50 dark:hover:bg-red-950 focus:bg-red-50 dark:focus:bg-red-950 text-red-600 focus:text-red-600"
             >
               {isLoggingOut ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

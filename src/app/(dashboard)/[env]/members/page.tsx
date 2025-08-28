@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client-server'
 import { getEnvironmentMembers } from '@/lib/db/environments/get-members'
 import { InviteMemberDialog } from '@/components/members/invite-member-dialog'
 import { MembersDataTable } from '@/components/members/members-data-table'
+import { InviteCodesSection } from '@/components/members/invite-codes-section'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface MembersPageProps {
@@ -45,6 +46,7 @@ async function MembersContent({ environmentSlug }: { environmentSlug: string }) 
 
   // Check permissions
   const canInvite = ['admin', 'store_manager'].includes(membership.role)
+  const isAdmin = membership.role === 'admin'
 
   // Fetch members
   const members = await getEnvironmentMembers(environment.id)
@@ -55,13 +57,21 @@ async function MembersContent({ environmentSlug }: { environmentSlug: string }) 
         <h2 className="text-3xl font-bold tracking-tight">Members</h2>
       </div>
       
-      <MembersDataTable 
-        members={members} 
-        canInvite={canInvite}
-        environmentId={environment.id}
-        environmentName={environment.name}
-        currentUserId={user.id}
-      />
+      <div className="grid gap-6">
+        {/* Invite Codes Section - Only show for admins */}
+        {isAdmin && (
+          <InviteCodesSection partnerId={environment.id} />
+        )}
+        
+        {/* Members Table */}
+        <MembersDataTable 
+          members={members} 
+          canInvite={canInvite}
+          environmentId={environment.id}
+          environmentName={environment.name}
+          currentUserId={user.id}
+        />
+      </div>
     </div>
   )
 }

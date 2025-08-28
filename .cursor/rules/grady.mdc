@@ -1,8 +1,3 @@
----
-description: when creating an app logic
-alwaysApply: false
----
-
 ## Current Working Features
 
 ### ✅ Authentication & Authorization
@@ -28,7 +23,16 @@ alwaysApply: false
 - SPA-style navigation (no full page reloads)
 - Active route highlighting
 - Breadcrumb navigation
-- Mobile-responsive design
+- Mobile-responsive design with bottom navigation
+- Mobile environment switcher and user menu
+
+### ✅ Theme System
+
+- Complete dark/light mode implementation
+- Theme-aware CSS variables using OKLCH color format
+- Theme toggle in sidebar footer and mobile user menu
+- Automatic theme persistence and system preference detection
+- All components properly themed (dialogs, dropdowns, cards, etc.)
 
 ### ✅ Product Management
 
@@ -47,6 +51,7 @@ alwaysApply: false
 - Location-specific product tracking
 - Contact information management
 - Location statistics and analytics
+- Responsive grid layout (4-column on desktop, 2-column on mobile)
 
 ### ✅ Member Management
 
@@ -55,14 +60,16 @@ alwaysApply: false
 - Member activity tracking
 - Partner access control
 - Action buttons integrated into table toolbar
+- Status tags for member status tracking
 
 ### ✅ Analytics & Reporting
 
 - Dashboard statistics and metrics
-- Product status distribution
+- Product status distribution with modern bar charts (Recharts)
 - Revenue tracking
 - Time-to-sale analytics
 - Location-based reporting
+- Responsive stats grids (2-column on mobile)
 
 ### ✅ Settings & Configuration
 
@@ -89,7 +96,7 @@ alwaysApply: false
 - Use `const router = useRouter(); router.push(url)` for programmatic navigation
 - All routes render inside the dashboard layout - no full refresh
 - Sidebar items use Link and highlight active routes
-- Environment-based routing: `/[env]/[section]`
+- Partner-based routing: `/[partner-slug]/[section]`
 
 ### UI Rules
 
@@ -98,6 +105,24 @@ alwaysApply: false
 - Use Tailwind CSS for styling
 - Follow shadcn/ui design patterns
 - Ensure mobile responsiveness
+- Use theme-aware CSS variables (`bg-popover`, `text-popover-foreground`, etc.)
+
+### Theme System Rules
+
+- **CSS Variables**: Use OKLCH color format for all theme variables
+- **Component Backgrounds**: Use `bg-popover` for overlays (dialogs, dropdowns)
+- **Text Colors**: Use `text-popover-foreground` for overlay text
+- **Consistent Theming**: All components must work in both light and dark modes
+- **Theme Toggle**: Available in sidebar footer and mobile user menu
+
+### Mobile Responsiveness Rules
+
+- **Bottom Navigation**: Mobile uses bottom navigation bar instead of sidebar
+- **Grid Layouts**: Stats grids use 2-column layout on mobile
+- **Button Placement**: Action buttons placed under headers on mobile, not
+  inline
+- **Table Responsiveness**: Tables stack content vertically on mobile
+- **Padding**: Use `px-0 md:px-8` for mobile-first padding
 
 ### Table Component Rules
 
@@ -136,6 +161,58 @@ alwaysApply: false
 
 ---
 
+## Registration System
+
+### Two-Tier Account Types
+
+The system supports two distinct account types:
+
+#### 1. Admin Accounts
+
+- **Capabilities**: Create and manage partner dashboards, invite partners, track
+  products
+- **Registration**: Requires company name and personal details
+- **Dashboard**: Full admin dashboard with partner management
+- **Access**: Can create multiple partners and invite team members
+
+#### 2. Partner Accounts
+
+- **Capabilities**: Join existing partner dashboards, track assigned products
+- **Registration**: Requires invite code from an admin
+- **Dashboard**: Partner-specific dashboard with limited access
+- **Access**: Only to assigned partner dashboard
+
+### Invite Codes System
+
+#### For Admins
+
+- **Generate Codes**: Create invite codes with usage limits and expiration dates
+- **Share Codes**: Copy codes or direct registration links
+- **Track Usage**: Monitor code usage and expiration
+- **Manage Access**: Control who can join the partner dashboard
+
+#### For Partners
+
+- **Receive Code**: Get invite code from admin via email, link, or direct
+  sharing
+- **Register**: Use code during registration process
+- **Join Dashboard**: Automatically join the correct partner dashboard
+- **Activate Account**: Complete email verification and partner activation
+
+### Registration Flow
+
+1. **Admin Registration**:
+   ```
+   User selects Admin → Enters company details → Account created → Partner dashboard created → Redirected to dashboard
+   ```
+
+2. **Partner Registration**:
+   ```
+   User receives invite code → Clicks registration link → Registers as Partner → Email verification → Partner activation → Join dashboard
+   ```
+
+---
+
 ## Production Setup
 
 ### 1. Environment Variables
@@ -163,6 +240,8 @@ supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_create_storage_bucket.sql
 supabase/migrations/003_rename_environments_to_partners.sql
 supabase/migrations/004_fix_storage_policies.sql
+supabase/migrations/005_enable_user_registration.sql
+supabase/migrations/20250828051404_remote_migration.sql
 ```
 
 ### 3. Admin User Creation
@@ -190,43 +269,74 @@ npm run dev
 ### Test Routes
 
 - **Login**: http://localhost:3000/login
+- **Registration**: http://localhost:3000/register
 - **Admin Dashboard**: http://localhost:3000/admin
-- **Partner Dashboard**: http://localhost:3000/[env]
-- **Products**: http://localhost:3000/[env]/products
-- **Locations**: http://localhost:3000/[env]/locations
-- **Members**: http://localhost:3000/[env]/members
-- **Analytics**: http://localhost:3000/[env]/analytics
-- **Settings**: http://localhost:3000/[env]/settings
+- **Partner Dashboard**: http://localhost:3000/[partner-slug]
+- **Products**: http://localhost:3000/[partner-slug]/products
+- **Locations**: http://localhost:3000/[partner-slug]/locations
+- **Members**: http://localhost:3000/[partner-slug]/members
+- **Analytics**: http://localhost:3000/[partner-slug]/analytics
+- **Settings**: http://localhost:3000/[partner-slug]/settings
+
+### Testing the Registration System
+
+1. **Admin Registration**:
+   - Go to `/register`
+   - Select "Admin" account type
+   - Fill in company name and personal details
+   - Verify account creation and partner dashboard setup
+
+2. **Partner Registration**:
+   - Generate invite code from admin dashboard
+   - Share invite code or direct link
+   - Test partner registration with invite code
+   - Verify partner activation and dashboard access
+
+3. **Invite Codes**:
+   - Test code generation with different usage limits
+   - Test code expiration functionality
+   - Test direct link sharing
+   - Verify usage tracking
 
 ### Current Working Features
 
-- ✅ Complete authentication system
-- ✅ Multi-tenant partner management
-- ✅ Product management with CSV import
-- ✅ Location management
-- ✅ Member management with invitations (Partner Managers only)
-- ✅ Analytics and reporting
+- ✅ Complete authentication system with two-tier registration
+- ✅ Multi-tenant partner management with logo support
+- ✅ Product management with CSV import and status tracking
+- ✅ Location management with responsive grid layout
+- ✅ Member management with invite codes system
+- ✅ Analytics and reporting with modern charts
 - ✅ Settings and configuration
-- ✅ Mobile-responsive design
+- ✅ Mobile-responsive design with bottom navigation
+- ✅ Complete theme system (dark/light mode)
 - ✅ TypeScript compilation
 - ✅ All components working
 - ✅ Partner logo support and display
+- ✅ Invite codes management and tracking
+- ✅ Partner activation flow
+- ✅ Email system with Resend integration
 
 ---
 
 ## Acceptance Criteria Status
 
-1. ✅ **Authentication**: Complete Supabase Auth integration
-2. ✅ **Multi-Tenancy**: Partner-based data isolation
+1. ✅ **Authentication**: Complete Supabase Auth integration with two-tier
+   registration
+2. ✅ **Multi-Tenancy**: Partner-based data isolation with logo support
 3. ✅ **Navigation**: All navigation uses Next.js routing
 4. ✅ **UI Components**: Every component uses shadcn/ui
 5. ✅ **RLS**: Row-level security implemented
 6. ✅ **Product Management**: Complete CRUD with status tracking
 7. ✅ **CSV Import**: Bulk import with validation
-8. ✅ **Member Management**: Invitation system with roles (Partner Managers
-   only)
-9. ✅ **Analytics**: Dashboard statistics and reporting
+8. ✅ **Member Management**: Invitation system with invite codes (Partner
+   Managers only)
+9. ✅ **Analytics**: Dashboard statistics and reporting with charts
 10. ✅ **Security**: Comprehensive security measures
+11. ✅ **Theme System**: Complete dark/light mode implementation
+12. ✅ **Mobile Responsiveness**: Bottom navigation and responsive layouts
+13. ✅ **Invite Codes**: Complete invite code system with usage tracking
+14. ✅ **Partner Activation**: Secure partner activation flow
+15. ✅ **Email System**: Email notifications and invitations
 
 ---
 
@@ -236,15 +346,26 @@ npm run dev
 
 - ✅ Removed all demo content and functionality
 - ✅ Updated all database functions for production use
-- ✅ Implemented complete authentication system
+- ✅ Implemented complete authentication system with two-tier registration
 - ✅ Added partner-based access control with logo support
 - ✅ Updated all components for real data
-- ✅ Implemented invitation system (Partner Managers only)
-- ✅ Added email functionality
+- ✅ Implemented invitation system with invite codes (Partner Managers only)
+- ✅ Added email functionality with Resend integration
 - ✅ Updated documentation for production
 - ✅ Integrated action buttons into table toolbars
 - ✅ Improved mobile responsiveness and table display
 - ✅ Added partner logo support in sidebar and switcher
+- ✅ Implemented complete theme system with dark/light mode
+- ✅ Added mobile bottom navigation and responsive layouts
+- ✅ Fixed dialog backgrounds to use theme-aware styling
+- ✅ Updated stats grids for mobile responsiveness
+- ✅ Added modern bar charts for analytics
+- ✅ Improved location management with responsive grid layout
+- ✅ Implemented invite codes system with usage tracking
+- ✅ Added partner activation flow
+- ✅ Created invite codes management interface
+- ✅ Updated registration form with step-by-step flow
+- ✅ Added URL parameter support for invite codes
 
 ### Current Working Files
 
@@ -252,17 +373,20 @@ npm run dev
 - All components render correctly
 - Navigation works as expected
 - Database operations work with real data
-- Email system functional
+- Email system functional with Resend
 - Security measures implemented
+- Theme system fully functional
+- Mobile responsiveness complete
+- Invite codes system fully operational
+- Partner activation flow working
+- Registration system with two-tier accounts working
 
 ---
 
 **Status**: 🟢 **PRODUCTION READY**
 
 The application is now production-ready with complete multi-tenant
-functionality, proper authentication, and comprehensive security measures. All
-demo content has been removed and the system works exclusively with real
-partners and user data.
-
-pages, implement server actions, and apply RLS. Include a README.md with setup
-and migration steps.
+functionality, proper authentication with two-tier registration system,
+comprehensive security measures, full theme system, mobile-responsive design,
+and complete invite codes system. All demo content has been removed and the
+system works exclusively with real partners and user data.

@@ -412,7 +412,7 @@ export default function AdminLocationsPage() {
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
           </div>
         </div>
@@ -627,78 +627,78 @@ export default function AdminLocationsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {locations.map((location) => {
               const LocationTypeIcon = getLocationTypeIcon(location.location_type)
               
               return (
-                <div key={location.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <LocationTypeIcon className="h-5 w-5 text-muted-foreground" />
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <h3 className="font-semibold">{location.name}</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {location.is_active ? (
-                              <Badge variant="default" className="flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" />
-                                Active
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="flex items-center gap-1">
-                                <XCircle className="h-3 w-3" />
-                                Inactive
-                              </Badge>
-                            )}
-                            <Badge variant="outline">{getLocationTypeLabel(location.location_type)}</Badge>
-                          </div>
-                        </div>
-                        {location.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {location.description}
-                          </p>
-                        )}
-                        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-2 text-xs text-muted-foreground">
-                          {location.address && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {location.address}
-                            </span>
+                <div key={location.id} className="flex flex-col p-4 border rounded-lg gap-3">
+                  <div className="flex items-center gap-3">
+                    <LocationTypeIcon className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <div className="flex flex-col gap-2">
+                        <h3 className="font-semibold">{location.name}</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {location.is_active ? (
+                            <Badge variant="default" className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <XCircle className="h-3 w-3" />
+                              Inactive
+                            </Badge>
                           )}
-                          {location.contact_person_name && (
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {location.contact_person_name}
-                            </span>
-                          )}
-                          {location.contact_email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {location.contact_email}
-                            </span>
-                          )}
-                          {location.contact_phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {location.contact_phone}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <Building2 className="h-3 w-3" />
-                            Created {formatDate(location.created_at)}
-                          </span>
+                          <Badge variant="outline">{getLocationTypeLabel(location.location_type)}</Badge>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  {location.description && (
+                    <p className="text-sm text-muted-foreground">
+                      {location.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                    {location.address && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {location.address}
+                      </span>
+                    )}
+                    {location.contact_person_name && (
+                      <span className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {location.contact_person_name}
+                      </span>
+                    )}
+                    {location.contact_email && (
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {location.contact_email}
+                      </span>
+                    )}
+                    {location.contact_phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {location.contact_phone}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      Created {formatDate(location.created_at)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2 mt-auto">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => openEditDialog(location)}
-                      className="w-full sm:w-auto"
+                      className="w-full"
                     >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
@@ -706,7 +706,7 @@ export default function AdminLocationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 hover:text-red-700 w-full sm:w-auto"
+                      className="text-red-600 hover:text-red-700 w-full"
                       onClick={() => handleDeleteLocation(location.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />

@@ -13,7 +13,7 @@ export default async function UpgradeSuccessLayout({ children }: UpgradeSuccessL
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F0F0]">
+    <div className="min-h-screen bg-background">
       {children}
     </div>
   )

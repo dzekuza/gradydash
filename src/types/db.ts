@@ -7,6 +7,8 @@ export interface Profile {
   email: string
   full_name?: string
   avatar_url?: string
+  is_partner_admin?: boolean
+  primary_partner_id?: string | null
   created_at: string
   updated_at: string
 }

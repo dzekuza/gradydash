@@ -68,7 +68,7 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
       case 'discarded':
         return <XCircle className="h-4 w-4 text-red-600" />
       default:
-        return <Package className="h-4 w-4 text-gray-600" />
+        return <Package className="h-4 w-4 text-muted-foreground" />
     }
   }
 

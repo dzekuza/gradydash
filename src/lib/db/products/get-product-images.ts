@@ -1,12 +1,13 @@
+'use server'
+
 import { createClient } from '@/lib/supabase/client-server'
 import { ProductImage } from '@/types/db'
 
 export async function getProductImages(productId: string): Promise<ProductImage[]> {
   const supabase = createClient()
-
+  
   try {
-    // Get images from database
-    const { data: images, error } = await supabase
+    const { data, error } = await supabase
       .from('product_images')
       .select('*')
       .eq('product_id', productId)
@@ -17,21 +18,17 @@ export async function getProductImages(productId: string): Promise<ProductImage[
       return []
     }
 
-    // Add public URLs to each image
-    const imagesWithUrls = images.map(image => {
-      const { data: urlData } = supabase.storage
+    // Add public URLs to the images
+    const imagesWithUrls = (data || []).map(image => ({
+      ...image,
+      public_url: supabase.storage
         .from('product-images')
-        .getPublicUrl(image.file_path)
-
-      return {
-        ...image,
-        public_url: urlData.publicUrl
-      }
-    })
+        .getPublicUrl(image.file_path).data.publicUrl
+    }))
 
     return imagesWithUrls
   } catch (error) {
-    console.error('Error in getProductImages:', error)
+    console.error('Unexpected error in getProductImages:', error)
     return []
   }
 }

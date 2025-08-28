@@ -49,7 +49,7 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
           Add Product
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border border-border shadow-2xl">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription>
@@ -57,14 +57,26 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
           </DialogDescription>
         </DialogHeader>
         
-        <ProductForm
-          locations={locations}
-          environmentId={environmentId}
-          environments={environments}
-          isLoading={isLoading}
-          setIsLoading={setIsLoading}
-          inDialog={true}
-        />
+        <div className="py-4">
+          <ProductForm
+            locations={locations}
+            environmentId={environmentId}
+            environments={environments}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+            inDialog={true}
+          />
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            type="submit" 
+            form="product-form" 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Add Product'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

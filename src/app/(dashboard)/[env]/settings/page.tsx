@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast'
 import { updateProfile, UpdateProfileData } from '@/lib/db/profiles/update-profile'
 import { updateEnvironment, UpdateEnvironmentData } from '@/lib/db/environments/update-environment'
 import { getCurrentProfile } from '@/lib/db/profiles/get-profile'
+import { InviteCodesManager } from '@/components/admin/invite-codes-manager'
 import { 
   User, 
   Building2, 
@@ -593,6 +594,11 @@ export default function EnvironmentSettingsPage({ params }: EnvironmentSettingsP
             </Button>
           </CardContent>
         </Card>
+
+        {/* Invite Codes Management - Only show for partner admins */}
+        {profile?.is_partner_admin && (
+          <InviteCodesManager partnerId={environment?.id} />
+        )}
 
         {/* Danger Zone */}
         <Card className="border-destructive">

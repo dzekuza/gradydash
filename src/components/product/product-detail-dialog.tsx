@@ -1,38 +1,42 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Product, Location, ProductImage } from '@/types/db'
-import { statuses } from '@/lib/utils/product-statuses'
-import { CategoryDisplay } from '@/components/product/category-display'
-import { ProductImages } from '@/components/product/product-images'
-import { getProductImagesClient } from '@/lib/db/products/get-product-images-client'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { ProductImages } from '@/components/product/product-images'
+import { Product, Location, ProductImage } from '@/types/db'
 import { 
-  Calendar, 
-  MapPin, 
-  Tag, 
-  DollarSign, 
   Package, 
-  Image as ImageIcon,
-  ExternalLink,
-  Edit
+  MapPin, 
+  Calendar, 
+  DollarSign, 
+  Tag, 
+  Edit,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 
+// Client-side function to fetch product images
+async function getProductImagesClient(productId: string): Promise<ProductImage[]> {
+  try {
+    const response = await fetch(`/api/products/${productId}/images`)
+    if (response.ok) {
+      return await response.json()
+    }
+    return []
+  } catch (error) {
+    console.error('Error fetching product images:', error)
+    return []
+  }
+}
+
 interface ProductDetailDialogProps {
-  product: Product | null
-  location?: Location | null
+  product: Product
+  location: Location | null
   open: boolean
   onOpenChange: (open: boolean) => void
   environmentSlug?: string
@@ -45,13 +49,12 @@ export function ProductDetailDialog({
   onOpenChange,
   environmentSlug
 }: ProductDetailDialogProps) {
-  const [activeTab, setActiveTab] = useState('overview')
   const [images, setImages] = useState<ProductImage[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
 
-  // Fetch images when product changes or dialog opens
+  // Fetch images when dialog opens
   useEffect(() => {
-    if (product && open) {
+    if (open && product.id) {
       setIsLoadingImages(true)
       getProductImagesClient(product.id)
         .then(setImages)
@@ -62,57 +65,70 @@ export function ProductDetailDialog({
           setIsLoadingImages(false)
         })
     }
-  }, [product, open])
+  }, [open, product.id])
 
-  if (!product) {
-    return null
-  }
-
-  const status = statuses.find(s => s.value === product.status)
-
-  const formatPrice = (price?: number) => {
-    if (!price) return 'N/A'
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EUR',
     }).format(price)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString()
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'taken':
+        return 'bg-blue-100 text-blue-800'
+      case 'in_repair':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'selling':
+        return 'bg-green-100 text-green-800'
+      case 'sold':
+        return 'bg-purple-100 text-purple-800'
+      case 'returned':
+        return 'bg-red-100 text-red-800'
+      case 'discarded':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border border-border shadow-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl">{product.title}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-2xl font-bold">{product.title}</DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
                 Product ID: {product.id}
-              </DialogDescription>
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {environmentSlug && (
-                <Link href={`/${environmentSlug}/products/${product.id}/edit`}>
-                  <Button variant="outline" size="sm">
-                    <Edit className="mr-2 h-4 w-4" />
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/${environmentSlug}/products/${product.id}/edit`}>
+                    <Edit className="h-4 w-4 mr-2" />
                     Edit
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
@@ -131,8 +147,8 @@ export function ProductDetailDialog({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Title</label>
-                    <p className="text-lg font-medium">{product.title}</p>
+                    <label className="text-sm font-medium text-muted-foreground">Name</label>
+                    <p className="text-lg font-semibold">{product.title}</p>
                   </div>
                   
                   {product.sku && (
@@ -149,72 +165,39 @@ export function ProductDetailDialog({
                     </div>
                   )}
                   
-                  {product.external_id && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">External ID</label>
-                      <p className="font-mono">{product.external_id}</p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <Badge className={getStatusColor(product.status)}>
+                      {product.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
-                    Status & Location
+                    <MapPin className="h-4 w-4" />
+                    Location
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
-                    <div className="mt-1">
-                      {status && (
-                        <Badge variant={status.variant}>
-                          {status.label}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {location && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Location</label>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium">{location.name}</p>
-                      </div>
+                <CardContent>
+                  {location ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold">{location.name}</p>
                       {location.description && (
                         <p className="text-sm text-muted-foreground">{location.description}</p>
                       )}
+                      {location.address && (
+                        <p className="text-sm text-muted-foreground">{location.address}</p>
+                      )}
                     </div>
+                  ) : (
+                    <p className="text-muted-foreground">No location assigned</p>
                   )}
-                  
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status Updated</label>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm">{formatDate(product.status_updated_at)}</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
-
-            {product.categories && product.categories.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Categories</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CategoryDisplay 
-                    categories={product.categories} 
-                    showFullPath={true}
-                    maxDisplay={10}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             {product.description && (
               <Card>
@@ -222,7 +205,44 @@ export function ProductDetailDialog({
                   <CardTitle>Description</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap">{product.description}</p>
+                  <p className="text-sm leading-relaxed">{product.description}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {product.categories && product.categories.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    Categories
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1">
+                    {product.categories.map((category, index) => (
+                      <Badge key={index} variant="secondary">
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {product.tags && product.tags.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tags</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1">
+                    {product.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -231,21 +251,24 @@ export function ProductDetailDialog({
           <TabsContent value="details" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Product Details</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Product Details
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
+                  {product.external_id && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">External ID</label>
+                      <p className="font-mono">{product.external_id}</p>
+                    </div>
+                  )}
+                  
                   {product.product_type && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Product Type</label>
                       <p>{product.product_type}</p>
-                    </div>
-                  )}
-                  
-                  {product.short_description && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Short Description</label>
-                      <p>{product.short_description}</p>
                     </div>
                   )}
                   
@@ -280,22 +303,27 @@ export function ProductDetailDialog({
               </CardContent>
             </Card>
 
-            {product.tags && product.tags.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tags</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1">
-                    {product.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Created</span>
+                    <span className="text-sm">{formatDate(product.created_at)}</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Last Updated</span>
+                    <span className="text-sm">{formatDate(product.updated_at)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="financial" className="space-y-4">

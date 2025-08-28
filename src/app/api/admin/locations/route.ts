@@ -3,6 +3,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUser } from '@/lib/supabase/auth'
 import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getUser()

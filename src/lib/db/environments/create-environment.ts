@@ -12,7 +12,7 @@ export interface CreateEnvironmentData {
 export async function createEnvironment(data: CreateEnvironmentData, userId: string) {
   const supabase = createClient()
 
-  // Check if user is system admin
+  // Check if user is system admin or partner admin
   const { data: systemMembership, error: systemError } = await supabase
     .from('memberships')
     .select('role')
@@ -20,8 +20,22 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
     .is('partner_id', null)
     .single()
 
-  if (systemError || !systemMembership || systemMembership.role !== 'admin') {
-    throw new Error('Only system administrators can create environments')
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('is_partner_admin')
+    .eq('id', userId)
+    .single()
+
+  if (systemError && profileError) {
+    throw new Error('Error checking user permissions')
+  }
+
+  // Allow if user is system admin or partner admin
+  const isSystemAdmin = systemMembership && systemMembership.role === 'admin'
+  const isPartnerAdmin = profile?.is_partner_admin
+
+  if (!isSystemAdmin && !isPartnerAdmin) {
+    throw new Error('Only administrators can create additional environments')
   }
 
   // Check if slug already exists
@@ -40,14 +54,13 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
   }
 
   // Create the partner
-  // Note: created_by will be automatically set by the database trigger to auth.uid()
   const { data: environment, error: createError } = await supabase
     .from('partners')
     .insert({
       name: data.name,
       slug: data.slug,
-      description: data.description
-      // created_by will be automatically set by the database trigger
+      description: data.description,
+      created_by: userId
     })
     .select()
     .single()
@@ -57,13 +70,13 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
     throw new Error('Failed to create partner')
   }
 
-  // Add the current user as a member with store_manager role
+  // Add the current user as a member with admin role
   const { error: membershipError } = await supabase
     .from('memberships')
     .insert({
       partner_id: environment.id,
       user_id: userId,
-      role: 'store_manager'
+      role: 'admin'
     })
 
   if (membershipError) {

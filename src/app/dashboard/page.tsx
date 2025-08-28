@@ -18,6 +18,11 @@ export default async function DashboardRedirectPage() {
     redirect('/admin')
   }
 
+  // If user is partner admin, redirect to their primary partner
+  if (routingInfo.isPartnerAdmin && routingInfo.primaryPartnerSlug) {
+    redirect(`/${routingInfo.primaryPartnerSlug}`)
+  }
+
   // If user has no memberships at all, show no environments message
   if (!routingInfo.hasEnvironments) {
     return <NoEnvironments userEmail={user.email} />

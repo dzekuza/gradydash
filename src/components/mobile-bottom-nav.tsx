@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import { cn } from "@/lib/utils/cn"
+import { cn } from "@/lib/utils"
 import { Environment } from "@/types/db"
 
 interface MobileBottomNavProps {

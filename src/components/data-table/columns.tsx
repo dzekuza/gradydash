@@ -7,6 +7,8 @@ import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import { Product } from "@/types/db"
 import { statuses } from "@/lib/utils/product-statuses"
+import { Image as ImageIcon } from "lucide-react"
+import Image from "next/image"
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -30,6 +32,39 @@ export const columns: ColumnDef<Product>[] = [
         className="translate-y-[2px]"
       />
     ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    id: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      const product = row.original
+      // This will be populated by the table wrapper with actual images
+      const images = (product as any).images || []
+      const firstImage = images[0]
+      
+      return (
+        <div className="flex items-center">
+          {firstImage?.public_url ? (
+            <div className="w-10 h-10 rounded-md overflow-hidden border bg-muted">
+              <Image
+                src={firstImage.public_url}
+                alt={firstImage.file_name || product.title}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-md border bg-muted flex items-center justify-center">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      )
+    },
     enableSorting: false,
     enableHiding: false,
   },

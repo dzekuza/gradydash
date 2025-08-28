@@ -4,8 +4,9 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Image, Upload, X, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { Upload, X, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { cn } from '@/lib/utils'
 
 interface LogoUploadProps {
   onLogoChange: (file: File | null) => void
@@ -66,17 +67,17 @@ export function LogoUpload({ onLogoChange, disabled = false }: LogoUploadProps) 
           <label
             htmlFor="logo-upload"
             className={cn(
-              "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer",
-              "hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
+              "relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+              "hover:bg-accent transition-colors",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className="w-8 h-8 mb-4 text-gray-500" />
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Click to upload</span> or drag and drop
+              <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+              <p className="mb-2 text-sm text-muted-foreground">
+                Click to upload or drag and drop
               </p>
-              <p className="text-xs text-gray-500">PNG, JPG, WebP, SVG up to 2MB</p>
+              <p className="text-xs text-muted-foreground">PNG, JPG, WebP, SVG up to 2MB</p>
             </div>
             <Input
               id="logo-upload"
@@ -94,9 +95,11 @@ export function LogoUpload({ onLogoChange, disabled = false }: LogoUploadProps) 
           <div className="flex items-center space-x-4">
             <div className="relative">
               {previewUrl && (
-                <img
+                <Image
                   src={previewUrl}
                   alt="Logo preview"
+                  width={64}
+                  height={64}
                   className="w-16 h-16 object-cover rounded-lg border"
                 />
               )}

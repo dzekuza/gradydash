@@ -4,6 +4,6 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic'
 
 export default function HomePage() {
-  // Redirect to login for now
-  redirect('/login')
+  // Redirect to register to encourage new user signups
+  redirect('/register')
 }

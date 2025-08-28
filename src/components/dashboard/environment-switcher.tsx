@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Check, ChevronsUpDown, Plus, Building2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useToast } from '@/hooks/use-toast'
 
 import { cn } from '@/lib/utils'
@@ -99,9 +100,11 @@ export function EnvironmentSwitcher({
           >
             <div className="flex items-center gap-2">
               {currentEnvironment?.logo_url ? (
-                <img
+                <Image
                   src={currentEnvironment.logo_url}
                   alt={`${currentEnvironment.name} logo`}
+                  width={20}
+                  height={20}
                   className="w-5 h-5 object-cover rounded"
                 />
               ) : (
@@ -114,7 +117,7 @@ export function EnvironmentSwitcher({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
+        <PopoverContent className="w-[300px] p-0 bg-popover border border-border shadow-xl">
           <Command>
             <CommandInput placeholder="Search partners..." />
             <CommandList>
@@ -125,6 +128,7 @@ export function EnvironmentSwitcher({
                     key={environment.id}
                     value={environment.slug}
                     onSelect={() => handleEnvironmentSelect(environment.slug)}
+                    className="hover:bg-accent focus:bg-accent"
                   >
                     <div className="flex items-center gap-2 w-full">
                       <Check
@@ -134,9 +138,11 @@ export function EnvironmentSwitcher({
                         )}
                       />
                       {environment.logo_url ? (
-                        <img
+                        <Image
                           src={environment.logo_url}
                           alt={`${environment.name} logo`}
+                          width={20}
+                          height={20}
                           className="w-5 h-5 object-cover rounded"
                         />
                       ) : (

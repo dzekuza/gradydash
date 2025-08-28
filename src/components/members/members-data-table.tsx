@@ -43,7 +43,7 @@ const getRoleBadge = (role: string) => {
   }
   
   return (
-    <Badge className={roleColors[role as keyof typeof roleColors] || 'bg-gray-100 text-gray-800'}>
+    <Badge className={roleColors[role as keyof typeof roleColors] || 'bg-muted text-muted-foreground'}>
       {roleLabels[role as keyof typeof roleLabels] || role.replace('_', ' ')}
     </Badge>
   )

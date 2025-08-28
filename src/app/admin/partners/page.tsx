@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { CreateEnvironmentDialog } from '@/components/admin/create-environment-dialog'
 import { Building2, Users, Calendar, Mail, Shield } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import Image from 'next/image'
 
 export default async function AdminPartnersPage() {
   const user = await getUser()
@@ -152,9 +153,11 @@ export default async function AdminPartnersPage() {
                     {/* Logo and Name */}
                     <div className="flex items-center gap-3">
                       {partner.logo_url ? (
-                        <img
+                        <Image
                           src={partner.logo_url}
                           alt={`${partner.name} logo`}
+                          width={48}
+                          height={48}
                           className="h-12 w-12 object-cover rounded-lg"
                         />
                       ) : (

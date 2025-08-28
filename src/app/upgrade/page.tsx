@@ -17,9 +17,9 @@ export default function UpgradePage() {
       </div>
 
       <div className="flex flex-col gap-2 items-center justify-center text-center mb-8">
-        <p className="font-bold text-base text-[#78716c] tracking-[0.4px]">Pricing</p>
+        <p className="font-bold text-base text-muted-foreground tracking-[0.4px]">Pricing</p>
         <h1 className="text-4xl font-bold">Choose your plan</h1>
-        <p className="tracking-[0.4px] leading-[1.4em] text-center max-w-md mt-2 text-[#78716c]">
+        <p className="tracking-[0.4px] leading-[1.4em] text-center max-w-md mt-2 text-muted-foreground">
           Scale your business with our flexible partner-based pricing. 
           Start free and upgrade as you grow.
         </p>

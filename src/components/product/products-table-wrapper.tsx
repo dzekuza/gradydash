@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
 import { columns } from '@/components/data-table/columns'
 import { DataTableRowActions } from '@/components/data-table/data-table-row-actions'
 import { ColumnDef } from '@tanstack/react-table'
-import { Product, Location } from '@/types/db'
+import { Product, Location, ProductImage } from '@/types/db'
 import { ProductDetailDialog } from '@/components/product/product-detail-dialog'
 import { bulkUpdateProductStatus, bulkDeleteProducts } from '@/lib/db/products/bulk-actions'
 
@@ -19,6 +19,30 @@ export function ProductsTableWrapper({ products, environmentSlug, actionButtons 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [productLocation, setProductLocation] = useState<Location | null>(null)
+  const [productsWithImages, setProductsWithImages] = useState<Product[]>([])
+
+  // Fetch images for all products
+  useEffect(() => {
+    const fetchProductImages = async () => {
+      const productsWithImagesData = await Promise.all(
+        products.map(async (product) => {
+          try {
+            const response = await fetch(`/api/products/${product.id}/images`)
+            if (response.ok) {
+              const images: ProductImage[] = await response.json()
+              return { ...product, images }
+            }
+          } catch (error) {
+            console.error(`Error fetching images for product ${product.id}:`, error)
+          }
+          return { ...product, images: [] }
+        })
+      )
+      setProductsWithImages(productsWithImagesData)
+    }
+
+    fetchProductImages()
+  }, [products])
 
   // Create custom columns with environmentSlug
   const customColumns: ColumnDef<Product>[] = columns.map(column => {
@@ -70,21 +94,23 @@ export function ProductsTableWrapper({ products, environmentSlug, actionButtons 
   return (
     <>
       <DataTable 
-        columns={customColumns} 
-        data={products} 
-        onBulkAction={handleBulkActionWrapper}
+        columns={customColumns}
+        data={productsWithImages}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
         filterPlaceholder="Filter products..."
+        onBulkAction={handleBulkActionWrapper}
       />
 
-      <ProductDetailDialog
-        product={selectedProduct}
-        location={productLocation}
-        open={isDetailDialogOpen}
-        onOpenChange={setIsDetailDialogOpen}
-        environmentSlug={environmentSlug}
-      />
+      {selectedProduct && (
+        <ProductDetailDialog
+          product={selectedProduct}
+          location={productLocation}
+          open={isDetailDialogOpen}
+          onOpenChange={setIsDetailDialogOpen}
+          environmentSlug={environmentSlug}
+        />
+      )}
     </>
   )
 }

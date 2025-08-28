@@ -6,13 +6,16 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface ImageUploadProps {
   onImagesChange: (files: File[]) => void
+  onSave?: (files: File[]) => void
   maxFiles?: number
   maxFileSize?: number // in MB
   acceptedTypes?: string[]
   className?: string
+  showSaveButton?: boolean
 }
 
 interface ImagePreview {
@@ -23,14 +26,17 @@ interface ImagePreview {
 
 export function ImageUpload({
   onImagesChange,
+  onSave,
   maxFiles = 5,
   maxFileSize = 5, // 5MB default
   acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-  className
+  className,
+  showSaveButton = false
 }: ImageUploadProps) {
   const [previews, setPreviews] = useState<ImagePreview[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = useCallback((file: File): string | null => {
@@ -78,16 +84,43 @@ export function ImageUpload({
     }))
 
     setPreviews(prev => [...prev, ...newPreviews])
-    onImagesChange([...previews.map(p => p.file), ...validFiles])
-  }, [previews, maxFiles, validateFile, onImagesChange])
+    
+    // Only call onImagesChange if showSaveButton is false (auto-upload mode)
+    if (!showSaveButton) {
+      onImagesChange([...previews.map(p => p.file), ...validFiles])
+    }
+  }, [previews, maxFiles, validateFile, onImagesChange, showSaveButton])
 
   const removeImage = useCallback((id: string) => {
     setPreviews(prev => {
       const newPreviews = prev.filter(p => p.id !== id)
-      onImagesChange(newPreviews.map(p => p.file))
+      // Only call onImagesChange if showSaveButton is false (auto-upload mode)
+      if (!showSaveButton) {
+        onImagesChange(newPreviews.map(p => p.file))
+      }
       return newPreviews
     })
-  }, [onImagesChange])
+  }, [onImagesChange, showSaveButton])
+
+  const handleSave = useCallback(async () => {
+    if (previews.length === 0) return
+    
+    setIsUploading(true)
+    try {
+      const files = previews.map(p => p.file)
+      if (onSave) {
+        await onSave(files)
+      } else {
+        onImagesChange(files)
+      }
+      // Clear previews after successful upload
+      setPreviews([])
+    } catch (error) {
+      console.error('Error saving images:', error)
+    } finally {
+      setIsUploading(false)
+    }
+  }, [previews, onSave, onImagesChange])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -173,9 +206,11 @@ export function ImageUpload({
                 {previews.map((preview) => (
                   <div key={preview.id} className="relative group">
                     <div className="aspect-square rounded-lg overflow-hidden border bg-muted">
-                      <img
+                      <Image
                         src={preview.preview}
                         alt={preview.file.name}
+                        width={300}
+                        height={300}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -213,6 +248,20 @@ export function ImageUpload({
           )}
         </CardContent>
       </Card>
+
+      {/* Save Button */}
+      {showSaveButton && previews.length > 0 && (
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={handleSave}
+            disabled={isUploading}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            {isUploading ? 'Uploading...' : `Upload ${previews.length} Image${previews.length > 1 ? 's' : ''}`}
+          </Button>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (

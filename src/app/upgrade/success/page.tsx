@@ -1,12 +1,8 @@
-import { Button } from "@/components/ui/button"
 import { CheckCircle, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-export default function UpgradeSuccessPage({
-  searchParams,
-}: {
-  searchParams: { session_id?: string }
-}) {
+export default function UpgradeSuccessPage() {
   return (
     <main className="w-full min-h-screen flex flex-col items-center justify-center relative">
       {/* Back Button */}
@@ -19,22 +15,18 @@ export default function UpgradeSuccessPage({
         </Button>
       </div>
 
-      <div className="text-center max-w-md mx-auto p-6">
-        <div className="mb-6">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
-          <p className="text-gray-600 mb-6">
-            Thank you for upgrading your plan. Your subscription has been activated and you now have access to additional features.
+      <div className="flex flex-col items-center justify-center text-center max-w-md">
+        <CheckCircle className="h-16 w-16 text-green-500 mb-6" />
+        <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
+        <p className="text-muted-foreground mb-6">
+          Thank you for upgrading your plan. Your new features are now available.
+        </p>
+        
+        <div className="bg-muted p-4 rounded-lg mb-6">
+          <p className="text-sm text-muted-foreground">
+            You will receive a confirmation email shortly with your receipt and next steps.
           </p>
         </div>
-
-        {searchParams.session_id && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <p className="text-sm text-gray-600">
-              <strong>Session ID:</strong> {searchParams.session_id}
-            </p>
-          </div>
-        )}
 
         <div className="space-y-4">
           <Button asChild className="w-full">
@@ -43,8 +35,8 @@ export default function UpgradeSuccessPage({
             </Link>
           </Button>
           
-          <p className="text-sm text-gray-500">
-            You will receive a confirmation email shortly with your receipt and subscription details.
+          <p className="text-sm text-muted-foreground">
+            Need help? Contact our support team at support@gradydash.com
           </p>
         </div>
       </div>

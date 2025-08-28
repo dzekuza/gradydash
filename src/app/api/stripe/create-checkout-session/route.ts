@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createCheckoutSession, getPlanByPartnerCount } from '@/lib/stripe'
 import { getUser } from '@/lib/supabase/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user

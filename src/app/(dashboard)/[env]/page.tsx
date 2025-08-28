@@ -28,52 +28,52 @@ async function EnvironmentStats({ environmentId }: { environmentId: string }) {
 
     return (
       <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">Total Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
+            <div className="text-2xl font-bold text-card-foreground">{totalProducts}</div>
             <p className="text-xs text-muted-foreground">
               Total inventory
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Repair</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">In Repair</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{productsInRepair}</div>
+            <div className="text-2xl font-bold text-card-foreground">{productsInRepair}</div>
             <p className="text-xs text-muted-foreground">
               Products being repaired
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue (30d)</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">Revenue (30d)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-card-foreground">€{totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               Last 30 days
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Time to Sale</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">Avg Time to Sale</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{avgTimeToSale.toFixed(1)}d</div>
+            <div className="text-2xl font-bold text-card-foreground">{avgTimeToSale.toFixed(1)}d</div>
             <p className="text-xs text-muted-foreground">
               Average days to sell
             </p>
@@ -85,9 +85,9 @@ async function EnvironmentStats({ environmentId }: { environmentId: string }) {
     console.error('Error loading environment stats:', error)
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Error Loading Stats</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">Error Loading Stats</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground">
@@ -104,13 +104,13 @@ function EnvironmentStatsSkeleton() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
+        <Card key={i} className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24 bg-muted" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-8 w-16 mb-2" />
-            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-8 w-16 mb-2 bg-muted" />
+            <Skeleton className="h-3 w-20 bg-muted" />
           </CardContent>
         </Card>
       ))}
@@ -161,7 +161,7 @@ export default async function EnvironmentDashboardPage({ params }: EnvironmentDa
     return (
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Partner Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Partner Dashboard</h2>
         </div>
         <Suspense fallback={<EnvironmentStatsSkeleton />}>
           <EnvironmentStats environmentId={environment.id} />
@@ -173,9 +173,9 @@ export default async function EnvironmentDashboardPage({ params }: EnvironmentDa
     return (
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Error</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Error</h2>
         </div>
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">
               An error occurred while loading the dashboard. Please try refreshing the page.

@@ -13,9 +13,11 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import Image from 'next/image'
 import {
   Sidebar,
   SidebarContent,
@@ -157,9 +159,11 @@ export function AppSidebar({
           <div className="px-4 py-6 border-b">
             <div className="flex items-center gap-3">
               {currentEnvironment.logo_url ? (
-                <img
+                <Image
                   src={currentEnvironment.logo_url}
                   alt={`${currentEnvironment.name} logo`}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 object-cover rounded-lg"
                 />
               ) : (
@@ -179,7 +183,10 @@ export function AppSidebar({
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <div className="flex items-center justify-between p-4 border-t">
+          <NavUser user={user} />
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

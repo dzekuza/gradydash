@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { ChevronDown, Building2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import Image from 'next/image'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,9 +44,11 @@ export function MobileEnvironmentSwitcher({
         <Button variant="ghost" size="sm" className="h-8 px-2">
           <div className="flex items-center gap-2">
             {currentEnvironment.logo_url ? (
-              <img
+              <Image
                 src={currentEnvironment.logo_url}
                 alt={`${currentEnvironment.name} logo`}
+                width={20}
+                height={20}
                 className="h-5 w-5 object-cover rounded"
               />
             ) : (
@@ -66,9 +69,11 @@ export function MobileEnvironmentSwitcher({
               className="flex items-center gap-3"
             >
               {environment.logo_url ? (
-                <img
+                <Image
                   src={environment.logo_url}
                   alt={`${environment.name} logo`}
+                  width={24}
+                  height={24}
                   className="h-6 w-6 object-cover rounded"
                 />
               ) : (

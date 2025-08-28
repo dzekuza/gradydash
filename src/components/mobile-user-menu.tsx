@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { LogOut, User, Settings } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -78,6 +79,11 @@ export function MobileUserMenu({ userProfile }: MobileUserMenuProps) {
             <Settings className="h-4 w-4" />
             Settings
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex items-center justify-between p-2">
+          <span className="text-sm">Theme</span>
+          <ThemeToggle />
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
