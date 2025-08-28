@@ -62,7 +62,7 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
     if (!environmentSlug) {
       toast({
         title: "Error",
-        description: "Environment not found",
+        description: "Partner not found",
         variant: "destructive",
       })
       return
@@ -91,7 +91,7 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
     if (!environmentSlug) {
       toast({
         title: "Error",
-        description: "Environment not found",
+        description: "Partner not found",
         variant: "destructive",
       })
       return

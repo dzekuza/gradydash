@@ -18,12 +18,12 @@ export async function getUserAdminStatus(userId: string): Promise<AdminStatus> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Check for system admin membership (null environment_id)
+  // Check for system admin membership (null partner_id)
   const { data: systemMembership, error: systemError } = await serviceClient
     .from('memberships')
-    .select('role, environment_id')
+    .select('role, partner_id')
     .eq('user_id', userId)
-    .is('environment_id', null)
+    .is('partner_id', null)
     .single()
 
   if (systemError && systemError.code !== 'PGRST116') {
@@ -33,9 +33,9 @@ export async function getUserAdminStatus(userId: string): Promise<AdminStatus> {
   // Check for environment admin membership
   const { data: environmentMembership, error: envError } = await serviceClient
     .from('memberships')
-    .select('role, environment_id')
+    .select('role, partner_id')
     .eq('user_id', userId)
-    .not('environment_id', 'is', null)
+    .not('partner_id', 'is', null)
     .eq('role', 'admin')
     .single()
 

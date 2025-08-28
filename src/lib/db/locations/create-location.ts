@@ -14,7 +14,7 @@ export async function createLocation(formData: FormData) {
   const contactPersonName = formData.get('contact_person_name') as string
   const contactEmail = formData.get('contact_email') as string
   const contactPhone = formData.get('contact_phone') as string
-  const environmentId = formData.get('environment_id') as string
+  const environmentId = formData.get('partner_id') as string
 
   // Validate input
   const validation = createLocationSchema.safeParse({
@@ -45,41 +45,41 @@ export async function createLocation(formData: FormData) {
     let environmentSlug = ''
 
     if (targetEnvironmentId) {
-      // Verify the environment exists and user has access
+      // Verify the partner exists and user has access
       const { data: environment, error: envError } = await supabase
-        .from('environments')
+        .from('partners')
         .select('id, slug')
         .eq('id', targetEnvironmentId)
         .single()
 
       if (envError || !environment) {
-        throw new Error('Environment not found')
+        throw new Error('Partner not found')
       }
 
-      // Check if user has access to this environment
+      // Check if user has access to this partner
       if (!isSystemAdmin) {
         const { data: membership, error: membershipError } = await supabase
           .from('memberships')
           .select('id')
-          .eq('environment_id', targetEnvironmentId)
+          .eq('partner_id', targetEnvironmentId)
           .eq('user_id', user.id)
           .single()
 
         if (membershipError || !membership) {
-          throw new Error('You do not have permission to create locations in this environment')
+          throw new Error('You do not have permission to create locations in this partner')
         }
       }
 
       environmentSlug = environment.slug
     } else {
-      throw new Error('Environment ID is required')
+      throw new Error('Partner ID is required')
     }
 
     // Create the location
     const { data: location, error: locationError } = await supabase
       .from('locations')
       .insert({
-        environment_id: targetEnvironmentId,
+        partner_id: targetEnvironmentId,
         name: validation.data.name,
         description: validation.data.description,
         address: validation.data.address,

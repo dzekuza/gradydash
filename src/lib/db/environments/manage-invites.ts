@@ -15,10 +15,10 @@ export async function resendInvite(inviteId: string) {
 
     // Get the invite details
     const { data: invite, error: inviteError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select(`
         *,
-        environments (
+        partners (
           id,
           name,
           slug
@@ -44,20 +44,20 @@ export async function resendInvite(inviteId: string) {
     const { EmailService } = await import('@/lib/email/email-service')
     const { buildInviteUrl } = await import('@/lib/email/email-config')
     
-    const inviteUrl = buildInviteUrl(invite.id, invite.environments.slug)
+    const inviteUrl = buildInviteUrl(invite.id, invite.partners.slug)
     
     await EmailService.sendInviteEmail({
       to: invite.email,
       from: process.env.EMAIL_FROM_ADDRESS || 'noreply@grady.app',
       inviterName: user.email || 'System',
-      environmentName: invite.environments.name,
+      environmentName: invite.partners.name,
       inviteUrl,
       role: invite.role
     })
 
     // Update the created_at timestamp to "refresh" the invite
     const { error: updateError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .update({
         created_at: new Date().toISOString()
       })
@@ -87,7 +87,7 @@ export async function cancelInvite(inviteId: string) {
 
     // Check if invite exists and is not accepted
     const { data: invite, error: inviteError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select('id, accepted_at')
       .eq('id', inviteId)
       .single()
@@ -102,7 +102,7 @@ export async function cancelInvite(inviteId: string) {
 
     // Delete the invite
     const { error: deleteError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .delete()
       .eq('id', inviteId)
 

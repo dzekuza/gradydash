@@ -27,29 +27,29 @@ export async function importProducts(products: ImportProduct[], environmentId?: 
       throw new Error('Authentication required')
     }
 
-    // Get user's environment if not provided
+    // Get user's partner if not provided
     if (!environmentId) {
       const { data: memberships } = await supabase
         .from('memberships')
-        .select('environment_id')
+        .select('partner_id')
         .eq('user_id', user.id)
         .limit(1)
       
       if (!memberships || memberships.length === 0) {
-        throw new Error('No environment found for user')
+        throw new Error('No partner found for user')
       }
-      environmentId = memberships[0].environment_id
+      environmentId = memberships[0].partner_id
     }
 
-    // Get environment slug for revalidation
+    // Get partner slug for revalidation
     const { data: environment } = await supabase
-      .from('environments')
+      .from('partners')
       .select('slug')
       .eq('id', environmentId)
       .single()
 
     if (!environment) {
-      throw new Error('Environment not found')
+      throw new Error('Partner not found')
     }
 
     let totalInserted = 0
@@ -69,7 +69,7 @@ export async function importProducts(products: ImportProduct[], environmentId?: 
         const { data: insertedProduct, error: insertError } = await supabase
           .from('products')
           .insert({
-            environment_id: environmentId,
+            partner_id: environmentId,
             ...validation.data,
             created_by: user.id
           })

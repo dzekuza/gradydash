@@ -34,7 +34,7 @@ export default async function ProductEditPage({ params }: ProductEditPageProps) 
     .from('products')
     .select('*')
     .eq('id', params.id)
-    .eq('environment_id', environment.id)
+    .eq('partner_id', environment.id)
     .single()
 
   if (productsError || !products) {

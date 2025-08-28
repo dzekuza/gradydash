@@ -69,15 +69,15 @@ export function EnvironmentSwitcher({
       await createEnvironmentAction(formData)
       setShowCreateDialog(false)
       toast({
-        title: 'Environment created',
-        description: 'Your new environment has been created successfully.',
+        title: 'Partner created',
+        description: 'Your new partner has been created successfully.',
       })
       router.refresh()
     } catch (error) {
-      console.error('Failed to create environment:', error)
+      console.error('Failed to create partner:', error)
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create environment',
+        description: error instanceof Error ? error.message : 'Failed to create partner',
         variant: 'destructive',
       })
     } finally {
@@ -93,18 +93,18 @@ export function EnvironmentSwitcher({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select an environment"
+            aria-label="Select a partner"
             className="w-full justify-between"
           >
-            {currentEnvironment ? currentEnvironment.name : 'Select environment...'}
+            {currentEnvironment ? currentEnvironment.name : 'Select partner...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0">
           <Command>
-            <CommandInput placeholder="Search environments..." />
+            <CommandInput placeholder="Search partners..." />
             <CommandList>
-              <CommandEmpty>No environment found.</CommandEmpty>
+              <CommandEmpty>No partner found.</CommandEmpty>
               <CommandGroup>
                 {environments.map((environment) => (
                   <CommandItem
@@ -131,14 +131,14 @@ export function EnvironmentSwitcher({
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full mt-2">
             <Plus className="mr-2 h-4 w-4" />
-            Add Environment
+            Add Partner
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Environment</DialogTitle>
+            <DialogTitle>Create New Partner</DialogTitle>
             <DialogDescription>
-              Create a new environment for a reseller.
+              Create a new partner for a reseller.
             </DialogDescription>
           </DialogHeader>
           <form action={handleCreateEnvironment}>
@@ -148,7 +148,7 @@ export function EnvironmentSwitcher({
                 <Input
                   id="name"
                   name="name"
-                  placeholder="Enter environment name"
+                  placeholder="Enter partner name"
                   required
                   disabled={isCreating}
                 />
@@ -158,7 +158,7 @@ export function EnvironmentSwitcher({
                 <Input
                   id="slug"
                   name="slug"
-                  placeholder="environment-slug"
+                  placeholder="partner-slug"
                   pattern="[a-z0-9-]+"
                   title="Only lowercase letters, numbers, and hyphens allowed"
                   required
@@ -168,7 +168,7 @@ export function EnvironmentSwitcher({
             </div>
             <DialogFooter>
               <Button type="submit" disabled={isCreating}>
-                {isCreating ? 'Creating...' : 'Create Environment'}
+                {isCreating ? 'Creating...' : 'Create Partner'}
               </Button>
             </DialogFooter>
           </form>

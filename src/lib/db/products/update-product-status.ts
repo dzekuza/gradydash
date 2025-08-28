@@ -21,7 +21,7 @@ export async function updateProductStatus(
     // Get the current product to check its status
     const { data: currentProduct, error: productError } = await supabase
       .from('products')
-      .select('status, environment_id')
+      .select('status, partner_id')
       .eq('id', productId)
       .single()
 

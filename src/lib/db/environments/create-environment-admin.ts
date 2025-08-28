@@ -36,49 +36,49 @@ export async function createEnvironmentAdmin(formData: FormData) {
       throw new Error('User not authenticated')
     }
 
-    // Check if environment with this slug already exists
+    // Check if partner with this slug already exists
     const { data: existingEnv, error: checkError } = await supabase
-      .from('environments')
+      .from('partners')
       .select('id')
       .eq('slug', slug)
       .single()
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
-      console.error('Error checking existing environment:', checkError)
-      throw new Error('Error checking environment: ' + checkError.message)
+      console.error('Error checking existing partner:', checkError)
+      throw new Error('Error checking partner: ' + checkError.message)
     }
 
     if (existingEnv) {
-      throw new Error('Environment with this slug already exists')
+      throw new Error('Partner with this slug already exists')
     }
 
-    // Create the environment
+    // Create the partner
     // Note: created_by will be automatically set by the database trigger to auth.uid()
     const { data: environment, error: envError } = await supabase
-      .from('environments')
+      .from('partners')
       .insert({
         name: sanitizedName,
         slug,
-        description: description || `Environment for ${sanitizedName}`
+        description: description || `Partner for ${sanitizedName}`
         // created_by will be automatically set by the database trigger
       })
       .select()
       .single()
 
     if (envError) {
-      console.error('Error creating environment:', envError)
-      throw new Error('Failed to create environment: ' + envError.message)
+      console.error('Error creating partner:', envError)
+      throw new Error('Failed to create partner: ' + envError.message)
     }
 
     if (!environment) {
-      throw new Error('Environment was not created')
+      throw new Error('Partner was not created')
     }
 
     // Add the current user as a member with store_manager role
     const { error: membershipError } = await supabase
       .from('memberships')
       .insert({
-        environment_id: environment.id,
+        partner_id: environment.id,
         user_id: user.id,
         role: 'store_manager'
       })

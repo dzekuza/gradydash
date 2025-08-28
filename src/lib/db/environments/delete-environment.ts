@@ -11,22 +11,22 @@ export async function deleteEnvironment(environmentId: string, userId: string) {
     .from('memberships')
     .select('role')
     .eq('user_id', userId)
-    .is('environment_id', null)
+    .is('partner_id', null)
     .single()
 
   if (systemError || !systemMembership || systemMembership.role !== 'admin') {
-    throw new Error('Only system administrators can delete environments')
+    throw new Error('Only system administrators can delete partners')
   }
 
-  // Delete the environment (cascade will handle related data)
+  // Delete the partner (cascade will handle related data)
   const { error: deleteError } = await supabase
-    .from('environments')
+    .from('partners')
     .delete()
     .eq('id', environmentId)
 
   if (deleteError) {
-    console.error('Error deleting environment:', deleteError)
-    throw new Error('Failed to delete environment')
+    console.error('Error deleting partner:', deleteError)
+    throw new Error('Failed to delete partner')
   }
 
   revalidatePath('/admin/environments')

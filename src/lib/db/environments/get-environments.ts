@@ -4,10 +4,10 @@ import { Environment } from '@/types/db'
 export async function getEnvironmentsForUser(userId: string): Promise<Environment[]> {
   const supabase = createClient()
   
-  // Get environment IDs where user has membership
+  // Get partner IDs where user has membership
   const { data: memberships, error: membershipsError } = await supabase
     .from('memberships')
-    .select('environment_id')
+    .select('partner_id')
     .eq('user_id', userId)
 
   if (membershipsError) {
@@ -15,11 +15,11 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
     return []
   }
 
-  const membershipEnvironmentIds = memberships?.map(m => m.environment_id).filter(id => id !== null) || []
+  const membershipPartnerIds = memberships?.map(m => m.partner_id).filter(id => id !== null) || []
 
   // Build query based on memberships
   let envQuery = supabase
-    .from('environments')
+    .from('partners')
     .select(`
       id,
       name,
@@ -30,12 +30,12 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
       updated_at
     `)
 
-  if (membershipEnvironmentIds.length === 0) {
-    // If no memberships, only show environments created by the user
+  if (membershipPartnerIds.length === 0) {
+    // If no memberships, only show partners created by the user
     envQuery = envQuery.eq('created_by', userId)
   } else {
-    // Show environments where user has membership OR environments created by the user
-    envQuery = envQuery.in('id', membershipEnvironmentIds)
+    // Show partners where user has membership OR partners created by the user
+    envQuery = envQuery.in('id', membershipPartnerIds)
   }
 
   const { data: environments, error: environmentsError } = await envQuery.order('name')
@@ -53,7 +53,7 @@ export async function getEnvironmentBySlug(slug: string): Promise<Environment | 
   
   try {
     const { data, error } = await supabase
-      .from('environments')
+      .from('partners')
       .select(`
         id,
         name,
@@ -67,14 +67,14 @@ export async function getEnvironmentBySlug(slug: string): Promise<Environment | 
       .single()
 
     if (error) {
-      // Handle the case where no environment is found (PGRST116)
+      // Handle the case where no partner is found (PGRST116)
       if (error.code === 'PGRST116') {
         if (process.env.NODE_ENV === 'development') {
-        console.log(`Environment with slug '${slug}' not found`)
+        console.log(`Partner with slug '${slug}' not found`)
       }
         return null
       }
-      console.error('Error fetching environment:', error)
+      console.error('Error fetching partner:', error)
       return null
     }
 

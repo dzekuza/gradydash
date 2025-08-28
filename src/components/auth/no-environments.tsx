@@ -17,7 +17,7 @@ export function NoEnvironments({ userEmail }: NoEnvironmentsProps) {
           </div>
           <CardTitle className="text-xl">No Access Granted</CardTitle>
           <CardDescription className="text-base">
-            You haven&apos;t been assigned to any environments yet.
+            You haven&apos;t been assigned to any partners yet.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -28,7 +28,7 @@ export function NoEnvironments({ userEmail }: NoEnvironmentsProps) {
               </p>
             )}
             <p>
-              Please contact your administrator to be granted access to an environment.
+              Please contact your administrator to be granted access to a partner.
             </p>
           </div>
           <div className="flex flex-col gap-2">

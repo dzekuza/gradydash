@@ -20,7 +20,7 @@ export async function createProduct(formData: FormData) {
   const sellingPrice = formData.get('selling_price') as string
   const categories = formData.get('categories') as string
   const redirectTo = formData.get('redirectTo') as string
-  const environmentId = formData.get('environment_id') as string
+  const environmentId = formData.get('partner_id') as string
 
   // Validate input
   const validation = createProductSchema.safeParse({
@@ -54,28 +54,28 @@ export async function createProduct(formData: FormData) {
     let environmentSlug = ''
 
     if (targetEnvironmentId) {
-      // Verify the environment exists and user has access
+      // Verify the partner exists and user has access
       const { data: environment, error: envError } = await supabase
-        .from('environments')
+        .from('partners')
         .select('id, slug')
         .eq('id', targetEnvironmentId)
         .single()
 
       if (envError || !environment) {
-        throw new Error('Environment not found')
+        throw new Error('Partner not found')
       }
 
-      // Check if user has access to this environment
+      // Check if user has access to this partner
       if (!isSystemAdmin) {
         const { data: membership, error: membershipError } = await supabase
           .from('memberships')
           .select('id')
-          .eq('environment_id', targetEnvironmentId)
+          .eq('partner_id', targetEnvironmentId)
           .eq('user_id', user.id)
           .single()
 
         if (membershipError || !membership) {
-          throw new Error('You do not have permission to create products in this environment')
+          throw new Error('You do not have permission to create products in this partner')
         }
       }
 
@@ -90,7 +90,7 @@ export async function createProduct(formData: FormData) {
     const { data: product, error: productError } = await supabase
       .from('products')
       .insert({
-        environment_id: targetEnvironmentId,
+        partner_id: targetEnvironmentId,
         ...validation.data,
         created_by: user.id
       })

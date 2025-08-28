@@ -47,15 +47,15 @@ export async function GET(request: NextRequest) {
       try {
         // Get the invitation
         const { data: invite, error: inviteError } = await supabase
-          .from('environment_invites')
+          .from('partner_invites')
           .select(`
             id,
-            environment_id,
+            partner_id,
             email,
             role,
             expires_at,
             accepted_at,
-            environments!inner(name, slug)
+            partners!inner(name, slug)
           `)
           .eq('id', inviteId)
           .single()
@@ -67,18 +67,18 @@ export async function GET(request: NextRequest) {
             if (user.email === invite.email) {
               // Accept the invitation
               const { error: acceptError } = await supabase
-                .from('environment_invites')
+                .from('partner_invites')
                 .update({ accepted_at: new Date().toISOString() })
                 .eq('id', inviteId)
 
               if (!acceptError) {
                 // Create the membership
-                const environment = Array.isArray(invite.environments) ? invite.environments[0] : invite.environments
+                const partner = Array.isArray(invite.partners) ? invite.partners[0] : invite.partners
                 
                 await supabase
                   .from('memberships')
                   .insert({
-                    environment_id: invite.environment_id,
+                    partner_id: invite.partner_id,
                     user_id: user.id,
                     role: invite.role
                   })
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
                   data: { pending_invite_id: null }
                 })
 
-                // Redirect to the environment
-                return NextResponse.redirect(new URL(`/${environment.slug}`, request.url))
+                // Redirect to the partner
+                return NextResponse.redirect(new URL(`/${partner.slug}`, request.url))
               }
             }
           }

@@ -66,7 +66,7 @@ export function ProductForm({
 
     try {
       if (selectedEnvironmentId) {
-        formData.append('environment_id', selectedEnvironmentId)
+        formData.append('partner_id', selectedEnvironmentId)
       }
 
       // Add the select values to form data
@@ -149,10 +149,10 @@ export function ProductForm({
 
           {environments && environments.length > 1 && (
             <div className="space-y-2">
-              <Label htmlFor="environment_id">Environment *</Label>
+              <Label htmlFor="environment_id">Partner *</Label>
               <Select value={selectedEnvironmentId} onValueChange={setSelectedEnvironmentId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select environment" />
+                  <SelectValue placeholder="Select partner" />
                 </SelectTrigger>
                 <SelectContent>
                   {environments.map((env) => (

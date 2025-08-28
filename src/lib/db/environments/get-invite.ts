@@ -5,17 +5,17 @@ export async function getInvite(inviteId: string) {
 
   try {
     const { data: invite, error } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select(`
         id,
-        environment_id,
+        partner_id,
         email,
         role,
         invited_by,
         accepted_at,
         expires_at,
         created_at,
-        environments!inner(name, slug)
+        partners!inner(name, slug)
       `)
       .eq('id', inviteId)
       .single()
@@ -25,10 +25,10 @@ export async function getInvite(inviteId: string) {
       throw new Error('Failed to fetch invitation')
     }
 
-    // Handle the environments relationship (could be array or single object)
+    // Handle the partners relationship (could be array or single object)
     const transformedInvite = {
       ...invite,
-      environments: Array.isArray(invite.environments) ? invite.environments[0] : invite.environments
+      partners: Array.isArray(invite.partners) ? invite.partners[0] : invite.partners
     }
 
     return transformedInvite

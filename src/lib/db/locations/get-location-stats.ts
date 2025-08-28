@@ -10,11 +10,11 @@ export async function getLocationStats(environmentId: string): Promise<LocationS
   const supabase = createClient()
   
   try {
-    // Get all locations for the environment
+    // Get all locations for the partner
     const { data: locations, error: locationsError } = await supabase
       .from('locations')
       .select('id, name')
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
 
     if (locationsError) {
       console.error('Error fetching locations:', locationsError)
@@ -32,7 +32,7 @@ export async function getLocationStats(environmentId: string): Promise<LocationS
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('environment_id', environmentId)
+        .eq('partner_id', environmentId)
         .eq('location_id', location.id)
 
       if (countError) {

@@ -11,7 +11,7 @@ import { CreateEnvironmentDialog } from '@/components/admin/create-environment-d
 import { Building2, Users, Calendar, Mail, Shield } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
-export default async function AdminEnvironmentsPage() {
+export default async function AdminPartnersPage() {
   const user = await getUser()
   
   if (!user) {
@@ -38,9 +38,9 @@ export default async function AdminEnvironmentsPage() {
     )
   }
 
-  // Get all environments with member counts using service client
-  const { data: environments, error: envError } = await serviceClient
-    .from('environments')
+  // Get all partners with member counts using service client
+  const { data: partners, error: partnersError } = await serviceClient
+    .from('partners')
     .select(`
       id,
       name,
@@ -60,17 +60,17 @@ export default async function AdminEnvironmentsPage() {
     `)
     .order('created_at', { ascending: false })
 
-  if (envError) {
-    console.error('Error fetching environments:', envError)
+  if (partnersError) {
+    console.error('Error fetching partners:', partnersError)
   }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Environment Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Partner Management</h2>
           <p className="text-muted-foreground">
-            Manage all environments and their settings
+            Manage all partners and their settings
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -82,13 +82,13 @@ export default async function AdminEnvironmentsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Environments</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Partners</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{environments?.length || 0}</div>
+            <div className="text-2xl font-bold">{partners?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Active environments
+              Active partners
             </p>
           </CardContent>
         </Card>
@@ -99,10 +99,10 @@ export default async function AdminEnvironmentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {environments?.reduce((total, env) => total + (env.memberships?.length || 0), 0) || 0}
+              {partners?.reduce((total, partner) => total + (partner.memberships?.length || 0), 0) || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Across all environments
+              Across all partners
             </p>
           </CardContent>
         </Card>
@@ -113,46 +113,46 @@ export default async function AdminEnvironmentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {environments && environments.length > 0 
-                ? Math.round(environments.reduce((total, env) => total + (env.memberships?.length || 0), 0) / environments.length)
+              {partners && partners.length > 0 
+                ? Math.round(partners.reduce((total, partner) => total + (partner.memberships?.length || 0), 0) / partners.length)
                 : 0
               }
             </div>
             <p className="text-xs text-muted-foreground">
-              Per environment
+              Per partner
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Environments List */}
+      {/* Partners List */}
       <Card>
         <CardHeader>
-          <CardTitle>All Environments</CardTitle>
+          <CardTitle>All Partners</CardTitle>
           <CardDescription>
-            View and manage all environments in the system
+            View and manage all partners in the system
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {environments?.map((environment) => {
-              const memberCount = environment.memberships?.length || 0
-              const adminCount = environment.memberships?.filter(m => m.role === 'admin').length || 0
-              const managerCount = environment.memberships?.filter(m => m.role === 'store_manager').length || 0
+            {partners?.map((partner) => {
+              const memberCount = partner.memberships?.length || 0
+              const adminCount = partner.memberships?.filter(m => m.role === 'admin').length || 0
+              const managerCount = partner.memberships?.filter(m => m.role === 'store_manager').length || 0
 
               return (
-                <div key={environment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={partner.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <h3 className="font-semibold">{environment.name}</h3>
+                        <h3 className="font-semibold">{partner.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {environment.description || 'No description'}
+                          {partner.description || 'No description'}
                         </p>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>Slug: {environment.slug}</span>
-                          <span>Created: {formatDistanceToNow(new Date(environment.created_at), { addSuffix: true })}</span>
+                          <span>Slug: {partner.slug}</span>
+                          <span>Created: {formatDistanceToNow(new Date(partner.created_at), { addSuffix: true })}</span>
                         </div>
                       </div>
                     </div>
@@ -173,7 +173,7 @@ export default async function AdminEnvironmentsPage() {
                     </div>
                     
                     <Button variant="outline" size="sm" asChild>
-                      <a href={`/${environment.slug}`}>
+                      <a href={`/${partner.slug}`}>
                         View
                       </a>
                     </Button>
@@ -182,12 +182,12 @@ export default async function AdminEnvironmentsPage() {
               )
             })}
             
-            {(!environments || environments.length === 0) && (
+            {(!partners || partners.length === 0) && (
               <div className="text-center py-8">
                 <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-2 text-sm font-semibold">No environments yet</h3>
+                <h3 className="mt-2 text-sm font-semibold">No partners yet</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Create your first environment to get started.
+                  Create your first partner to get started.
                 </p>
               </div>
             )}

@@ -5,19 +5,19 @@ export async function getEnvironmentInvites(environmentId: string) {
 
   try {
     const { data: invites, error } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select(`
         id,
-        environment_id,
+        partner_id,
         email,
         role,
         invited_by,
         accepted_at,
         expires_at,
         created_at,
-        environments!inner(name, slug)
+        partners!inner(name, slug)
       `)
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
       .is('accepted_at', null)
       .order('created_at', { ascending: false })
 
@@ -29,7 +29,7 @@ export async function getEnvironmentInvites(environmentId: string) {
     // Transform the data to match the expected interface
     const transformedInvites = (invites || []).map(invite => ({
       ...invite,
-      environments: Array.isArray(invite.environments) ? invite.environments[0] : invite.environments
+      partners: Array.isArray(invite.partners) ? invite.partners[0] : invite.partners
     }))
 
     return transformedInvites

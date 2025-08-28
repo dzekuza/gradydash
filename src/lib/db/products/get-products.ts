@@ -9,7 +9,7 @@ export async function getProducts(environmentId: string): Promise<Product[]> {
       .from('products')
       .select(`
         id,
-        environment_id,
+        partner_id,
         title,
         sku,
         barcode,
@@ -22,7 +22,7 @@ export async function getProducts(environmentId: string): Promise<Product[]> {
         created_at,
         updated_at
       `)
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
       .order('created_at', { ascending: false })
 
     if (error) {

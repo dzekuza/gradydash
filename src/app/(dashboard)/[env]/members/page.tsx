@@ -16,9 +16,9 @@ interface MembersPageProps {
 async function MembersContent({ environmentSlug }: { environmentSlug: string }) {
   const supabase = createClient()
 
-  // Get the environment (access already checked in layout)
+  // Get the partner (access already checked in layout)
   const { data: environment, error: envError } = await supabase
-    .from('environments')
+    .from('partners')
     .select('id, name, slug')
     .eq('slug', environmentSlug)
     .single()
@@ -36,7 +36,7 @@ async function MembersContent({ environmentSlug }: { environmentSlug: string }) 
   const { data: membership } = await supabase
     .from('memberships')
     .select('role')
-    .eq('environment_id', environment.id)
+    .eq('partner_id', environment.id)
     .eq('user_id', user.id)
     .single()
 

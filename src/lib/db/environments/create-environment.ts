@@ -17,7 +17,7 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
     .from('memberships')
     .select('role')
     .eq('user_id', userId)
-    .is('environment_id', null)
+    .is('partner_id', null)
     .single()
 
   if (systemError || !systemMembership || systemMembership.role !== 'admin') {
@@ -26,23 +26,23 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
 
   // Check if slug already exists
   const { data: existingEnvironment, error: checkError } = await supabase
-    .from('environments')
+    .from('partners')
     .select('id')
     .eq('slug', data.slug)
     .single()
 
   if (checkError && checkError.code !== 'PGRST116') {
-    throw new Error('Error checking environment slug')
+    throw new Error('Error checking partner slug')
   }
 
   if (existingEnvironment) {
-    throw new Error('Environment with this slug already exists')
+    throw new Error('Partner with this slug already exists')
   }
 
-  // Create the environment
+  // Create the partner
   // Note: created_by will be automatically set by the database trigger to auth.uid()
   const { data: environment, error: createError } = await supabase
-    .from('environments')
+    .from('partners')
     .insert({
       name: data.name,
       slug: data.slug,
@@ -53,27 +53,27 @@ export async function createEnvironment(data: CreateEnvironmentData, userId: str
     .single()
 
   if (createError) {
-    console.error('Error creating environment:', createError)
-    throw new Error('Failed to create environment')
+    console.error('Error creating partner:', createError)
+    throw new Error('Failed to create partner')
   }
 
   // Add the current user as a member with store_manager role
   const { error: membershipError } = await supabase
     .from('memberships')
     .insert({
-      environment_id: environment.id,
+      partner_id: environment.id,
       user_id: userId,
       role: 'store_manager'
     })
 
   if (membershipError) {
     console.error('Error creating membership:', membershipError)
-    // Try to clean up the environment if membership creation fails
+    // Try to clean up the partner if membership creation fails
     await supabase
-      .from('environments')
+      .from('partners')
       .delete()
       .eq('id', environment.id)
-    throw new Error('Failed to create environment membership')
+    throw new Error('Failed to create partner membership')
   }
 
   revalidatePath('/admin/environments')

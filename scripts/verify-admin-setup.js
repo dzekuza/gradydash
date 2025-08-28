@@ -74,7 +74,7 @@ async function verifyAdminSetup() {
       .from('memberships')
       .select('*')
       .eq('user_id', adminUser.id)
-      .is('environment_id', null)
+      .is('partner_id', null)
       .single()
 
     if (membershipError) {
@@ -85,7 +85,7 @@ async function verifyAdminSetup() {
         .insert({
           user_id: adminUser.id,
           role: 'admin',
-          environment_id: null // null for system-wide admin access
+          partner_id: null // null for system-wide admin access
         })
         .select()
         .single()
@@ -103,15 +103,15 @@ async function verifyAdminSetup() {
     // Test admin access
     console.log('\n🧪 Testing admin access...')
     
-    const { data: environments, error: envError } = await supabase
-      .from('environments')
+    const { data: partners, error: envError } = await supabase
+      .from('partners')
       .select('count')
       .limit(1)
 
     if (envError) {
       console.error('❌ Error testing admin access:', envError)
     } else {
-      console.log('✅ Admin can access environments table')
+      console.log('✅ Admin can access partners table')
     }
 
     console.log('\n🎉 Admin setup verification complete!')

@@ -75,7 +75,7 @@ export function LoginForm({
         // Check if user has any memberships (including system admin membership)
         const { data: memberships, error: membershipsError } = await supabase
           .from('memberships')
-          .select('id, role, environment_id')
+          .select('id, role, partner_id')
           .eq('user_id', authData.user.id)
 
         if (membershipsError) {
@@ -87,19 +87,19 @@ export function LoginForm({
         if (!memberships || memberships.length === 0) {
           // User has no memberships, sign them out and show error
           await supabase.auth.signOut()
-          setError('Access denied. You must be invited to an environment before you can sign in.')
+          setError('Access denied. You must be invited to a partner before you can sign in.')
           return
         }
 
-        // Check if user is a system admin (has admin role with null environment_id)
-        const isSystemAdmin = memberships.some(m => m.role === 'admin' && m.environment_id === null)
+        // Check if user is a system admin (has admin role with null partner_id)
+        const isSystemAdmin = memberships.some(m => m.role === 'admin' && m.partner_id === null)
         
-        // If not system admin, ensure they have at least one environment membership
-        const hasEnvironmentMembership = memberships.some(m => m.environment_id !== null)
+        // If not system admin, ensure they have at least one partner membership
+        const hasPartnerMembership = memberships.some(m => m.partner_id !== null)
         
-        if (!isSystemAdmin && !hasEnvironmentMembership) {
+        if (!isSystemAdmin && !hasPartnerMembership) {
           await supabase.auth.signOut()
-          setError('Access denied. You must be invited to an environment before you can sign in.')
+          setError('Access denied. You must be invited to a partner before you can sign in.')
           return
         }
         

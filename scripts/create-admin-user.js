@@ -55,13 +55,13 @@ async function createAdminUser() {
 
     console.log('✅ Profile updated successfully')
 
-    // Create a global admin membership (without environment_id for system-wide access)
+    // Create a global admin membership (without partner_id for system-wide access)
     const { data: membershipData, error: membershipError } = await supabase
       .from('memberships')
       .insert({
         user_id: authData.user.id,
         role: 'admin',
-        environment_id: null // null for system-wide admin access
+        partner_id: null // null for system-wide admin access
       })
       .select()
 
@@ -78,9 +78,9 @@ async function createAdminUser() {
     console.log('Role: admin')
     console.log('')
     console.log('This user can:')
-    console.log('- Create new environments (stores)')
-    console.log('- Invite users to any environment')
-    console.log('- Access all environments')
+    console.log('- Create new partners (stores)')
+    console.log('- Invite users to any partner')
+    console.log('- Access all partners')
     console.log('- Manage system-wide settings')
 
   } catch (error) {

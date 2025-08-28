@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client-server'
 export async function getEnvironmentMembers(environmentId: string) {
   const supabase = createClient()
 
-  // Get members for this environment
+  // Get members for this partner
   const { data: members, error } = await supabase
     .from('memberships')
     .select(`
@@ -17,7 +17,7 @@ export async function getEnvironmentMembers(environmentId: string) {
         avatar_url
       )
     `)
-    .eq('environment_id', environmentId)
+    .eq('partner_id', environmentId)
     .order('created_at', { ascending: false })
 
   if (error) {

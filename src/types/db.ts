@@ -23,7 +23,7 @@ export interface Environment {
 
 export interface Membership {
   id: string
-  environment_id: string
+  partner_id: string | null
   user_id: string
   role: Role
   created_at: string
@@ -32,7 +32,7 @@ export interface Membership {
 
 export interface Location {
   id: string
-  environment_id: string
+  partner_id: string
   name: string
   description?: string
   address?: string
@@ -45,7 +45,7 @@ export interface Location {
 
 export interface Product {
   id: string
-  environment_id: string
+  partner_id: string
   title: string
   sku?: string
   barcode?: string
@@ -113,7 +113,7 @@ export interface Sale {
 
 export interface EnvironmentInvite {
   id: string
-  environment_id: string
+  partner_id: string
   email: string
   role: Role
   invited_by?: string | null

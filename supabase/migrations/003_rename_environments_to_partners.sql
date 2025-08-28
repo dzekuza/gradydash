@@ -1,0 +1,508 @@
+-- Migration to rename environments to partners and add admin_locations table
+-- This migration handles the transition from environments to partners
+
+-- First, create the admin_locations table for system-wide locations
+CREATE TABLE ADMIN_LOCATIONS (
+  ID UUID DEFAULT UUID_GENERATE_V4() PRIMARY KEY,
+  NAME TEXT NOT NULL,
+  DESCRIPTION TEXT,
+  ADDRESS TEXT,
+  CONTACT_PERSON_NAME TEXT,
+  CONTACT_EMAIL TEXT,
+  CONTACT_PHONE TEXT,
+  LOCATION_TYPE TEXT DEFAULT 'warehouse', -- warehouse, store, office, etc.
+  IS_ACTIVE BOOLEAN DEFAULT TRUE,
+  CREATED_BY UUID REFERENCES PROFILES(ID) ON DELETE SET NULL,
+  CREATED_AT TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UPDATED_AT TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for admin_locations
+CREATE INDEX IDX_ADMIN_LOCATIONS_CREATED_BY ON ADMIN_LOCATIONS(CREATED_BY);
+CREATE INDEX IDX_ADMIN_LOCATIONS_IS_ACTIVE ON ADMIN_LOCATIONS(IS_ACTIVE);
+CREATE INDEX IDX_ADMIN_LOCATIONS_LOCATION_TYPE ON ADMIN_LOCATIONS(LOCATION_TYPE);
+
+-- Enable RLS on admin_locations
+ALTER TABLE ADMIN_LOCATIONS ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for admin_locations - only system admins can manage
+CREATE POLICY "System admins can view all admin locations" ON ADMIN_LOCATIONS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "System admins can create admin locations" ON ADMIN_LOCATIONS FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "System admins can update admin locations" ON ADMIN_LOCATIONS FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "System admins can delete admin locations" ON ADMIN_LOCATIONS FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+-- Create trigger for admin_locations updated_at
+CREATE TRIGGER UPDATE_ADMIN_LOCATIONS_UPDATED_AT 
+BEFORE UPDATE ON ADMIN_LOCATIONS 
+FOR EACH ROW EXECUTE FUNCTION UPDATE_UPDATED_AT_COLUMN();
+
+-- Now rename environments to partners
+-- First, drop foreign key constraints that reference environments
+ALTER TABLE MEMBERSHIPS DROP CONSTRAINT IF EXISTS MEMBERSHIPS_ENVIRONMENT_ID_FKEY;
+ALTER TABLE LOCATIONS DROP CONSTRAINT IF EXISTS LOCATIONS_ENVIRONMENT_ID_FKEY;
+ALTER TABLE PRODUCTS DROP CONSTRAINT IF EXISTS PRODUCTS_ENVIRONMENT_ID_FKEY;
+ALTER TABLE ENVIRONMENT_INVITES DROP CONSTRAINT IF EXISTS ENVIRONMENT_INVITES_ENVIRONMENT_ID_FKEY;
+
+-- Rename the environments table to partners
+ALTER TABLE ENVIRONMENTS RENAME TO PARTNERS;
+
+-- Rename the environment_id columns to partner_id
+ALTER TABLE MEMBERSHIPS RENAME COLUMN ENVIRONMENT_ID TO PARTNER_ID;
+ALTER TABLE LOCATIONS RENAME COLUMN ENVIRONMENT_ID TO PARTNER_ID;
+ALTER TABLE PRODUCTS RENAME COLUMN ENVIRONMENT_ID TO PARTNER_ID;
+ALTER TABLE ENVIRONMENT_INVITES RENAME COLUMN ENVIRONMENT_ID TO PARTNER_ID;
+
+-- Rename the invites table
+ALTER TABLE ENVIRONMENT_INVITES RENAME TO PARTNER_INVITES;
+
+-- Recreate foreign key constraints with new names
+ALTER TABLE MEMBERSHIPS ADD CONSTRAINT MEMBERSHIPS_PARTNER_ID_FKEY 
+  FOREIGN KEY (PARTNER_ID) REFERENCES PARTNERS(ID) ON DELETE CASCADE;
+
+ALTER TABLE LOCATIONS ADD CONSTRAINT LOCATIONS_PARTNER_ID_FKEY 
+  FOREIGN KEY (PARTNER_ID) REFERENCES PARTNERS(ID) ON DELETE CASCADE;
+
+ALTER TABLE PRODUCTS ADD CONSTRAINT PRODUCTS_PARTNER_ID_FKEY 
+  FOREIGN KEY (PARTNER_ID) REFERENCES PARTNERS(ID) ON DELETE CASCADE;
+
+ALTER TABLE PARTNER_INVITES ADD CONSTRAINT PARTNER_INVITES_PARTNER_ID_FKEY 
+  FOREIGN KEY (PARTNER_ID) REFERENCES PARTNERS(ID) ON DELETE CASCADE;
+
+-- Update indexes to reflect new column names
+DROP INDEX IF EXISTS IDX_MEMBERSHIPS_ENVIRONMENT_ID;
+CREATE INDEX IDX_MEMBERSHIPS_PARTNER_ID ON MEMBERSHIPS(PARTNER_ID);
+
+DROP INDEX IF EXISTS IDX_PRODUCTS_ENVIRONMENT_ID;
+CREATE INDEX IDX_PRODUCTS_PARTNER_ID ON PRODUCTS(PARTNER_ID);
+
+DROP INDEX IF EXISTS IDX_ENVIRONMENT_INVITES_ENVIRONMENT_ID;
+CREATE INDEX IDX_PARTNER_INVITES_PARTNER_ID ON PARTNER_INVITES(PARTNER_ID);
+
+-- Update RLS policies to use new table and column names
+-- Drop old policies
+DROP POLICY IF EXISTS "Members can view their environments" ON PARTNERS;
+DROP POLICY IF EXISTS "Admins can view all environments" ON PARTNERS;
+DROP POLICY IF EXISTS "Users can create environments" ON PARTNERS;
+DROP POLICY IF EXISTS "Users can update their environments" ON PARTNERS;
+DROP POLICY IF EXISTS "Admins can update any environment" ON PARTNERS;
+
+DROP POLICY IF EXISTS "Users can view memberships in their environments" ON MEMBERSHIPS;
+DROP POLICY IF EXISTS "Users can create memberships in their environments" ON MEMBERSHIPS;
+
+DROP POLICY IF EXISTS "Members can view products in their environments" ON PRODUCTS;
+DROP POLICY IF EXISTS "Users can create products in their environments" ON PRODUCTS;
+DROP POLICY IF EXISTS "Users can update products in their environments" ON PRODUCTS;
+DROP POLICY IF EXISTS "Users can delete products in their environments" ON PRODUCTS;
+DROP POLICY IF EXISTS "Admins can view all products" ON PRODUCTS;
+
+DROP POLICY IF EXISTS "Members can view locations in their environments" ON LOCATIONS;
+DROP POLICY IF EXISTS "Users can create locations in their environments" ON LOCATIONS;
+DROP POLICY IF EXISTS "Users can update locations in their environments" ON LOCATIONS;
+DROP POLICY IF EXISTS "Users can delete locations in their environments" ON LOCATIONS;
+DROP POLICY IF EXISTS "Admins can view all locations" ON LOCATIONS;
+
+DROP POLICY IF EXISTS "Members can view product status history in their environments" ON PRODUCT_STATUS_HISTORY;
+DROP POLICY IF EXISTS "Staff can create product status history" ON PRODUCT_STATUS_HISTORY;
+
+DROP POLICY IF EXISTS "Members can view product comments in their environments" ON PRODUCT_COMMENTS;
+DROP POLICY IF EXISTS "Members can create product comments" ON PRODUCT_COMMENTS;
+DROP POLICY IF EXISTS "Staff can update any comment" ON PRODUCT_COMMENTS;
+DROP POLICY IF EXISTS "Staff can delete any comment" ON PRODUCT_COMMENTS;
+
+DROP POLICY IF EXISTS "Members can view product images in their environments" ON PRODUCT_IMAGES;
+DROP POLICY IF EXISTS "Users can create product images in their environments" ON PRODUCT_IMAGES;
+DROP POLICY IF EXISTS "Users can update product images in their environments" ON PRODUCT_IMAGES;
+DROP POLICY IF EXISTS "Users can delete product images in their environments" ON PRODUCT_IMAGES;
+DROP POLICY IF EXISTS "Admins can view all product images" ON PRODUCT_IMAGES;
+
+DROP POLICY IF EXISTS "Members can view sales in their environments" ON SALES;
+DROP POLICY IF EXISTS "Staff can create sales records" ON SALES;
+DROP POLICY IF EXISTS "Staff can update sales records" ON SALES;
+DROP POLICY IF EXISTS "Staff can delete sales records" ON SALES;
+
+DROP POLICY IF EXISTS "Members can view invites for their environments" ON PARTNER_INVITES;
+DROP POLICY IF EXISTS "Users can view invites sent to their email" ON PARTNER_INVITES;
+DROP POLICY IF EXISTS "Staff can create environment invites" ON PARTNER_INVITES;
+DROP POLICY IF EXISTS "Staff can update environment invites" ON PARTNER_INVITES;
+DROP POLICY IF EXISTS "Staff can delete environment invites" ON PARTNER_INVITES;
+
+-- Create new policies with updated names
+CREATE POLICY "Members can view their partners" ON PARTNERS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PARTNERS.ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Admins can view all partners" ON PARTNERS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "Users can create partners" ON PARTNERS FOR INSERT 
+WITH CHECK (AUTH.UID() IS NOT NULL);
+
+CREATE POLICY "Users can update their partners" ON PARTNERS FOR UPDATE 
+USING (CREATED_BY = AUTH.UID());
+
+CREATE POLICY "Admins can update any partner" ON PARTNERS FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "Users can view memberships in their partners" ON MEMBERSHIPS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = MEMBERSHIPS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can create memberships in their partners" ON MEMBERSHIPS FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM PARTNERS P 
+    WHERE P.ID = MEMBERSHIPS.PARTNER_ID 
+    AND P.CREATED_BY = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Members can view products in their partners" ON PRODUCTS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PRODUCTS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can create products in their partners" ON PRODUCTS FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PRODUCTS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can update products in their partners" ON PRODUCTS FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PRODUCTS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can delete products in their partners" ON PRODUCTS FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PRODUCTS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Admins can view all products" ON PRODUCTS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "Members can view locations in their partners" ON LOCATIONS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = LOCATIONS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can create locations in their partners" ON LOCATIONS FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = LOCATIONS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can update locations in their partners" ON LOCATIONS FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = LOCATIONS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can delete locations in their partners" ON LOCATIONS FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = LOCATIONS.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Admins can view all locations" ON LOCATIONS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+-- Update other policies with new table/column names
+CREATE POLICY "Members can view product status history in their partners" ON PRODUCT_STATUS_HISTORY FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_STATUS_HISTORY.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Staff can create product status history" ON PRODUCT_STATUS_HISTORY FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_STATUS_HISTORY.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Members can view product comments in their partners" ON PRODUCT_COMMENTS FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Members can create product comments" ON PRODUCT_COMMENTS FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Staff can update any comment" ON PRODUCT_COMMENTS FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Staff can delete any comment" ON PRODUCT_COMMENTS FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_COMMENTS.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Members can view product images in their partners" ON PRODUCT_IMAGES FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_IMAGES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can create product images in their partners" ON PRODUCT_IMAGES FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_IMAGES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can update product images in their partners" ON PRODUCT_IMAGES FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_IMAGES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can delete product images in their partners" ON PRODUCT_IMAGES FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = PRODUCT_IMAGES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Admins can view all product images" ON PRODUCT_IMAGES FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.USER_ID = AUTH.UID() 
+    AND M.ROLE = 'admin'
+  )
+);
+
+CREATE POLICY "Members can view sales in their partners" ON SALES FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = SALES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Staff can create sales records" ON SALES FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = SALES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Staff can update sales records" ON SALES FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = SALES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Staff can delete sales records" ON SALES FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM PRODUCTS P 
+    JOIN MEMBERSHIPS M ON M.PARTNER_ID = P.PARTNER_ID 
+    WHERE P.ID = SALES.PRODUCT_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Members can view invites for their partners" ON PARTNER_INVITES FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PARTNER_INVITES.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Users can view invites sent to their email" ON PARTNER_INVITES FOR SELECT
+USING (
+  EMAIL = (
+    SELECT EMAIL FROM PROFILES WHERE ID = AUTH.UID()
+  )
+);
+
+CREATE POLICY "Staff can create partner invites" ON PARTNER_INVITES FOR INSERT 
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PARTNER_INVITES.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Staff can update partner invites" ON PARTNER_INVITES FOR UPDATE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PARTNER_INVITES.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+CREATE POLICY "Staff can delete partner invites" ON PARTNER_INVITES FOR DELETE 
+USING (
+  EXISTS (
+    SELECT 1 FROM MEMBERSHIPS M 
+    WHERE M.PARTNER_ID = PARTNER_INVITES.PARTNER_ID 
+    AND M.USER_ID = AUTH.UID() 
+    AND M.ROLE IN ('admin', 'store_manager')
+  )
+);
+
+-- Add comments for documentation
+COMMENT ON TABLE PARTNERS IS 'Partners (formerly environments) - organizations that use the system';
+COMMENT ON TABLE ADMIN_LOCATIONS IS 'System-wide locations managed by administrators';
+COMMENT ON COLUMN ADMIN_LOCATIONS.LOCATION_TYPE IS 'Type of location: warehouse, store, office, etc.';
+COMMENT ON COLUMN ADMIN_LOCATIONS.IS_ACTIVE IS 'Whether this location is currently active';

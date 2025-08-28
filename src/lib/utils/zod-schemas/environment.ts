@@ -21,7 +21,7 @@ export const updateEnvironmentSchema = z.object({
 export const environmentInviteSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.enum(['admin', 'store_manager'] as const),
-  environmentId: z.string().uuid('Invalid environment ID')
+  partnerId: z.string().uuid('Invalid partner ID')
 })
 
 export const createLocationSchema = z.object({
@@ -34,7 +34,7 @@ export const createLocationSchema = z.object({
 })
 
 export const inviteUserSchema = z.object({
-  environment_id: z.string().uuid(),
+  partner_id: z.string().uuid(),
   email: z.string().email('Invalid email address'),
   role: z.enum(['admin', 'store_manager'] as const),
 })

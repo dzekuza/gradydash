@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Building2, Users, Settings, Plus } from 'lucide-react'
+import { Shield, Building2, Users, Settings, Plus, MapPin } from 'lucide-react'
 
 interface AdminSidebarProps {
   userRole?: string | null
@@ -31,13 +31,13 @@ interface AdminSidebarProps {
 export function AdminSidebar({ userRole }: AdminSidebarProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newEnvironmentName, setNewEnvironmentName] = useState('')
-  const [newEnvironmentSlug, setNewEnvironmentSlug] = useState('')
+  const [newPartnerSlug, setNewPartnerSlug] = useState('')
   const router = useRouter()
 
   const isAdmin = userRole === 'admin'
 
   const handleCreateEnvironment = async () => {
-    if (!newEnvironmentName || !newEnvironmentSlug) return
+    if (!newEnvironmentName || !newPartnerSlug) return  
 
     try {
       const response = await fetch('/api/environments', {
@@ -47,7 +47,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
         },
         body: JSON.stringify({
           name: newEnvironmentName,
-          slug: newEnvironmentSlug,
+          slug: newPartnerSlug,
         }),
       })
 
@@ -55,11 +55,11 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
         const data = await response.json()
         setIsCreateDialogOpen(false)
         setNewEnvironmentName('')
-        setNewEnvironmentSlug('')
+        setNewPartnerSlug('')
         router.push(`/${data.slug}`)
       }
     } catch (error) {
-      console.error('Error creating environment:', error)
+      console.error('Error creating partner:', error)
     }
   }
 
@@ -88,7 +88,14 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
         <Button variant="ghost" className="w-full justify-start" asChild>
           <a href="/admin/environments">
             <Building2 className="mr-2 h-4 w-4" />
-            Environments
+            Partners
+          </a>
+        </Button>
+        
+        <Button variant="ghost" className="w-full justify-start" asChild>
+          <a href="/admin/locations">
+            <MapPin className="mr-2 h-4 w-4" />
+            Locations
           </a>
         </Button>
         
@@ -113,33 +120,33 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
             <DialogTrigger asChild>
               <Button className="w-full" size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Environment
+                Create Partner
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Environment</DialogTitle>
+                <DialogTitle>Create New Partner</DialogTitle>
                 <DialogDescription>
-                  Create a new environment for a store or organization.
+                  Create a new partner organization.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Environment Name</Label>
+                  <Label htmlFor="name">Partner Name</Label>
                   <Input
                     id="name"
                     value={newEnvironmentName}
                     onChange={(e) => setNewEnvironmentName(e.target.value)}
-                    placeholder="Enter environment name"
+                    placeholder="Enter partner name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="slug">Environment Slug</Label>
+                  <Label htmlFor="slug">Partner Slug</Label>
                   <Input
                     id="slug"
-                    value={newEnvironmentSlug}
-                    onChange={(e) => setNewEnvironmentSlug(e.target.value)}
-                    placeholder="Enter environment slug"
+                    value={newPartnerSlug}
+                    onChange={(e) => setNewPartnerSlug(e.target.value)}
+                    placeholder="Enter partner slug"
                   />
                 </div>
               </div>
@@ -148,7 +155,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
                   Cancel
                 </Button>
                 <Button onClick={handleCreateEnvironment}>
-                  Create Environment
+                  Create Partner
                 </Button>
               </DialogFooter>
             </DialogContent>

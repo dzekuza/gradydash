@@ -8,7 +8,7 @@ export async function getProductsByStatus(environmentId: string): Promise<Record
     const { data, error } = await supabase
       .from('products')
       .select('status')
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
 
     if (error) {
       console.error('Error fetching products by status:', error)
@@ -61,9 +61,9 @@ export async function getRevenueLast30Days(environmentId: string): Promise<numbe
       .select(`
         sale_price,
         product_id,
-        products!inner(environment_id)
+        products!inner(partner_id)
       `)
-      .eq('products.environment_id', environmentId)
+      .eq('products.partner_id', environmentId)
       .gte('sale_date', thirtyDaysAgo.toISOString())
 
     if (error) {
@@ -82,11 +82,11 @@ export async function getAverageTimeToSale(environmentId: string): Promise<numbe
   const supabase = createClient()
   
   try {
-    // First get all products in the environment with their creation dates
+    // First get all products in the partner with their creation dates
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select('id, created_at')
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
 
     if (productsError) {
       console.error('Error fetching products:', productsError)
@@ -178,15 +178,15 @@ export interface DashboardStats {
 export async function getDashboardStats(environmentId: string): Promise<DashboardStats> {
   const supabase = createClient()
 
-  // Verify environment exists
+  // Verify partner exists
   const { data: environment, error: envError } = await supabase
-    .from('environments')
+    .from('partners')
     .select('id')
     .eq('id', environmentId)
     .single()
 
   if (envError || !environment) {
-    throw new Error('Environment not found')
+    throw new Error('Partner not found')
   }
 
   // Get all stats in parallel

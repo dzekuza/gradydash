@@ -26,7 +26,7 @@ interface Invite {
   role: string
   created_at: string
   expires_at: string
-  environments: {
+  partners: {
     name: string
     slug: string
   }

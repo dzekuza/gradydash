@@ -25,15 +25,15 @@ export async function acceptInvite(formData: FormData) {
 
     // Get the invitation
     const { data: invite, error: inviteError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select(`
         id,
-        environment_id,
+        partner_id,
         email,
         role,
         expires_at,
         accepted_at,
-        environments!inner(name, slug)
+        partners!inner(name, slug)
       `)
       .eq('id', inviteId)
       .single()
@@ -42,8 +42,8 @@ export async function acceptInvite(formData: FormData) {
       throw new Error('Invitation not found')
     }
 
-    // Handle the environments relationship (could be array or single object)
-    const environment = Array.isArray(invite.environments) ? invite.environments[0] : invite.environments
+    // Handle the partners relationship (could be array or single object)
+    const environment = Array.isArray(invite.partners) ? invite.partners[0] : invite.partners
 
     // Check if invitation is expired
     if (new Date(invite.expires_at) < new Date()) {
@@ -66,21 +66,21 @@ export async function acceptInvite(formData: FormData) {
       throw new Error('This invitation was sent to a different email address')
     }
 
-    // Check if user is already a member of this environment
+    // Check if user is already a member of this partner
     const { data: existingMembership } = await supabase
       .from('memberships')
       .select('id')
-      .eq('environment_id', invite.environment_id)
+      .eq('partner_id', invite.partner_id)
       .eq('user_id', user.id)
       .single()
 
     if (existingMembership) {
-      throw new Error('You are already a member of this environment')
+      throw new Error('You are already a member of this partner')
     }
 
     // Start a transaction
     const { error: acceptError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .update({ accepted_at: new Date().toISOString() })
       .eq('id', inviteId)
 
@@ -93,7 +93,7 @@ export async function acceptInvite(formData: FormData) {
     const { error: membershipError } = await supabase
       .from('memberships')
       .insert({
-        environment_id: invite.environment_id,
+        partner_id: invite.partner_id,
         user_id: user.id,
         role: invite.role
       })

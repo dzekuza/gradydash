@@ -8,11 +8,11 @@ export const emailConfig = {
   // Email templates configuration
   templates: {
     invite: {
-      subject: (environmentName: string) => `You're invited to join ${environmentName}`,
+      subject: (partnerName: string) => `You're invited to join ${partnerName}`,
       expiresIn: '7 days'
     },
     welcome: {
-      subject: (environmentName: string) => `Welcome to ${environmentName}!`
+      subject: (partnerName: string) => `Welcome to ${partnerName}!`
     },
     notification: {
       subject: (subject: string) => subject
@@ -53,12 +53,12 @@ export function sanitizeEmailContent(content: string): string {
     .replace(/on\w+\s*=/gi, '')
 }
 
-export function buildInviteUrl(inviteId: string, environmentSlug: string): string {
-  return `${emailConfig.appUrl}/invite/${inviteId}?env=${environmentSlug}`
+export function buildInviteUrl(inviteId: string, partnerSlug: string): string {
+  return `${emailConfig.appUrl}/invite/${inviteId}?env=${partnerSlug}`
 }
 
-export function buildProductUrl(productId: string, environmentSlug: string): string {
-  return `${emailConfig.appUrl}/${environmentSlug}/products/${productId}`
+export function buildProductUrl(productId: string, partnerSlug: string): string {
+  return `${emailConfig.appUrl}/${partnerSlug}/products/${productId}`
 }
 
 export function buildLoginUrl(): string {

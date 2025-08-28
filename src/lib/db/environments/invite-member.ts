@@ -67,12 +67,12 @@ export async function inviteMember(formData: FormData) {
         const { data: membership, error: membershipError } = await supabase
           .from('memberships')
           .select('role')
-          .eq('environment_id', finalEnvironmentId)
+          .eq('partner_id', finalEnvironmentId)
           .eq('user_id', user.id)
           .single()
 
         if (membershipError || !membership) {
-          throw new Error('You do not have permission to invite members to this environment')
+          throw new Error('You do not have permission to invite members to this partner')
         }
 
         // Only allow store_manager and admin to invite members
@@ -96,30 +96,30 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
           .from('memberships')
           .select('id')
           .eq('user_id', existingUser.id)
-          .is('environment_id', null)
+          .is('partner_id', null)
           .single()
 
         if (existingSystemMembership) {
           throw new Error('This user is already a system admin')
         }
       } else {
-        // Check if user is already a member of the target environment
+        // Check if user is already a member of the target partner
         const { data: existingMembership } = await supabase
           .from('memberships')
           .select('id')
-          .eq('environment_id', finalEnvironmentId)
+          .eq('partner_id', finalEnvironmentId)
           .eq('user_id', existingUser.id)
           .single()
 
         if (existingMembership) {
-          throw new Error('This user is already a member of this environment')
+          throw new Error('This user is already a member of this partner')
         }
       }
     }
 
     // Check if there's already a pending invite
     const { data: existingInvite } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .select('id')
       .eq('email', email)
       .is('accepted_at', null)
@@ -137,9 +137,9 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
     const token = crypto.randomBytes(32).toString('hex')
 
     const { data: invite, error: inviteError } = await supabase
-      .from('environment_invites')
+      .from('partner_invites')
       .insert({
-        environment_id: finalEnvironmentId,
+        partner_id: finalEnvironmentId,
         email,
         role: finalRole,
         invited_by: user.id,

@@ -9,7 +9,7 @@ export async function getLocations(environmentId: string): Promise<Location[]> {
       .from('locations')
       .select(`
         id,
-        environment_id,
+        partner_id,
         name,
         description,
         address,
@@ -19,7 +19,7 @@ export async function getLocations(environmentId: string): Promise<Location[]> {
         created_at,
         updated_at
       `)
-      .eq('environment_id', environmentId)
+      .eq('partner_id', environmentId)
       .order('name')
 
     if (error) {

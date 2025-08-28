@@ -6,16 +6,16 @@ import { revalidatePath } from 'next/cache'
 export async function deleteProduct(productId: string, userId: string, environmentId: string) {
   const supabase = createClient()
 
-  // Check if user has permission to delete products in this environment
+  // Check if user has permission to delete products in this partner
   const { data: membership, error: membershipError } = await supabase
     .from('memberships')
     .select('role')
-    .eq('environment_id', environmentId)
+    .eq('partner_id', environmentId)
     .eq('user_id', userId)
     .single()
 
   if (membershipError || !membership) {
-    throw new Error('You do not have permission to delete products in this environment')
+    throw new Error('You do not have permission to delete products in this partner')
   }
 
   // Only allow store_manager and admin to delete products
@@ -23,10 +23,10 @@ export async function deleteProduct(productId: string, userId: string, environme
     throw new Error('You do not have permission to delete products')
   }
 
-  // Verify the product belongs to the environment
+  // Verify the product belongs to the partner
   const { data: product, error: productError } = await supabase
     .from('products')
-    .select('id, environment_id')
+    .select('id, partner_id')
     .eq('id', productId)
     .single()
 
@@ -34,8 +34,8 @@ export async function deleteProduct(productId: string, userId: string, environme
     throw new Error('Product not found')
   }
 
-  if (product.environment_id !== environmentId) {
-    throw new Error('Product does not belong to this environment')
+  if (product.partner_id !== environmentId) {
+    throw new Error('Product does not belong to this partner')
   }
 
   // Delete the product (cascade will handle related data)

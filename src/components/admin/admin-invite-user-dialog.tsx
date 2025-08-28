@@ -56,7 +56,7 @@ export function AdminInviteUserDialog({
       
       if (inviteType === 'environment') {
         if (!targetEnvironmentId) {
-          throw new Error('Please select an environment')
+          throw new Error('Please select a partner')
         }
         formData.append('environmentId', targetEnvironmentId)
         formData.append('targetEnvironmentId', targetEnvironmentId)
@@ -68,10 +68,10 @@ export function AdminInviteUserDialog({
 
       const result = await inviteMember(formData)
 
-      // Get target environment name for the toast message
+      // Get target partner name for the toast message
       const targetEnv = inviteType === 'system_admin' 
         ? 'System Administration' 
-        : environments.find(env => env.id === targetEnvironmentId)?.name || 'Unknown Environment'
+        : environments.find(env => env.id === targetEnvironmentId)?.name || 'Unknown Partner'
 
       toast({
         title: 'Invitation sent',
@@ -104,7 +104,7 @@ export function AdminInviteUserDialog({
     
     return [
       { value: 'store_manager', label: 'Store Manager' },
-      { value: 'admin', label: 'Environment Admin' },
+      { value: 'admin', label: 'Partner Admin' },
     ]
   }
 
@@ -122,7 +122,7 @@ export function AdminInviteUserDialog({
         <DialogHeader>
           <DialogTitle>Invite User</DialogTitle>
           <DialogDescription>
-            Send an invitation to join the system or a specific environment
+            Send an invitation to join the system or a specific partner
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -146,7 +146,7 @@ export function AdminInviteUserDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="environment">Environment Member</SelectItem>
+                <SelectItem value="environment">Partner Member</SelectItem>
                 <SelectItem value="system_admin">System Administrator</SelectItem>
               </SelectContent>
             </Select>
@@ -154,10 +154,10 @@ export function AdminInviteUserDialog({
           
           {inviteType === 'environment' && (
             <div className="space-y-2">
-              <Label htmlFor="environment">Environment</Label>
+              <Label htmlFor="environment">Partner</Label>
               <Select value={targetEnvironmentId} onValueChange={setTargetEnvironmentId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an environment" />
+                  <SelectValue placeholder="Select a partner" />
                 </SelectTrigger>
                 <SelectContent>
                   {environments.map(env => (

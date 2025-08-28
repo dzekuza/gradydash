@@ -29,7 +29,7 @@ async function InviteContent({ inviteId }: { inviteId: string }) {
             <CardHeader>
               <CardTitle className="text-center text-green-600">Invitation Accepted</CardTitle>
               <CardDescription className="text-center">
-                You have already accepted this invitation to join {invite.environments.name}.
+                You have already accepted this invitation to join {invite.partners.name}.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
@@ -49,12 +49,12 @@ async function InviteContent({ inviteId }: { inviteId: string }) {
             <CardHeader>
               <CardTitle className="text-center text-red-600">Invitation Expired</CardTitle>
               <CardDescription className="text-center">
-                This invitation to join {invite.environments.name} has expired.
+                This invitation to join {invite.partners.name} has expired.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-sm text-muted-foreground">
-                Please contact the environment administrator for a new invitation.
+                Please contact the partner administrator for a new invitation.
               </p>
             </CardContent>
           </Card>
@@ -68,7 +68,7 @@ async function InviteContent({ inviteId }: { inviteId: string }) {
           <CardHeader>
             <CardTitle className="text-center">You&apos;re Invited!</CardTitle>
             <CardDescription className="text-center">
-              You&apos;ve been invited to join <strong>{invite.environments.name}</strong>
+              You&apos;ve been invited to join <strong>{invite.partners.name}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent>

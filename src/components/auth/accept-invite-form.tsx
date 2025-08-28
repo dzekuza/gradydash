@@ -44,7 +44,7 @@ export function AcceptInviteForm({ inviteId }: AcceptInviteFormProps) {
           description: `You've successfully joined ${result.environmentName}`,
         })
 
-        // Redirect to the environment after a short delay
+        // Redirect to the partner after a short delay
         setTimeout(() => {
           router.push(`/${result.environmentSlug}`)
         }, 2000)
@@ -112,10 +112,10 @@ export function AcceptInviteForm({ inviteId }: AcceptInviteFormProps) {
         throw new Error(error.message)
       }
 
-      toast({
-        title: 'Account created',
-        description: 'Please check your email to confirm your account. After confirmation, you will be automatically added to the environment.',
-      })
+              toast({
+          title: 'Account created',
+          description: 'Please check your email to confirm your account. After confirmation, you will be automatically added to the partner.',
+        })
 
       // Don't try to accept invitation here - it will be handled after email confirmation
     } catch (error) {

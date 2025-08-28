@@ -68,10 +68,16 @@ export function AppSidebar({
         isActive: pathname === "/admin",
       },
       {
-        title: "Environments",
+        title: "Partners",
         url: "/admin/environments",
         icon: Building2,
         isActive: pathname.startsWith("/admin/environments"),
+      },
+      {
+        title: "Locations",
+        url: "/admin/locations",
+        icon: MapPin,
+        isActive: pathname.startsWith("/admin/locations"),
       },
       {
         title: "Users",
@@ -87,10 +93,10 @@ export function AppSidebar({
       },
     ]
   } else if (currentEnvironment) {
-    // Environment-specific navigation
+    // Partner-specific navigation
     navMain = [
       {
-        title: "Environment Dashboard",
+        title: "Partner Dashboard",
         url: `/${currentEnvironment.slug}`,
         icon: BarChart3,
         isActive: pathname === `/${currentEnvironment.slug}`,
@@ -120,7 +126,7 @@ export function AppSidebar({
         isActive: pathname.startsWith(`/${currentEnvironment.slug}/analytics`),
       },
       {
-        title: "Environment Settings",
+        title: "Partner Settings",
         url: `/${currentEnvironment.slug}/settings`,
         icon: Settings2,
         isActive: pathname.startsWith(`/${currentEnvironment.slug}/settings`),

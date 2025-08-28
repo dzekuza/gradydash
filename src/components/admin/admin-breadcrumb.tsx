@@ -18,7 +18,7 @@ export function AdminBreadcrumb() {
 
     if (pathname.startsWith('/admin/environments')) {
       items.push({
-        title: 'Environments',
+        title: 'Partners',
         href: '/admin/environments',
         isCurrent: pathname === '/admin/environments'
       })

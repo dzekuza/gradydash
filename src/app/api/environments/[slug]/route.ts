@@ -23,16 +23,16 @@ export async function GET(
     
     if (!environment) {
       return NextResponse.json(
-        { error: 'Environment not found' },
+        { error: 'Partner not found' },
         { status: 404 }
       )
     }
 
     return NextResponse.json(environment)
   } catch (error) {
-    console.error('Error fetching environment:', error)
+    console.error('Error fetching partner:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch environment' },
+      { error: 'Failed to fetch partner' },
       { status: 500 }
     )
   }

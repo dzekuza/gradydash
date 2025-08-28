@@ -25,15 +25,15 @@ export async function updateEnvironment(environmentId: string, data: UpdateEnvir
     if (data.name) updateData.name = data.name.trim()
     if (data.description) updateData.description = data.description.trim()
 
-    // Update the environment
+    // Update the partner
     const { error } = await supabase
-      .from('environments')
+      .from('partners')
       .update(updateData)
       .eq('id', environmentId)
 
     if (error) {
-      console.error('Error updating environment:', error)
-      throw new Error('Failed to update environment')
+      console.error('Error updating partner:', error)
+      throw new Error('Failed to update partner')
     }
 
     // Revalidate relevant paths

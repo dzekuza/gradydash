@@ -41,10 +41,10 @@ export async function updateProduct(productId: string, formData: FormData) {
       throw new Error('Authentication required')
     }
 
-    // Get the product to find its environment
+    // Get the product to find its partner
     const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
-      .select('environment_id, environments!inner(slug)')
+      .select('partner_id, partners!inner(slug)')
       .eq('id', productId)
       .single()
 
@@ -74,7 +74,7 @@ export async function updateProduct(productId: string, formData: FormData) {
 
 
     // Revalidate paths for immediate UI updates
-    const environmentSlug = existingProduct.environments[0].slug
+    const environmentSlug = existingProduct.partners[0].slug
     revalidatePath(`/${environmentSlug}/products`)
     revalidatePath(`/${environmentSlug}`)
 

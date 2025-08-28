@@ -24,9 +24,9 @@ export async function getUserRoutingInfo(userId: string): Promise<UserRoutingInf
     const { data: memberships, error: membershipsError } = await serviceClient
       .from('memberships')
       .select(`
-        environment_id,
+        partner_id,
         role,
-        environments (
+        partners (
           slug
         )
       `)
@@ -37,14 +37,14 @@ export async function getUserRoutingInfo(userId: string): Promise<UserRoutingInf
       throw new Error('Failed to fetch user memberships')
     }
 
-    // Check if user is a system admin (has membership with null environment_id)
-    const systemMembership = memberships?.find(m => m.environment_id === null)
+    // Check if user is a system admin (has membership with null partner_id)
+    const systemMembership = memberships?.find(m => m.partner_id === null)
     const isSystemAdmin = !!systemMembership && systemMembership.role === 'admin'
     const hasEnvironments = memberships && memberships.length > 0
 
     // Get the first environment slug for redirect
-    const firstEnvironment = memberships?.find(m => m.environment_id !== null)
-    const firstEnvironmentSlug = (firstEnvironment?.environments as any)?.slug
+    const firstEnvironment = memberships?.find(m => m.partner_id !== null)
+    const firstEnvironmentSlug = (firstEnvironment?.partners as any)?.slug
 
     // Determine redirect destination
     let redirectTo = '/dashboard'

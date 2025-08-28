@@ -129,9 +129,9 @@ export default async function EnvironmentDashboardPage({ params }: EnvironmentDa
     // Get user routing information
     const routingInfo = await getUserRoutingInfo(user.id)
     
-    // Check if user has access to this environment
-    // System admins have access to all environments
-    // Regular users need to have a membership in this environment
+    // Check if user has access to this partner
+    // System admins have access to all partners
+    // Regular users need to have a membership in this partner
     const hasAccess = routingInfo.isSystemAdmin || 
       (routingInfo.hasEnvironments && routingInfo.firstEnvironmentSlug === params.env)
 
@@ -139,20 +139,20 @@ export default async function EnvironmentDashboardPage({ params }: EnvironmentDa
       return (
         <AccessDenied
           title="Access Denied"
-          message={`You don't have permission to access the "${params.env}" environment.`}
+          message={`You don't have permission to access the "${params.env}" partner.`}
           homeUrl={routingInfo.redirectTo}
         />
       )
     }
 
-    // Get environment from slug (user has access, so RLS will allow it)
+    // Get partner from slug (user has access, so RLS will allow it)
     const environment = await getEnvironmentBySlug(params.env)
     
     if (!environment) {
       return (
         <AccessDenied
-          title="Environment Not Found"
-          message="The environment you're trying to access does not exist."
+          title="Partner Not Found"
+          message="The partner you're trying to access does not exist."
           homeUrl="/dashboard"
         />
       )
@@ -161,7 +161,7 @@ export default async function EnvironmentDashboardPage({ params }: EnvironmentDa
     return (
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Environment Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Partner Dashboard</h2>
         </div>
         <Suspense fallback={<EnvironmentStatsSkeleton />}>
           <EnvironmentStats environmentId={environment.id} />
