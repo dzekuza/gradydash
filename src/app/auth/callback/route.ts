@@ -37,7 +37,67 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    
+    const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    // Check if user has a pending invitation
+    if (user && user.user_metadata?.pending_invite_id) {
+      const inviteId = user.user_metadata.pending_invite_id
+      
+      try {
+        // Get the invitation
+        const { data: invite, error: inviteError } = await supabase
+          .from('environment_invites')
+          .select(`
+            id,
+            environment_id,
+            email,
+            role,
+            expires_at,
+            accepted_at,
+            environments!inner(name, slug)
+          `)
+          .eq('id', inviteId)
+          .single()
+
+        if (!inviteError && invite && !invite.accepted_at) {
+          // Check if invitation is expired
+          if (new Date(invite.expires_at) >= new Date()) {
+            // Check if user's email matches the invitation email
+            if (user.email === invite.email) {
+              // Accept the invitation
+              const { error: acceptError } = await supabase
+                .from('environment_invites')
+                .update({ accepted_at: new Date().toISOString() })
+                .eq('id', inviteId)
+
+              if (!acceptError) {
+                // Create the membership
+                const environment = Array.isArray(invite.environments) ? invite.environments[0] : invite.environments
+                
+                await supabase
+                  .from('memberships')
+                  .insert({
+                    environment_id: invite.environment_id,
+                    user_id: user.id,
+                    role: invite.role
+                  })
+
+                // Clear the pending invitation from user metadata
+                await supabase.auth.updateUser({
+                  data: { pending_invite_id: null }
+                })
+
+                // Redirect to the environment
+                return NextResponse.redirect(new URL(`/${environment.slug}`, request.url))
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling pending invitation:', error)
+      }
+    }
   }
 
   // URL to redirect to after sign in process completes

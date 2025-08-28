@@ -103,6 +103,7 @@ export function AcceptInviteForm({ inviteId }: AcceptInviteFormProps) {
         options: {
           data: {
             full_name: fullName,
+            pending_invite_id: inviteId, // Store the invitation ID in user metadata
           },
         },
       })
@@ -113,11 +114,10 @@ export function AcceptInviteForm({ inviteId }: AcceptInviteFormProps) {
 
       toast({
         title: 'Account created',
-        description: 'Please check your email to confirm your account, then log in.',
+        description: 'Please check your email to confirm your account. After confirmation, you will be automatically added to the environment.',
       })
 
-      // After successful registration, accept the invitation
-      await handleAcceptInvite(formData)
+      // Don't try to accept invitation here - it will be handled after email confirmation
     } catch (error) {
       toast({
         title: 'Registration failed',

@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Always allow access to public routes
-  if (['/login', '/register', '/auth/callback'].includes(pathname)) {
+  if (['/login', '/register', '/auth/callback', '/invite'].includes(pathname) || pathname.startsWith('/invite/')) {
     return supabaseResponse
   }
 
