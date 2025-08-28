@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-browser'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
+
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -99,8 +99,14 @@ export default function AdminLocationsPage() {
 
         setUser(currentUser)
 
-        // Check admin status
-        const adminStatus = await getUserAdminStatus(currentUser.id)
+        // Check admin status via API
+        const adminStatusResponse = await fetch('/api/admin/user-status')
+        if (!adminStatusResponse.ok) {
+          router.push('/dashboard')
+          return
+        }
+        
+        const adminStatus = await adminStatusResponse.json()
         
         if (!adminStatus.isSystemAdmin) {
           router.push('/dashboard')
@@ -109,38 +115,11 @@ export default function AdminLocationsPage() {
 
         setIsAdmin(true)
 
-        // Use service client for admin operations to bypass RLS
-        const serviceClient = createServiceClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
-
-        // Get all admin locations
-        const { data: adminLocations, error: locationsError } = await serviceClient
-          .from('admin_locations')
-          .select(`
-            id,
-            name,
-            description,
-            address,
-            contact_person_name,
-            contact_email,
-            contact_phone,
-            location_type,
-            is_active,
-            created_at,
-            updated_at,
-            created_by:profiles (
-              id,
-              full_name,
-              email
-            )
-          `)
-          .order('created_at', { ascending: false })
-
-        if (locationsError) {
-          console.error('Error fetching admin locations:', locationsError)
-        } else {
+        // Get all admin locations via API
+        const response = await fetch('/api/admin/locations')
+        if (response.ok) {
+          const { data: adminLocations } = await response.json()
+          
           // Transform the data to match our interface
           const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
             id: location.id,
@@ -157,6 +136,8 @@ export default function AdminLocationsPage() {
             created_by: location.created_by?.[0] || null
           }))
           setLocations(transformedLocations)
+        } else {
+          console.error('Error fetching admin locations:', response.statusText)
         }
 
       } catch (error) {
@@ -194,14 +175,12 @@ export default function AdminLocationsPage() {
 
     setIsSubmitting(true)
     try {
-      const serviceClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-
-      const { data, error } = await serviceClient
-        .from('admin_locations')
-        .insert({
+      const response = await fetch('/api/admin/locations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
           address: formData.address.trim() || null,
@@ -210,14 +189,15 @@ export default function AdminLocationsPage() {
           contact_phone: formData.contact_phone.trim() || null,
           location_type: formData.location_type,
           is_active: formData.is_active,
-          created_by: user.id
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create location')
       }
+
+      const { data } = await response.json()
 
       toast({
         title: 'Location Created',
@@ -225,44 +205,28 @@ export default function AdminLocationsPage() {
       })
 
       // Refresh locations list
-      const { data: adminLocations } = await serviceClient
-        .from('admin_locations')
-        .select(`
-          id,
-          name,
-          description,
-          address,
-          contact_person_name,
-          contact_email,
-          contact_phone,
-          location_type,
-          is_active,
-          created_at,
-          updated_at,
-          created_by:profiles (
-            id,
-            full_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false })
+      const refreshResponse = await fetch('/api/admin/locations')
+      if (refreshResponse.ok) {
+        const { data: adminLocations } = await refreshResponse.json()
+        
+        // Transform the data to match our interface
+        const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
+          id: location.id,
+          name: location.name,
+          description: location.description,
+          address: location.address,
+          contact_person_name: location.contact_person_name,
+          contact_email: location.contact_email,
+          contact_phone: location.contact_phone,
+          location_type: location.location_type,
+          is_active: location.is_active,
+          created_at: location.created_at,
+          updated_at: location.updated_at,
+          created_by: location.created_by?.[0] || null
+        }))
+        setLocations(transformedLocations)
+      }
 
-      // Transform the data to match our interface
-      const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
-        id: location.id,
-        name: location.name,
-        description: location.description,
-        address: location.address,
-        contact_person_name: location.contact_person_name,
-        contact_email: location.contact_email,
-        contact_phone: location.contact_phone,
-        location_type: location.location_type,
-        is_active: location.is_active,
-        created_at: location.created_at,
-        updated_at: location.updated_at,
-        created_by: location.created_by?.[0] || null
-      }))
-      setLocations(transformedLocations)
       setIsCreateDialogOpen(false)
       resetForm()
 
@@ -290,14 +254,13 @@ export default function AdminLocationsPage() {
 
     setIsSubmitting(true)
     try {
-      const serviceClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-
-      const { error } = await serviceClient
-        .from('admin_locations')
-        .update({
+      const response = await fetch('/api/admin/locations', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedLocation.id,
           name: formData.name.trim(),
           description: formData.description.trim() || null,
           address: formData.address.trim() || null,
@@ -306,11 +269,12 @@ export default function AdminLocationsPage() {
           contact_phone: formData.contact_phone.trim() || null,
           location_type: formData.location_type,
           is_active: formData.is_active,
-        })
-        .eq('id', selectedLocation.id)
+        }),
+      })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update location')
       }
 
       toast({
@@ -319,44 +283,28 @@ export default function AdminLocationsPage() {
       })
 
       // Refresh locations list
-      const { data: adminLocations } = await serviceClient
-        .from('admin_locations')
-        .select(`
-          id,
-          name,
-          description,
-          address,
-          contact_person_name,
-          contact_email,
-          contact_phone,
-          location_type,
-          is_active,
-          created_at,
-          updated_at,
-          created_by:profiles (
-            id,
-            full_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false })
+      const refreshResponse = await fetch('/api/admin/locations')
+      if (refreshResponse.ok) {
+        const { data: adminLocations } = await refreshResponse.json()
+        
+        // Transform the data to match our interface
+        const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
+          id: location.id,
+          name: location.name,
+          description: location.description,
+          address: location.address,
+          contact_person_name: location.contact_person_name,
+          contact_email: location.contact_email,
+          contact_phone: location.contact_phone,
+          location_type: location.location_type,
+          is_active: location.is_active,
+          created_at: location.created_at,
+          updated_at: location.updated_at,
+          created_by: location.created_by?.[0] || null
+        }))
+        setLocations(transformedLocations)
+      }
 
-      // Transform the data to match our interface
-      const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
-        id: location.id,
-        name: location.name,
-        description: location.description,
-        address: location.address,
-        contact_person_name: location.contact_person_name,
-        contact_email: location.contact_email,
-        contact_phone: location.contact_phone,
-        location_type: location.location_type,
-        is_active: location.is_active,
-        created_at: location.created_at,
-        updated_at: location.updated_at,
-        created_by: location.created_by?.[0] || null
-      }))
-      setLocations(transformedLocations)
       setIsEditDialogOpen(false)
       setSelectedLocation(null)
       resetForm()
@@ -379,18 +327,13 @@ export default function AdminLocationsPage() {
     }
 
     try {
-      const serviceClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
+      const response = await fetch(`/api/admin/locations?id=${locationId}`, {
+        method: 'DELETE',
+      })
 
-      const { error } = await serviceClient
-        .from('admin_locations')
-        .delete()
-        .eq('id', locationId)
-
-      if (error) {
-        throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete location')
       }
 
       toast({
@@ -399,44 +342,27 @@ export default function AdminLocationsPage() {
       })
 
       // Refresh locations list
-      const { data: adminLocations } = await serviceClient
-        .from('admin_locations')
-        .select(`
-          id,
-          name,
-          description,
-          address,
-          contact_person_name,
-          contact_email,
-          contact_phone,
-          location_type,
-          is_active,
-          created_at,
-          updated_at,
-          created_by:profiles (
-            id,
-            full_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false })
-
-      // Transform the data to match our interface
-      const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
-        id: location.id,
-        name: location.name,
-        description: location.description,
-        address: location.address,
-        contact_person_name: location.contact_person_name,
-        contact_email: location.contact_email,
-        contact_phone: location.contact_phone,
-        location_type: location.location_type,
-        is_active: location.is_active,
-        created_at: location.created_at,
-        updated_at: location.updated_at,
-        created_by: location.created_by?.[0] || null
-      }))
-      setLocations(transformedLocations)
+      const refreshResponse = await fetch('/api/admin/locations')
+      if (refreshResponse.ok) {
+        const { data: adminLocations } = await refreshResponse.json()
+        
+        // Transform the data to match our interface
+        const transformedLocations: AdminLocation[] = (adminLocations || []).map((location: any) => ({
+          id: location.id,
+          name: location.name,
+          description: location.description,
+          address: location.address,
+          contact_person_name: location.contact_person_name,
+          contact_email: location.contact_email,
+          contact_phone: location.contact_phone,
+          location_type: location.location_type,
+          is_active: location.is_active,
+          created_at: location.created_at,
+          updated_at: location.updated_at,
+          created_by: location.created_by?.[0] || null
+        }))
+        setLocations(transformedLocations)
+      }
 
     } catch (error) {
       console.error('Error deleting location:', error)
@@ -505,15 +431,25 @@ export default function AdminLocationsPage() {
   const storeCount = locations.filter(loc => loc.location_type === 'store').length
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Location Management</h2>
           <p className="text-muted-foreground">
             Manage system-wide locations for product storage and operations
           </p>
+          <div className="mt-4 md:hidden">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => resetForm()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Location
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="hidden md:flex items-center space-x-2">
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => resetForm()}>
@@ -631,7 +567,7 @@ export default function AdminLocationsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Locations</CardTitle>
@@ -696,32 +632,34 @@ export default function AdminLocationsPage() {
               const LocationTypeIcon = getLocationTypeIcon(location.location_type)
               
               return (
-                <div key={location.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={location.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <LocationTypeIcon className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                           <h3 className="font-semibold">{location.name}</h3>
-                          {location.is_active ? (
-                            <Badge variant="default" className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3" />
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="flex items-center gap-1">
-                              <XCircle className="h-3 w-3" />
-                              Inactive
-                            </Badge>
-                          )}
-                          <Badge variant="outline">{getLocationTypeLabel(location.location_type)}</Badge>
+                          <div className="flex flex-wrap gap-2">
+                            {location.is_active ? (
+                              <Badge variant="default" className="flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <XCircle className="h-3 w-3" />
+                                Inactive
+                              </Badge>
+                            )}
+                            <Badge variant="outline">{getLocationTypeLabel(location.location_type)}</Badge>
+                          </div>
                         </div>
                         {location.description && (
                           <p className="text-sm text-muted-foreground mt-1">
                             {location.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-2 text-xs text-muted-foreground">
                           {location.address && (
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
@@ -755,11 +693,12 @@ export default function AdminLocationsPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => openEditDialog(location)}
+                      className="w-full sm:w-auto"
                     >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
@@ -767,7 +706,7 @@ export default function AdminLocationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 w-full sm:w-auto"
                       onClick={() => handleDeleteLocation(location.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />

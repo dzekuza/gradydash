@@ -18,10 +18,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Loader2 } from 'lucide-react'
 import { createEnvironmentAdmin } from '@/lib/db/environments/create-environment-admin'
+import { LogoUpload } from '@/components/admin/logo-upload'
+import { MemberInvitations, MemberInvitation } from '@/components/admin/member-invitations'
 
 export function CreateEnvironmentDialog() {
   const [open, setOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [invitations, setInvitations] = useState<MemberInvitation[]>([])
   const router = useRouter()
   const { toast } = useToast()
 
@@ -29,23 +33,44 @@ export function CreateEnvironmentDialog() {
     setIsCreating(true)
     
     try {
+      // Add logo file to form data if present
+      if (logoFile) {
+        formData.append('logo', logoFile)
+      }
+
+      // Add invitations to form data
+      if (invitations.length > 0) {
+        formData.append('invitations', JSON.stringify(invitations))
+      }
+
       const result = await createEnvironmentAdmin(formData)
       setOpen(false)
+      
+      // Reset form state
+      setLogoFile(null)
+      setInvitations([])
+      
       toast({
-        title: 'Environment created',
-        description: 'The environment has been created successfully.',
+        title: 'Partner created',
+        description: 'The partner has been created successfully.',
       })
       router.refresh()
     } catch (error) {
       console.error('Failed to create environment:', error)
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create environment',
+        description: error instanceof Error ? error.message : 'Failed to create partner',
         variant: 'destructive',
       })
     } finally {
       setIsCreating(false)
     }
+  }
+
+  const handleClose = () => {
+    setOpen(false)
+    setLogoFile(null)
+    setInvitations([])
   }
 
   return (
@@ -56,27 +81,27 @@ export function CreateEnvironmentDialog() {
           Create Environment
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Environment</DialogTitle>
+          <DialogTitle>Create New Partner</DialogTitle>
           <DialogDescription>
-            Create a new environment for a reseller. This will create a new workspace with its own products, locations, and members.
+            Create a new partner for a reseller. This will create a new workspace with its own products, locations, and members.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit}>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Environment Name</Label>
+              <Label htmlFor="name">Partner Name</Label>
               <Input
                 id="name"
                 name="name"
-                placeholder="Enter environment name"
+                placeholder="Enter partner name"
                 required
                 disabled={isCreating}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="slug">Environment Slug</Label>
+              <Label htmlFor="slug">Partner Slug</Label>
               <Input
                 id="slug"
                 name="slug"
@@ -95,14 +120,25 @@ export function CreateEnvironmentDialog() {
               <Textarea
                 id="description"
                 name="description"
-                placeholder="Describe this environment..."
+                placeholder="Describe this partner..."
                 rows={3}
                 disabled={isCreating}
               />
             </div>
+            
+            <LogoUpload 
+              onLogoChange={setLogoFile}
+              disabled={isCreating}
+            />
+            
+            <MemberInvitations
+              invitations={invitations}
+              onInvitationsChange={setInvitations}
+              disabled={isCreating}
+            />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isCreating}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating}>
@@ -111,7 +147,7 @@ export function CreateEnvironmentDialog() {
               ) : (
                 <Plus className="mr-2 h-4 w-4" />
               )}
-              {isCreating ? 'Creating...' : 'Create Environment'}
+              {isCreating ? 'Creating...' : 'Create Partner'}
             </Button>
           </DialogFooter>
         </form>

@@ -16,6 +16,8 @@ export interface Environment {
   name: string
   slug: string
   description?: string
+  logo_url?: string
+  logo_file_name?: string
   created_by?: string | null
   created_at: string
   updated_at: string

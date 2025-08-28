@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import { MapPin, Edit, Trash2, Package, User, Mail, Phone } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,10 +29,12 @@ interface Location {
 interface LocationCardProps {
   location: Location
   environmentId: string
+  environmentSlug: string
 }
 
-export function LocationCard({ location, environmentId }: LocationCardProps) {
+export function LocationCard({ location, environmentId, environmentSlug }: LocationCardProps) {
   const [productCount, setProductCount] = React.useState<number>(0)
+  const router = useRouter()
 
   React.useEffect(() => {
     // Fetch product count for this location
@@ -50,8 +53,20 @@ export function LocationCard({ location, environmentId }: LocationCardProps) {
     fetchProductCount()
   }, [location.id])
 
+  const handleCardClick = () => {
+    // Navigate to products page filtered by this location
+    router.push(`/${environmentSlug}/products?location=${location.id}`)
+  }
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click when clicking edit
+  }
+
   return (
-    <Card>
+    <Card 
+      className="cursor-pointer hover:shadow-md transition-shadow duration-200"
+      onClick={handleCardClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -60,19 +75,23 @@ export function LocationCard({ location, environmentId }: LocationCardProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleEditClick}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleEditClick}>
                 <LocationDialog 
                   environmentId={environmentId} 
                   location={location}
                   trigger={<span>Edit Location</span>}
                 />
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={handleEditClick}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Location
               </DropdownMenuItem>

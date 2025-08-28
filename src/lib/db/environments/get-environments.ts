@@ -25,6 +25,8 @@ export async function getEnvironmentsForUser(userId: string): Promise<Environmen
       name,
       slug,
       description,
+      logo_url,
+      logo_file_name,
       created_by,
       created_at,
       updated_at
@@ -59,6 +61,8 @@ export async function getEnvironmentBySlug(slug: string): Promise<Environment | 
         name,
         slug,
         description,
+        logo_url,
+        logo_file_name,
         created_by,
         created_at,
         updated_at

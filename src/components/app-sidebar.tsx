@@ -69,9 +69,9 @@ export function AppSidebar({
       },
       {
         title: "Partners",
-        url: "/admin/environments",
+        url: "/admin/partners",
         icon: Building2,
-        isActive: pathname.startsWith("/admin/environments"),
+        isActive: pathname.startsWith("/admin/partners"),
       },
       {
         title: "Locations",
@@ -152,6 +152,30 @@ export function AppSidebar({
         {environmentSwitcher}
       </SidebarHeader>
       <SidebarContent>
+        {/* Partner Logo Section */}
+        {currentEnvironment && !showAdminBadge && (
+          <div className="px-4 py-6 border-b">
+            <div className="flex items-center gap-3">
+              {currentEnvironment.logo_url ? (
+                <img
+                  src={currentEnvironment.logo_url}
+                  alt={`${currentEnvironment.name} logo`}
+                  className="h-12 w-12 object-cover rounded-lg"
+                />
+              ) : (
+                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-lg truncate">{currentEnvironment.name}</h2>
+                <p className="text-sm text-muted-foreground truncate">
+                  Partner Dashboard
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>

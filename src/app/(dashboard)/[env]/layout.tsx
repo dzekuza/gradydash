@@ -1,6 +1,9 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
+import { MobileBottomNav } from '@/components/mobile-bottom-nav'
+import { MobileEnvironmentSwitcher } from '@/components/mobile-environment-switcher'
+import { MobileUserMenu } from '@/components/mobile-user-menu'
 import { EnvironmentSwitcher } from '@/components/dashboard/environment-switcher'
 import { PageBreadcrumb } from '@/components/dashboard/page-breadcrumb'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
@@ -49,35 +52,63 @@ export default async function EnvironmentLayout({
     }
 
     return (
-      <SidebarProvider>
-        <AppSidebar
-          environmentSwitcher={
-            <Suspense fallback={<div className="h-10 bg-muted animate-pulse rounded" />}>
-              <EnvironmentSwitcher
-                environments={environments}
-                currentEnvironment={currentEnvironment}
-              />
-            </Suspense>
-          }
-          currentEnvironment={currentEnvironment}
-          userProfile={userProfile}
-        />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
+      <>
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <SidebarProvider>
+            <AppSidebar
+              environmentSwitcher={
+                <Suspense fallback={<div className="h-10 bg-muted animate-pulse rounded" />}>
+                  <EnvironmentSwitcher
+                    environments={environments}
+                    currentEnvironment={currentEnvironment}
+                  />
+                </Suspense>
+              }
+              currentEnvironment={currentEnvironment}
+              userProfile={userProfile}
+            />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+                <div className="flex items-center gap-2 px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <Separator orientation="vertical" className="mr-2 h-4" />
+                  <PageBreadcrumb 
+                    environmentName={currentEnvironment.name}
+                    environmentSlug={currentEnvironment.slug}
+                  />
+                </div>
+              </header>
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                {children}
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
+            <div className="flex items-center justify-between gap-2 px-4 w-full">
               <PageBreadcrumb 
                 environmentName={currentEnvironment.name}
                 environmentSlug={currentEnvironment.slug}
               />
+              <div className="flex items-center gap-2">
+                <MobileEnvironmentSwitcher
+                  environments={environments}
+                  currentEnvironment={currentEnvironment}
+                />
+                <MobileUserMenu userProfile={userProfile} />
+              </div>
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 pt-0 pb-20">
             {children}
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+          <MobileBottomNav currentEnvironment={currentEnvironment} />
+        </div>
+      </>
     )
   } catch (error) {
     console.error('Error in environment layout:', error)

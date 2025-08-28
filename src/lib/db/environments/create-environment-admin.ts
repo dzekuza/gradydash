@@ -2,6 +2,13 @@
 
 import { createClient } from '@/lib/supabase/client-server'
 import { revalidatePath } from 'next/cache'
+import { uploadPartnerLogo } from '@/lib/utils/logo-upload'
+import { inviteMemberDirect } from '@/lib/db/environments/invite-member-direct'
+
+export interface MemberInvitation {
+  email: string
+  role: 'store_manager'
+}
 
 export async function createEnvironmentAdmin(formData: FormData) {
   // Use server client for authentication and operations
@@ -10,6 +17,8 @@ export async function createEnvironmentAdmin(formData: FormData) {
   const name = formData.get('name') as string
   const slug = formData.get('slug') as string
   const description = formData.get('description') as string
+  const logoFile = formData.get('logo') as File | null
+  const invitationsJson = formData.get('invitations') as string
 
   if (!name || !slug) {
     throw new Error('Name and slug are required')
@@ -21,6 +30,16 @@ export async function createEnvironmentAdmin(formData: FormData) {
   // Validate slug format
   if (!/^[a-z0-9-]+$/.test(slug)) {
     throw new Error('Slug must contain only lowercase letters, numbers, and hyphens')
+  }
+
+  // Parse invitations
+  let invitations: MemberInvitation[] = []
+  if (invitationsJson) {
+    try {
+      invitations = JSON.parse(invitationsJson)
+    } catch (error) {
+      console.error('Error parsing invitations:', error)
+    }
   }
 
   try {
@@ -53,7 +72,6 @@ export async function createEnvironmentAdmin(formData: FormData) {
     }
 
     // Create the partner
-    // Note: created_by will be automatically set by the database trigger to auth.uid()
     const { data: environment, error: envError } = await supabase
       .from('partners')
       .insert({
@@ -74,6 +92,35 @@ export async function createEnvironmentAdmin(formData: FormData) {
       throw new Error('Partner was not created')
     }
 
+    // Handle logo upload if provided
+    let logoUrl: string | undefined
+    let logoFileName: string | undefined
+    
+    if (logoFile && logoFile.size > 0) {
+      const uploadResult = await uploadPartnerLogo(environment.id, logoFile)
+      if (uploadResult.success && uploadResult.logoUrl) {
+        logoUrl = uploadResult.logoUrl
+        logoFileName = uploadResult.fileName
+        
+        // Update partner with logo information
+        const { error: updateError } = await supabase
+          .from('partners')
+          .update({
+            logo_url: logoUrl,
+            logo_file_name: logoFileName
+          })
+          .eq('id', environment.id)
+
+        if (updateError) {
+          console.error('Error updating partner with logo:', updateError)
+          // Don't throw here, the partner was created successfully
+        }
+      } else {
+        console.error('Error uploading logo:', uploadResult.error)
+        // Don't throw here, the partner was created successfully
+      }
+    }
+
     // Add the current user as a member with store_manager role
     const { error: membershipError } = await supabase
       .from('memberships')
@@ -86,6 +133,16 @@ export async function createEnvironmentAdmin(formData: FormData) {
     if (membershipError) {
       console.error('Error creating membership:', membershipError)
       // Don't throw here, the environment was created successfully
+    }
+
+    // Send invitations to members
+    for (const invitation of invitations) {
+      try {
+        await inviteMemberDirect(environment.id, invitation.email, invitation.role, user.id)
+      } catch (error) {
+        console.error(`Error inviting ${invitation.email}:`, error)
+        // Continue with other invitations even if one fails
+      }
     }
 
     revalidatePath('/admin/environments')

@@ -62,7 +62,7 @@ export function ProductDetailDialog({
           setIsLoadingImages(false)
         })
     }
-  }, [product?.id, open])
+  }, [product, open])
 
   if (!product) {
     return null

@@ -141,9 +141,11 @@ export function NavUser({
               </>
             )}
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
+              <DropdownMenuItem asChild>
+                <a href="/upgrade">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Upgrade to Pro
+                </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

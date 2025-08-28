@@ -155,7 +155,7 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
     }
 
     // Send email notification
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${invite.id}`
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://grady.app'}/invite/${invite.id}`
     
     let emailSent = false
     try {

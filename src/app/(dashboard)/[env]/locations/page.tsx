@@ -14,13 +14,18 @@ interface LocationsPageProps {
   }
 }
 
-async function LocationsList({ environmentId }: { environmentId: string }) {
+async function LocationsList({ environmentId, environmentSlug }: { environmentId: string, environmentSlug: string }) {
   const locations = await getLocations(environmentId)
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {locations.map((location) => (
-        <LocationCard key={location.id} location={location} environmentId={environmentId} />
+        <LocationCard 
+          key={location.id} 
+          location={location} 
+          environmentId={environmentId}
+          environmentSlug={environmentSlug}
+        />
       ))}
       
       {locations.length === 0 && (
@@ -69,7 +74,7 @@ export default async function LocationsPage({ params }: LocationsPageProps) {
           ))}
         </div>
       }>
-        <LocationsList environmentId={environment.id} />
+        <LocationsList environmentId={environment.id} environmentSlug={environment.slug} />
       </Suspense>
     </div>
   )

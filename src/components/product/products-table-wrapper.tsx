@@ -12,9 +12,10 @@ import { bulkUpdateProductStatus, bulkDeleteProducts } from '@/lib/db/products/b
 interface ProductsTableWrapperProps {
   products: Product[]
   environmentSlug: string
+  actionButtons?: React.ReactNode
 }
 
-export function ProductsTableWrapper({ products, environmentSlug }: ProductsTableWrapperProps) {
+export function ProductsTableWrapper({ products, environmentSlug, actionButtons }: ProductsTableWrapperProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [productLocation, setProductLocation] = useState<Location | null>(null)
@@ -73,6 +74,8 @@ export function ProductsTableWrapper({ products, environmentSlug }: ProductsTabl
         data={products} 
         onBulkAction={handleBulkActionWrapper}
         onRowClick={handleRowClick}
+        actionButtons={actionButtons}
+        filterPlaceholder="Filter products..."
       />
 
       <ProductDetailDialog

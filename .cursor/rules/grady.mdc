@@ -10,21 +10,21 @@ alwaysApply: false
 - Complete Supabase Auth integration
 - Role-based access control (RBAC)
 - Secure session management
-- Environment-based permissions
+- Partner-based permissions
 - Invitation system with email notifications
 
-### ✅ Multi-Tenant Environment System
+### ✅ Multi-Tenant Partner System
 
-- Environment-based routing with `[env]` parameter
-- Complete data isolation between environments
-- Environment switcher with keyboard shortcuts
-- Admin-only environment creation
-- User invitation and membership management
+- Partner-based routing with `[env]` parameter
+- Complete data isolation between partners
+- Partner switcher with logos and keyboard shortcuts
+- Admin-only partner creation with logo upload
+- User invitation and membership management (Partner Managers only)
 
 ### ✅ Dashboard & Navigation
 
-- Environment-specific dashboard layouts
-- Sidebar navigation with environment switcher
+- Partner-specific dashboard layouts
+- Sidebar navigation with partner switcher and logos
 - SPA-style navigation (no full page reloads)
 - Active route highlighting
 - Breadcrumb navigation
@@ -39,6 +39,7 @@ alwaysApply: false
 - Bulk operations (status updates, deletion)
 - Product search and filtering
 - Image upload support (schema ready)
+- Action buttons integrated into table toolbar
 
 ### ✅ Location Management
 
@@ -50,9 +51,10 @@ alwaysApply: false
 ### ✅ Member Management
 
 - User invitation system
-- Role assignment and management
+- Role assignment and management (Partner Managers only)
 - Member activity tracking
-- Environment access control
+- Partner access control
+- Action buttons integrated into table toolbar
 
 ### ✅ Analytics & Reporting
 
@@ -97,18 +99,37 @@ alwaysApply: false
 - Follow shadcn/ui design patterns
 - Ensure mobile responsiveness
 
+### Table Component Rules
+
+- **Action Buttons**: Place action buttons (Add Product, Invite Users, etc.) in
+  the table toolbar alongside filter and view options, not as separate buttons
+  near page headings
+- **DataTable Props**: Use `actionButtons` prop to pass custom buttons to table
+  toolbar
+- **Filter Placeholders**: Use `filterPlaceholder` prop for context-appropriate
+  filtering (e.g., "Filter products...", "Filter members...")
+- **Mobile Layout**: Use `space-y-4` instead of
+  `flex items-center justify-between` for page headers to ensure proper mobile
+  stacking
+- **Row Selection**: Disabled by default (`enableRowSelection: false`) - only
+  enable when bulk actions are needed
+- **Default Page Size**: Set to 10 rows
+  (`initialState: { pagination: { pageSize: 10 } }`)
+- **Pagination Display**: Show "X total row(s)" instead of selection count, hide
+  "Rows per page" selector
+
 ### Data Fetching
 
 - Use React Server Components for data fetching where possible
 - Use server actions for mutations
 - Implement proper error handling
 - Use revalidatePath/router.refresh() after mutations
-- Environment-scoped data access
+- Partner-scoped data access
 
 ### Security Rules
 
 - All routes require authentication
-- Environment-based data access control
+- Partner-based data access control
 - Role-based permissions
 - Input validation with Zod schemas
 - Secure API endpoints with RLS
@@ -139,11 +160,9 @@ DEBUG_EMAILS=false
 ```bash
 # Run all migrations in order
 supabase/migrations/001_initial_schema.sql
-supabase/migrations/002_add_system_admin_support.sql
-supabase/migrations/003_fix_environment_access_policies.sql
-supabase/migrations/004_fix_rls_policies.sql
-supabase/migrations/005_add_product_import_fields.sql
-supabase/migrations/006_add_location_contact_fields.sql
+supabase/migrations/002_create_storage_bucket.sql
+supabase/migrations/003_rename_environments_to_partners.sql
+supabase/migrations/004_fix_storage_policies.sql
 ```
 
 ### 3. Admin User Creation
@@ -152,11 +171,11 @@ supabase/migrations/006_add_location_contact_fields.sql
 node scripts/create-admin-user.js
 ```
 
-### 4. Environment Creation
+### 4. Partner Creation
 
-- Use admin dashboard to create production environments
-- Invite team members with appropriate roles
-- Configure environment settings
+- Use admin dashboard to create production partners
+- Invite team members with appropriate roles (Partner Managers only)
+- Configure partner settings and upload logos
 
 ---
 
@@ -172,7 +191,7 @@ npm run dev
 
 - **Login**: http://localhost:3000/login
 - **Admin Dashboard**: http://localhost:3000/admin
-- **Environment Dashboard**: http://localhost:3000/[env]
+- **Partner Dashboard**: http://localhost:3000/[env]
 - **Products**: http://localhost:3000/[env]/products
 - **Locations**: http://localhost:3000/[env]/locations
 - **Members**: http://localhost:3000/[env]/members
@@ -182,28 +201,30 @@ npm run dev
 ### Current Working Features
 
 - ✅ Complete authentication system
-- ✅ Multi-tenant environment management
+- ✅ Multi-tenant partner management
 - ✅ Product management with CSV import
 - ✅ Location management
-- ✅ Member management with invitations
+- ✅ Member management with invitations (Partner Managers only)
 - ✅ Analytics and reporting
 - ✅ Settings and configuration
 - ✅ Mobile-responsive design
 - ✅ TypeScript compilation
 - ✅ All components working
+- ✅ Partner logo support and display
 
 ---
 
 ## Acceptance Criteria Status
 
 1. ✅ **Authentication**: Complete Supabase Auth integration
-2. ✅ **Multi-Tenancy**: Environment-based data isolation
+2. ✅ **Multi-Tenancy**: Partner-based data isolation
 3. ✅ **Navigation**: All navigation uses Next.js routing
 4. ✅ **UI Components**: Every component uses shadcn/ui
 5. ✅ **RLS**: Row-level security implemented
 6. ✅ **Product Management**: Complete CRUD with status tracking
 7. ✅ **CSV Import**: Bulk import with validation
-8. ✅ **Member Management**: Invitation system with roles
+8. ✅ **Member Management**: Invitation system with roles (Partner Managers
+   only)
 9. ✅ **Analytics**: Dashboard statistics and reporting
 10. ✅ **Security**: Comprehensive security measures
 
@@ -216,11 +237,14 @@ npm run dev
 - ✅ Removed all demo content and functionality
 - ✅ Updated all database functions for production use
 - ✅ Implemented complete authentication system
-- ✅ Added environment-based access control
+- ✅ Added partner-based access control with logo support
 - ✅ Updated all components for real data
-- ✅ Implemented invitation system
+- ✅ Implemented invitation system (Partner Managers only)
 - ✅ Added email functionality
 - ✅ Updated documentation for production
+- ✅ Integrated action buttons into table toolbars
+- ✅ Improved mobile responsiveness and table display
+- ✅ Added partner logo support in sidebar and switcher
 
 ### Current Working Files
 
@@ -238,7 +262,7 @@ npm run dev
 The application is now production-ready with complete multi-tenant
 functionality, proper authentication, and comprehensive security measures. All
 demo content has been removed and the system works exclusively with real
-environments and user data.
+partners and user data.
 
 pages, implement server actions, and apply RLS. Include a README.md with setup
 and migration steps.

@@ -15,13 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+
 import { useToast } from '@/hooks/use-toast'
 import { inviteMember } from '@/lib/db/environments/invite-member'
 import { Loader2, UserPlus } from 'lucide-react'
@@ -30,23 +24,17 @@ interface InviteMemberDialogProps {
   environmentId: string
   environmentName: string
   currentUserId: string
-  isSystemAdmin?: boolean
-  environments?: Array<{ id: string; name: string }>
 }
 
 export function InviteMemberDialog({ 
   environmentId, 
   environmentName, 
-  currentUserId,
-  isSystemAdmin = false,
-  environments = []
+  currentUserId
 }: InviteMemberDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('store_manager')
-  const [inviteType, setInviteType] = useState('environment')
-  const [targetEnvironmentId, setTargetEnvironmentId] = useState(environmentId)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -57,30 +45,19 @@ export function InviteMemberDialog({
     try {
       const formData = new FormData()
       formData.append('email', email)
-      formData.append('role', role)
+      formData.append('role', 'store_manager')
       formData.append('environmentId', environmentId)
-      formData.append('inviteType', inviteType)
-      
-      if (inviteType === 'environment' && isSystemAdmin) {
-        formData.append('targetEnvironmentId', targetEnvironmentId)
-      }
+      formData.append('inviteType', 'environment')
 
       const result = await inviteMember(formData)
 
-      // Get target environment name for the toast message
-      const targetEnv = inviteType === 'system_admin' 
-        ? 'System Administration' 
-        : environments.find(env => env.id === targetEnvironmentId)?.name || environmentName
-
       toast({
         title: 'Invitation sent',
-        description: `Invitation sent to ${email} to join ${targetEnv}`,
+        description: `Invitation sent to ${email} to join ${environmentName} as Partner Manager`,
       })
 
       setEmail('')
       setRole('store_manager')
-      setInviteType('environment')
-      setTargetEnvironmentId(environmentId)
       setOpen(false)
       router.refresh()
     } catch (error) {
@@ -94,32 +71,21 @@ export function InviteMemberDialog({
     }
   }
 
-  const getRoleOptions = () => {
-    if (inviteType === 'system_admin') {
-      return [
-        { value: 'admin', label: 'Admin' },
-      ]
-    }
-    
-    return [
-      { value: 'store_manager', label: 'Store Manager' },
-      { value: 'admin', label: 'Admin' },
-    ]
-  }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
-          Invite Member
+          Invite Partner Manager
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
+          <DialogTitle>Invite Partner Manager</DialogTitle>
           <DialogDescription>
-            Send an invitation to join {environmentName}
+            Send an invitation to join {environmentName} as a Partner Manager
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -136,35 +102,14 @@ export function InviteMemberDialog({
             />
           </div>
           
-          {isSystemAdmin && (
-            <div className="space-y-2">
-              <Label htmlFor="inviteType">Invitation Type</Label>
-              <Select value={inviteType} onValueChange={setInviteType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="environment">Environment Member</SelectItem>
-                  <SelectItem value="system_admin">System Administrator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {getRoleOptions().map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="px-3 py-2 text-sm bg-muted rounded-md">
+              Partner Manager
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Invited users will be able to manage this partner&apos;s dashboard
+            </p>
           </div>
           
           <DialogFooter>

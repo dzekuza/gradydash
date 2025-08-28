@@ -34,6 +34,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   onBulkAction?: (action: string, data: any) => Promise<void>
   onRowClick?: (row: TData) => void
+  actionButtons?: React.ReactNode
+  filterPlaceholder?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -41,6 +43,8 @@ export function DataTable<TData, TValue>({
   data,
   onBulkAction,
   onRowClick,
+  actionButtons,
+  filterPlaceholder,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -56,7 +60,7 @@ export function DataTable<TData, TValue>({
       rowSelection,
       columnFilters,
     },
-    enableRowSelection: true,
+    enableRowSelection: false,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -67,6 +71,11 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   })
 
   const handleRowClick = (row: any, event: React.MouseEvent) => {
@@ -83,12 +92,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <DataTableToolbar table={table} />
-        {onBulkAction && table.getFilteredSelectedRowModel().rows.length > 0 && (
-          <DataTableBulkActions table={table} onBulkAction={onBulkAction} />
-        )}
-      </div>
+      <DataTableToolbar table={table} actionButtons={actionButtons} filterPlaceholder={filterPlaceholder} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -114,7 +118,6 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
                   onClick={(event) => handleRowClick(row, event)}
                 >

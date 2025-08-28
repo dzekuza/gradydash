@@ -38,6 +38,11 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // If user is authenticated and trying to access login/register, redirect to dashboard
+  if (user && ['/login', '/register'].includes(pathname)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   // Always allow access to public routes
   if (['/login', '/register', '/auth/callback', '/invite'].includes(pathname) || pathname.startsWith('/invite/')) {
     return supabaseResponse

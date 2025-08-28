@@ -2,7 +2,6 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client-server'
 import { getEnvironmentMembers } from '@/lib/db/environments/get-members'
-import { getEnvironmentInvites } from '@/lib/db/environments/get-invites'
 import { InviteMemberDialog } from '@/components/members/invite-member-dialog'
 import { MembersDataTable } from '@/components/members/members-data-table'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,26 +46,22 @@ async function MembersContent({ environmentSlug }: { environmentSlug: string }) 
   // Check permissions
   const canInvite = ['admin', 'store_manager'].includes(membership.role)
 
-  // Fetch members and invites
-  const [members, invites] = await Promise.all([
-    getEnvironmentMembers(environment.id),
-    getEnvironmentInvites(environment.id)
-  ])
+  // Fetch members
+  const members = await getEnvironmentMembers(environment.id)
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="space-y-4">
         <h2 className="text-3xl font-bold tracking-tight">Members</h2>
-        {canInvite && (
-          <InviteMemberDialog 
-            environmentId={environment.id} 
-            environmentName={environment.name}
-            currentUserId={user.id}
-          />
-        )}
       </div>
       
-      <MembersDataTable members={members} invites={invites} />
+      <MembersDataTable 
+        members={members} 
+        canInvite={canInvite}
+        environmentId={environment.id}
+        environmentName={environment.name}
+        currentUserId={user.id}
+      />
     </div>
   )
 }

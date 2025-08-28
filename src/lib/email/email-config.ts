@@ -1,9 +1,9 @@
 export const emailConfig = {
   // Default from address
-  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@eventably.lt',
+  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@grady.app',
   
   // App URL for links
-  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://eventably.lt',
+  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://grady.app',
   
   // Email templates configuration
   templates: {

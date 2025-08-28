@@ -27,7 +27,7 @@ async function EnvironmentStats({ environmentId }: { environmentId: string }) {
     const productsInRepair = statusDistribution.in_repair || 0
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>

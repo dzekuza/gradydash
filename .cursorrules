@@ -118,19 +118,19 @@ src/
 ### Core Tables
 
 - `profiles` - User profiles with authentication
-- `environments` - Multi-tenant environments
-- `memberships` - User-environment relationships with roles
-- `locations` - Physical locations within environments
+- `partners` - Multi-tenant partners (formerly environments) with logo support
+- `memberships` - User-partner relationships with roles
+- `locations` - Physical locations within partners
 - `products` - Product inventory with full metadata
 - `product_status_history` - Status change tracking
 - `product_comments` - Product discussions
 - `product_images` - Product image metadata
 - `sales` - Sales records
-- `environment_invites` - User invitations with expiration
+- `partner_invites` - User invitations with expiration
 
 ### Enums
 
-- `role`: admin, grady_staff, reseller_manager, reseller_staff
+- `role`: admin, store_manager (Partner Managers only)
 - `product_status`: taken, in_repair, selling, sold, returned, discarded
 
 ### RLS Policies
@@ -152,18 +152,18 @@ src/
 - Environment-based permissions
 - Invitation system with email notifications
 
-### ✅ Multi-Tenant Environment System
+### ✅ Multi-Tenant Partner System
 
-- Environment-based routing with `[env]` parameter
-- Complete data isolation between environments
-- Environment switcher with keyboard shortcuts
-- Admin-only environment creation
-- User invitation and membership management
+- Partner-based routing with `[env]` parameter
+- Complete data isolation between partners
+- Partner switcher with logos and keyboard shortcuts
+- Admin-only partner creation with logo upload
+- User invitation and membership management (Partner Managers only)
 
 ### ✅ Dashboard & Navigation
 
 - Environment-specific dashboard layouts
-- Sidebar navigation with environment switcher
+- Sidebar navigation with environment switcher and partner logos
 - SPA-style navigation (no full page reloads)
 - Active route highlighting
 - Breadcrumb navigation
@@ -178,6 +178,7 @@ src/
 - Bulk operations (status updates, deletion)
 - Product search and filtering
 - Image upload support (schema ready)
+- Action buttons integrated into table toolbar
 
 ### ✅ Location Management
 
@@ -189,9 +190,10 @@ src/
 ### ✅ Member Management
 
 - User invitation system
-- Role assignment and management
+- Role assignment and management (Partner Managers only)
 - Member activity tracking
 - Environment access control
+- Action buttons integrated into table toolbar
 
 ### ✅ Analytics & Reporting
 
@@ -235,6 +237,16 @@ src/
 - Use Tailwind CSS for styling
 - Follow shadcn/ui design patterns
 - Ensure mobile responsiveness
+
+### Table Component Rules
+
+- **Action Buttons**: Place action buttons (Add Product, Invite Users, etc.) in the table toolbar alongside filter and view options, not as separate buttons near page headings
+- **DataTable Props**: Use `actionButtons` prop to pass custom buttons to table toolbar
+- **Filter Placeholders**: Use `filterPlaceholder` prop for context-appropriate filtering (e.g., "Filter products...", "Filter members...")
+- **Mobile Layout**: Use `space-y-4` instead of `flex items-center justify-between` for page headers to ensure proper mobile stacking
+- **Row Selection**: Disabled by default (`enableRowSelection: false`) - only enable when bulk actions are needed
+- **Default Page Size**: Set to 10 rows (`initialState: { pagination: { pageSize: 10 } }`)
+- **Pagination Display**: Show "X total row(s)" instead of selection count, hide "Rows per page" selector
 
 ### Data Fetching
 
@@ -355,11 +367,14 @@ npm run dev
 - ✅ Removed all demo content and functionality
 - ✅ Updated all database functions for production use
 - ✅ Implemented complete authentication system
-- ✅ Added environment-based access control
+- ✅ Added partner-based access control with logo support
 - ✅ Updated all components for real data
-- ✅ Implemented invitation system
+- ✅ Implemented invitation system (Partner Managers only)
 - ✅ Added email functionality
 - ✅ Updated documentation for production
+- ✅ Integrated action buttons into table toolbars
+- ✅ Improved mobile responsiveness and table display
+- ✅ Added partner logo support in sidebar and switcher
 
 ### Current Working Files
 

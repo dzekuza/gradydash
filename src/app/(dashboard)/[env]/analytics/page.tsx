@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   TrendingUp, 
@@ -13,6 +13,7 @@ import {
   PieChart,
   Activity
 } from 'lucide-react'
+import { ProductStatusChart } from '@/components/analytics/product-status-chart'
 import { getProductsByStatus, getRevenueLast30Days, getAverageTimeToSale } from '@/lib/db/products/get-dashboard-stats'
 import { getLocations } from '@/lib/db/locations/get-locations'
 import { getLocationStats } from '@/lib/db/locations/get-location-stats'
@@ -42,7 +43,7 @@ async function AnalyticsStats({ environmentId }: { environmentId: string }) {
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
@@ -98,34 +99,7 @@ async function AnalyticsStats({ environmentId }: { environmentId: string }) {
 
       {/* Product Status Breakdown */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5" />
-              Product Status Distribution
-            </CardTitle>
-            <CardDescription>
-              Breakdown of products by current status
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {Object.entries(statusCounts).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant={
-                    status === 'selling' ? 'default' :
-                    status === 'sold' ? 'secondary' :
-                    status === 'in_repair' ? 'outline' :
-                    'secondary'
-                  }>
-                    {status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                </div>
-                <span className="font-medium">{count}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <ProductStatusChart statusCounts={statusCounts} />
 
         <Card>
           <CardHeader>
@@ -214,7 +188,7 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
       </div>
       
       <Suspense fallback={
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
               <CardHeader className="pb-2">

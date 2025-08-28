@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check, ChevronsUpDown, Plus } from 'lucide-react'
+import { Check, ChevronsUpDown, Plus, Building2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
@@ -38,6 +38,7 @@ interface Environment {
   id: string
   name: string
   slug: string
+  logo_url?: string
 }
 
 interface EnvironmentSwitcherProps {
@@ -96,7 +97,20 @@ export function EnvironmentSwitcher({
             aria-label="Select a partner"
             className="w-full justify-between"
           >
-            {currentEnvironment ? currentEnvironment.name : 'Select partner...'}
+            <div className="flex items-center gap-2">
+              {currentEnvironment?.logo_url ? (
+                <img
+                  src={currentEnvironment.logo_url}
+                  alt={`${currentEnvironment.name} logo`}
+                  className="w-5 h-5 object-cover rounded"
+                />
+              ) : (
+                <Building2 className="w-5 h-5" />
+              )}
+              <span className="truncate">
+                {currentEnvironment ? currentEnvironment.name : 'Select partner...'}
+              </span>
+            </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -112,13 +126,24 @@ export function EnvironmentSwitcher({
                     value={environment.slug}
                     onSelect={() => handleEnvironmentSelect(environment.slug)}
                   >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        value === environment.slug ? 'opacity-100' : 'opacity-0'
+                    <div className="flex items-center gap-2 w-full">
+                      <Check
+                        className={cn(
+                          'h-4 w-4',
+                          value === environment.slug ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      {environment.logo_url ? (
+                        <img
+                          src={environment.logo_url}
+                          alt={`${environment.name} logo`}
+                          className="w-5 h-5 object-cover rounded"
+                        />
+                      ) : (
+                        <Building2 className="w-5 h-5" />
                       )}
-                    />
-                    {environment.name}
+                      <span className="truncate">{environment.name}</span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
