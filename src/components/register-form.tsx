@@ -135,30 +135,10 @@ export function RegisterForm({
         if (authData.user) {
           setSuccess('Business account created successfully! Setting up your dashboard...')
           
-          // Wait a moment for the database triggers to complete
-          setTimeout(async () => {
-            try {
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('primary_partner_id, is_partner_admin')
-                .eq('id', authData.user!.id)
-                .single()
-
-              if (profileError) {
-                console.error('Error fetching profile:', profileError)
-                setError('Account created but there was an issue setting up your dashboard. Please contact support.')
-                return
-              }
-
-              if (profile?.is_partner_admin && profile?.primary_partner_id) {
-                router.push(`/${profile.primary_partner_id}`)
-              } else {
-                router.push('/dashboard')
-              }
-            } catch (err) {
-              console.error('Error redirecting:', err)
-              router.push('/dashboard')
-            }
+          // Wait for the database triggers to complete and then redirect to dashboard
+          // The dashboard page will handle the proper routing
+          setTimeout(() => {
+            router.push('/dashboard')
           }, 2000)
         }
       } else {
