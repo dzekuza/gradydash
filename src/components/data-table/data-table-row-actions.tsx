@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Product } from "@/types/db"
-import { statuses } from "./data"
+import { statuses } from "@/lib/utils/product-statuses"
 import { deleteProductAction } from "@/lib/db/products/delete-product-action"
 import { updateProductStatus } from "@/lib/db/products/update-product-status"
 import { useToast } from "@/hooks/use-toast"

@@ -80,12 +80,6 @@ export function AppSidebar({
         isActive: pathname.startsWith("/admin/users"),
       },
       {
-        title: "Invites",
-        url: "/admin/invites",
-        icon: Plus,
-        isActive: pathname.startsWith("/admin/invites"),
-      },
-      {
         title: "System Settings",
         url: "/admin/settings",
         icon: Settings,

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client-server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserAdminStatus } from '@/lib/db/environments/get-user-admin-status'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -17,19 +18,10 @@ import {
 } from 'lucide-react'
 
 export default async function AdminSettingsPage() {
-  // Use service role client for admin operations (bypasses RLS)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Use the server client for authentication
+  const supabase = createClient()
   
-  // Get the current user using regular client for auth
-  const regularClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  
-  const { data: { user }, error: userError } = await regularClient.auth.getUser()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
   
   if (userError || !user) {
     redirect('/login')
@@ -41,16 +33,22 @@ export default async function AdminSettingsPage() {
     redirect('/dashboard')
   }
 
+  // Use service client for admin operations to bypass RLS
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   // Get system statistics
-  const { data: stats, error: statsError } = await supabase
+  const { data: stats, error: statsError } = await serviceClient
     .from('profiles')
     .select('id', { count: 'exact' })
 
-  const { data: environmentStats, error: envStatsError } = await supabase
+  const { data: environmentStats, error: envStatsError } = await serviceClient
     .from('environments')
     .select('id', { count: 'exact' })
 
-  const { data: membershipStats, error: membershipStatsError } = await supabase
+  const { data: membershipStats, error: membershipStatsError } = await serviceClient
     .from('memberships')
     .select('role', { count: 'exact' })
 

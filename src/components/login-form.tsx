@@ -52,7 +52,9 @@ export function LoginForm({
     setError(null)
 
     try {
+      if (process.env.NODE_ENV === 'development') {
       console.log('Attempting login for:', data.email)
+    }
       
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -66,7 +68,9 @@ export function LoginForm({
       }
 
       if (authData.user) {
-        console.log('Login successful for:', authData.user.email)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Login successful for:', authData.user.email)
+        }
         
         // Check if user has any memberships (including system admin membership)
         const { data: memberships, error: membershipsError } = await supabase

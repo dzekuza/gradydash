@@ -40,8 +40,22 @@ export async function resendInvite(inviteId: string) {
       throw new Error('Invite has expired')
     }
 
-    // TODO: Send email using the email service
-    // For now, we'll just update the created_at timestamp to "refresh" the invite
+    // Send email using the email service
+    const { EmailService } = await import('@/lib/email/email-service')
+    const { buildInviteUrl } = await import('@/lib/email/email-config')
+    
+    const inviteUrl = buildInviteUrl(invite.id, invite.environments.slug)
+    
+    await EmailService.sendInviteEmail({
+      to: invite.email,
+      from: process.env.EMAIL_FROM_ADDRESS || 'noreply@grady.app',
+      inviterName: user.email || 'System',
+      environmentName: invite.environments.name,
+      inviteUrl,
+      role: invite.role
+    })
+
+    // Update the created_at timestamp to "refresh" the invite
     const { error: updateError } = await supabase
       .from('environment_invites')
       .update({

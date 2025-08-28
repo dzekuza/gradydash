@@ -33,14 +33,18 @@ export default async function EnvironmentLayout({
     // Check if user has access to the requested environment
     const hasAccess = environments.some(env => env.slug === params.env)
     if (!hasAccess) {
-      console.log(`User ${user.id} does not have access to environment '${params.env}'`)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`User ${user.id} does not have access to environment '${params.env}'`)
+      }
       notFound()
     }
 
     // Now get the current environment (user has access, so RLS will allow it)
     const currentEnvironment = await getEnvironmentBySlug(params.env)
     if (!currentEnvironment) {
-      console.log(`Environment '${params.env}' not found in database`)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Environment '${params.env}' not found in database`)
+      }
       notFound()
     }
 

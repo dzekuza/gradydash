@@ -42,11 +42,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 2. Navigate to SQL Editor
 3. Run the migrations in order:
    - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_add_system_admin_support.sql`
-   - `supabase/migrations/003_fix_environment_access_policies.sql`
-   - `supabase/migrations/004_fix_rls_policies.sql`
-   - `supabase/migrations/005_add_product_import_fields.sql`
-   - `supabase/migrations/006_add_location_contact_fields.sql`
+   - `supabase/migrations/002_create_storage_bucket.sql`
 
 **Option B: Using Supabase CLI**
 
@@ -192,8 +188,9 @@ Categories use kebab-case IDs (e.g., `mobile-phones-main`, `laptops-main`). See
 
 If you get a 404 error when trying to access a newly created environment:
 
-1. **Check Database Migrations**: Ensure all migrations have been run,
-   especially `003_fix_environment_access_policies.sql`
+1. **Check Database Migrations**: Ensure all migrations have been run:
+   - `001_initial_schema.sql` (creates all tables and policies)
+   - `002_create_storage_bucket.sql` (creates storage bucket for images)
 
 2. **Verify RLS Policies**: The following policies should exist:
    - `Users can create environments` on environments table

@@ -1,79 +1,60 @@
-# Admin User Setup
+# Scripts
 
-This directory contains scripts for setting up the master admin user for Grady
-ReSellOps.
+This directory contains utility scripts for managing the Grady ReSellOps
+Dashboard.
 
-## Prerequisites
+## Available Scripts
 
-1. **Supabase Service Role Key**: You need the Supabase service role key to
-   create users programmatically. This can be found in your Supabase dashboard
-   under Settings > API.
+### `create-admin-user.js`
 
-2. **Environment Variables**: Make sure you have the following in your
-   `.env.local` file:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   ```
+Creates a new admin user in the system. This script is required for initial
+setup.
 
-## Database Migration
-
-Before creating the admin user, you need to run the database migration to
-support system-wide admins:
+**Usage:**
 
 ```bash
-# Apply the migration to your Supabase database
-# This can be done through the Supabase dashboard or CLI
+node scripts/create-admin-user.js
 ```
 
-## Creating the Master Admin User
+**What it does:**
 
-Run the following command to create the master admin user:
+- Prompts for admin user credentials
+- Creates a new user profile with admin role
+- Sets up proper environment access
+- Required for first-time setup
+
+### `verify-admin-setup.js`
+
+Verifies that the admin user setup is correct and functional.
+
+**Usage:**
 
 ```bash
-npm run create-admin
+node scripts/verify-admin-setup.js
 ```
 
-This will create a user with the following credentials:
+**What it does:**
 
-- **Email**: admin@grady.app
-- **Password**: 7ftGiMiy.
-- **Role**: admin (system-wide admin)
+- Checks if admin user exists
+- Verifies admin role assignment
+- Tests admin access to environments
+- Useful for troubleshooting admin access issues
 
-## Admin Capabilities
+## Setup Instructions
 
-The master admin user can:
+1. **Create Admin User** (Required for first-time setup):
+   ```bash
+   node scripts/create-admin-user.js
+   ```
 
-- **Create new environments (stores)**: Set up new reseller environments
-- **Invite users**: Send invitations to join specific environments
-- **Access all environments**: View and manage all environments in the system
-- **Manage users**: Add, remove, and modify user roles across environments
-- **System-wide settings**: Access global system configuration
+2. **Verify Setup** (Optional, for troubleshooting):
+   ```bash
+   node scripts/verify-admin-setup.js
+   ```
 
-## Security Notes
+## Notes
 
-- The service role key has elevated permissions - keep it secure
-- The admin password should be changed after first login
-- Consider enabling 2FA for the admin account
-- Regularly audit admin access and permissions
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. **Check environment variables**: Ensure all required variables are set
-2. **Verify Supabase connection**: Test the connection to your Supabase instance
-3. **Check database permissions**: Ensure the service role has necessary
-   permissions
-4. **Review migration status**: Make sure the database migration has been
-   applied
-
-## Next Steps
-
-After creating the admin user:
-
-1. Log in with the admin credentials
-2. Create your first environment (store)
-3. Invite team members to the environment
-4. Set up locations and start managing products
+- These scripts require proper environment variables to be set
+- Make sure your Supabase project is properly configured
+- Run these scripts from the project root directory
+- The admin user creation script is referenced in the main README.md

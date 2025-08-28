@@ -34,11 +34,14 @@ export class EmailService {
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey || apiKey === 'your_resend_api_key_here') {
       console.warn('⚠️  Resend API key not configured. Email will not be sent.')
-      console.log('📧 Email would have been sent:')
-      console.log('   To:', data.to.join(', '))
-      console.log('   Subject:', data.subject)
-      console.log('   From:', data.from)
-      console.log('   URL in email:', data.html.match(/href="([^"]+)"/)?.[1] || 'No URL found')
+      // Debug logging for development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 Email would have been sent:')
+        console.log('   To:', data.to.join(', '))
+        console.log('   Subject:', data.subject)
+        console.log('   From:', data.from)
+        console.log('   URL in email:', data.html.match(/href="([^"]+)"/)?.[1] || 'No URL found')
+      }
       return { success: false, reason: 'API key not configured' }
     }
 
@@ -59,7 +62,9 @@ export class EmailService {
         throw new Error(result.message || 'Failed to send email')
       }
 
-      console.log('✅ Email sent successfully to:', data.to.join(', '))
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Email sent successfully to:', data.to.join(', '))
+      }
       return result
     } catch (error) {
       console.error('❌ Email sending error:', error)

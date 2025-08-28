@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table/data-table'
-import { columns } from '@/components/data-table/data'
+import { columns } from '@/components/data-table/columns'
 import { DataTableRowActions } from '@/components/data-table/data-table-row-actions'
 import { ColumnDef } from '@tanstack/react-table'
 import { Product, Location } from '@/types/db'

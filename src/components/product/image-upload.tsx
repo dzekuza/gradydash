@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
   onImagesChange: (files: File[]) => void

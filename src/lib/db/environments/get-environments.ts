@@ -69,7 +69,9 @@ export async function getEnvironmentBySlug(slug: string): Promise<Environment | 
     if (error) {
       // Handle the case where no environment is found (PGRST116)
       if (error.code === 'PGRST116') {
+        if (process.env.NODE_ENV === 'development') {
         console.log(`Environment with slug '${slug}' not found`)
+      }
         return null
       }
       console.error('Error fetching environment:', error)

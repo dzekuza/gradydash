@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Product, Location, ProductImage } from '@/types/db'
-import { statuses } from '@/components/data-table/data'
+import { statuses } from '@/lib/utils/product-statuses'
 import { CategoryDisplay } from '@/components/product/category-display'
 import { ProductImages } from '@/components/product/product-images'
 import { getProductImagesClient } from '@/lib/db/products/get-product-images-client'
