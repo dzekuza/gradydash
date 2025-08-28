@@ -5,14 +5,12 @@ shadcn/ui with comprehensive partner management and invitation systems.
 
 ## Features
 
-- ✅ **Two-Tier Registration System**: Admin and Partner account types
+- ✅ **Two-Tier Registration System**: Business Owner and Platform Admin account types
+- ✅ **Multi-Tenant Collaboration**: Business owners and partners can see each other's data within the same business
 - ✅ **Invite Codes System**: Secure partner invitation with usage tracking
-- ✅ **Multi-tenant Partner System**: Isolated partner dashboards with logo
-  support
-- ✅ **Role-based Access Control (RBAC)**: Admin, Partner Manager, and Store
-  Manager roles
-- ✅ **Partner Switching**: Environment switching with keyboard shortcuts and
-  partner logos
+- ✅ **Multi-tenant Partner System**: Isolated partner dashboards with logo support
+- ✅ **Role-based Access Control (RBAC)**: Admin, Partner Manager, and Store Manager roles
+- ✅ **Partner Switching**: Environment switching with keyboard shortcuts and partner logos
 - ✅ **Product Management**: Complete CRUD with status tracking and CSV import
 - ✅ **Location Management**: Multi-location support with contact information
 - ✅ **Member Management**: Invitation system with email notifications
@@ -62,7 +60,10 @@ DEBUG_EMAILS=false
    - `supabase/migrations/003_rename_environments_to_partners.sql`
    - `supabase/migrations/004_fix_storage_policies.sql`
    - `supabase/migrations/005_enable_user_registration.sql`
-   - `supabase/migrations/20250828051404_remote_migration.sql`
+   - `supabase/migrations/006_fix_account_type_logic.sql`
+   - `supabase/migrations/007_swap_account_type_logic.sql`
+   - `supabase/migrations/008_update_rls_for_multi_tenant.sql`
+   - `supabase/migrations/009_update_trigger_for_business_id.sql`
 
 **Option B: Using Supabase CLI**
 
@@ -104,48 +105,77 @@ npm run dev
 
 The system supports two distinct account types:
 
-#### 1. Admin Accounts
+#### 1. Business Owner Accounts
 
-- **Capabilities**: Create and manage partner dashboards, invite partners, track
-  products
+- **Capabilities**: Create and manage their own business dashboard, invite partners, track products
 - **Registration**: Requires company name and personal details
-- **Dashboard**: Full admin dashboard with partner management
-- **Access**: Can create multiple partners and invite team members
+- **Dashboard**: Business dashboard with partner management
+- **Access**: Can invite partners to their business and see all business data
+- **Data Access**: Can see data from all partners in their business
 
-#### 2. Partner Accounts
+#### 2. Platform Admin Accounts
 
-- **Capabilities**: Join existing partner dashboards, track assigned products
-- **Registration**: Requires invite code from an admin
-- **Dashboard**: Partner-specific dashboard with limited access
-- **Access**: Only to assigned partner dashboard
+- **Capabilities**: Access system admin dashboard to manage all partners and businesses
+- **Registration**: Requires company name and personal details
+- **Dashboard**: System admin dashboard with full platform access
+- **Access**: Can see all partners and businesses across the platform
+- **Data Access**: Can see all data across all businesses
+
+### Multi-Tenant Collaboration
+
+#### Business Structure
+
+- **Business Owner**: Creates a business and becomes the primary admin
+- **Partners**: Users invited by the business owner to collaborate
+- **Data Sharing**: All users in the same business can see each other's data
+- **Isolation**: Different businesses are completely isolated from each other
+
+#### How It Works
+
+1. **Business Owner Registration**:
+   - User selects "Business Owner" during registration
+   - Creates their own business dashboard
+   - Can invite partners to their business
+   - Can see all data from partners in their business
+
+2. **Partner Invitation**:
+   - Business owner generates invite codes
+   - Partners register using invite codes
+   - Partners join the business owner's business
+   - Partners can see all business data and contribute
+
+3. **Data Access**:
+   - Business owners and partners share the same `BUSINESS_ID`
+   - All users in the same business can see each other's products, locations, sales
+   - Complete isolation between different businesses
+   - Platform admins can see all data across all businesses
 
 ### Invite Codes System
 
-#### For Admins
+#### For Business Owners
 
 - **Generate Codes**: Create invite codes with usage limits and expiration dates
 - **Share Codes**: Copy codes or direct registration links
 - **Track Usage**: Monitor code usage and expiration
-- **Manage Access**: Control who can join the partner dashboard
+- **Manage Access**: Control who can join their business
 
 #### For Partners
 
-- **Receive Code**: Get invite code from admin via email, link, or direct
-  sharing
+- **Receive Code**: Get invite code from business owner via email, link, or direct sharing
 - **Register**: Use code during registration process
-- **Join Dashboard**: Automatically join the correct partner dashboard
+- **Join Business**: Automatically join the business owner's business
 - **Activate Account**: Complete email verification and partner activation
 
 ### Registration Flow
 
-1. **Admin Registration**:
+1. **Business Owner Registration**:
    ```
-   User selects Admin → Enters company details → Account created → Partner dashboard created → Redirected to dashboard
+   User selects Business Owner → Enters company details → Account created → Business dashboard created → Redirected to dashboard
    ```
 
 2. **Partner Registration**:
    ```
-   User receives invite code → Clicks registration link → Registers as Partner → Email verification → Partner activation → Join dashboard
+   User receives invite code → Clicks registration link → Registers as Partner → Email verification → Partner activation → Join business
    ```
 
 ## Project Structure
@@ -187,7 +217,7 @@ src/
 
 ### Core Tables
 
-- `profiles` - User profiles with partner admin flags
+- `profiles` - User profiles with business_id for multi-tenant access
 - `partners` - Multi-tenant partners (formerly environments) with logo support
 - `memberships` - User-partner relationships with roles
 - `invite_codes` - Partner invitation codes with usage tracking
@@ -198,6 +228,12 @@ src/
 - `product_images` - Product image metadata
 - `sales` - Sales records
 - `partner_invites` - User invitations with expiration
+
+### Multi-Tenant Structure
+
+- `profiles.business_id` - Links users to their business (NULL for platform admins)
+- `profiles.is_partner_admin` - TRUE for business owners, FALSE for platform admins
+- `profiles.primary_partner_id` - Business owner's partner ID (NULL for platform admins)
 
 ### Roles
 
@@ -218,9 +254,8 @@ src/
 
 ### Creating Partners
 
-1. **Admin Registration**: New admins automatically get their own partner
-   dashboard
-2. **Partner Setup**: Each partner is isolated with its own data and settings
+1. **Business Owner Registration**: New business owners automatically get their own business dashboard
+2. **Partner Setup**: Each business is isolated with its own data and settings
 3. **Logo Support**: Partners can upload and display their logos
 4. **Member Management**: Invite team members with specific roles
 
@@ -228,8 +263,31 @@ src/
 
 - Users must be authenticated to access any partner
 - Users can only access partners they have been invited to
-- Partner admins have full control over their partner dashboard
-- System admins have access to all partners
+- Business owners have full control over their business dashboard
+- Platform admins have access to all partners
+
+### Multi-Tenant Data Access
+
+#### Business Owners
+
+- Can see all data from partners in their business
+- Can invite new partners to their business
+- Can manage all business settings and configurations
+- Have full CRUD access to all business data
+
+#### Partners
+
+- Can see all data from the business owner and other partners in the same business
+- Can contribute products, locations, and sales data
+- Can view analytics and reports for the entire business
+- Have collaborative access to business data
+
+#### Platform Admins
+
+- Can see all data across all businesses
+- Can manage all partners and businesses
+- Have system-wide administrative access
+- Can create and manage platform-level settings
 
 ### Invite Codes Management
 
@@ -241,9 +299,9 @@ src/
 - **Usage Tracking**: Monitor how many times codes are used
 - **Active/Inactive**: Enable/disable codes as needed
 
-#### Admin Interface
+#### Business Owner Interface
 
-- **Members Page**: Invite codes section for admins
+- **Members Page**: Invite codes section for business owners
 - **Settings Page**: Full invite code management
 - **Copy Functionality**: Copy codes or direct links
 - **Usage Statistics**: Track code usage and expiration
@@ -360,19 +418,25 @@ npm run dev
 
 ### Testing the Registration System
 
-1. **Admin Registration**:
+1. **Business Owner Registration**:
    - Go to `/register`
-   - Select "Admin" account type
+   - Select "Business Owner" account type
    - Fill in company name and personal details
-   - Verify account creation and partner dashboard setup
+   - Verify account creation and business dashboard setup
 
 2. **Partner Registration**:
-   - Generate invite code from admin dashboard
+   - Generate invite code from business owner dashboard
    - Share invite code or direct link
    - Test partner registration with invite code
-   - Verify partner activation and dashboard access
+   - Verify partner activation and business access
 
-3. **Invite Codes**:
+3. **Multi-Tenant Testing**:
+   - Create multiple business owners
+   - Invite partners to different businesses
+   - Verify data isolation between businesses
+   - Test collaborative access within same business
+
+4. **Invite Codes**:
    - Test code generation with different usage limits
    - Test code expiration functionality
    - Test direct link sharing
@@ -424,12 +488,18 @@ The application can be deployed to any platform that supports Next.js:
 2. **Invite Code Not Working**:
    - Check if the code is active and not expired
    - Verify usage limits haven't been exceeded
-   - Ensure the code belongs to the correct partner
+   - Ensure the code belongs to the correct business
 
 3. **Partner Activation Issues**:
    - Check email verification status
    - Verify invite code is valid
    - Ensure user has proper permissions
+
+### Multi-Tenant Issues
+
+1. **Data Not Visible**: Check if users have the same `BUSINESS_ID`
+2. **Wrong Business Access**: Verify user's business assignment
+3. **Platform Admin Access**: Ensure platform admins have `BUSINESS_ID = NULL`
 
 ### Common Issues
 
