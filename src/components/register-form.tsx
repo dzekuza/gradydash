@@ -125,7 +125,7 @@ export function RegisterForm({
         }
 
         if (authData.user) {
-          setSuccess('Business admin account created successfully! Setting up your admin dashboard...')
+          setSuccess('Business owner account created successfully! Setting up your business dashboard...')
           
           // Wait for the database triggers to complete and then redirect to dashboard
           // The dashboard page will handle the proper routing
@@ -156,7 +156,7 @@ export function RegisterForm({
         }
 
         if (authData.user) {
-          setSuccess('Partner account created successfully! Setting up your business dashboard...')
+          setSuccess('Platform admin account created successfully! Setting up your admin dashboard...')
           
           // Wait for the database triggers to complete and then redirect to dashboard
           // The dashboard page will handle the proper routing
@@ -250,9 +250,9 @@ export function RegisterForm({
               <Crown className="h-6 w-6 text-yellow-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-lg mb-2">Business Admin</div>
+              <div className="font-semibold text-lg mb-2">Business Owner</div>
               <div className="text-muted-foreground text-sm leading-relaxed">
-                Access the system admin dashboard to manage all partners, create new businesses, and oversee the entire platform.
+                Create and manage your own business dashboard, track products across multiple locations, invite team members and partners.
               </div>
             </div>
             {accountType === 'admin' && (
@@ -278,9 +278,9 @@ export function RegisterForm({
               <Users className="h-6 w-6 text-blue-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-lg mb-2">Partner Account</div>
+              <div className="font-semibold text-lg mb-2">Platform Admin</div>
               <div className="text-muted-foreground text-sm leading-relaxed">
-                Create and manage your own business dashboard, track products across multiple locations, invite team members and partners.
+                Access the system admin dashboard to manage all partners, create new businesses, and oversee the entire platform.
               </div>
             </div>
             {accountType === 'partner' && (
@@ -314,12 +314,12 @@ export function RegisterForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold">
-          {accountType === 'admin' ? 'Create Business Admin Account' : 'Create Partner Account'}
+          {accountType === 'admin' ? 'Create Business Owner Account' : 'Create Platform Admin Account'}
         </h2>
         <p className="text-sm text-muted-foreground">
           {accountType === 'admin' 
-            ? 'Set up your business admin account to access the system admin dashboard'
-            : 'Set up your partner account and create your business dashboard'
+            ? 'Set up your business owner account and create your business dashboard'
+            : 'Set up your platform admin account to access the system admin dashboard'
           }
         </p>
       </div>
@@ -451,7 +451,7 @@ export function RegisterForm({
           disabled={isLoading}
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {accountType === 'admin' ? 'Create Business Admin Account' : 'Create Partner Account'}
+          {accountType === 'admin' ? 'Create Business Owner Account' : 'Create Platform Admin Account'}
         </Button>
       </div>
     </form>

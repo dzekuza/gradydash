@@ -1,5 +1,6 @@
--- Migration to fix account type logic
--- Business admin accounts should become system admins, partner accounts should become partner admins
+-- Migration to swap account type logic
+-- 'admin' should create partner admin accounts (business owners)
+-- 'partner' should create system admin accounts (platform admins)
 
 -- Drop the existing trigger and function
 DROP TRIGGER IF EXISTS ON_NEW_USER_REGISTRATION ON AUTH.USERS;
@@ -15,35 +16,13 @@ CREATE OR REPLACE FUNCTION HANDLE_NEW_USER_REGISTRATION(
 BEGIN
  
     -- Get account type and company name from user metadata
-    ACCOUNT_TYPE := COALESCE(NEW.RAW_USER_META_DATA->>'account_type', 'partner');
+    ACCOUNT_TYPE := COALESCE(NEW.RAW_USER_META_DATA->>'account_type', 'admin');
     COMPANY_NAME := COALESCE(NEW.RAW_USER_META_DATA->>'company_name', 'My Store');
  
     -- Handle different account types
     IF ACCOUNT_TYPE = 'admin' THEN
  
-        -- Business admin: Create system admin membership (no partner)
-        INSERT INTO MEMBERSHIPS (
-            PARTNER_ID,
-            USER_ID,
-            ROLE
-        ) VALUES (
-            NULL, -- NULL partner_id means system admin
-            NEW.ID,
-            'admin'
-        );
- 
-        -- Update profile to mark as NOT partner admin
-        UPDATE PROFILES
-        SET
-            IS_PARTNER_ADMIN = FALSE,
-            PRIMARY_PARTNER_ID = NULL,
-            UPDATED_AT = NOW(
-            )
-        WHERE
-            ID = NEW.ID;
-    ELSIF ACCOUNT_TYPE = 'partner' THEN
- 
-        -- Partner account: Create partner and partner admin membership
+        -- Business Owner: Create partner and partner admin membership
         -- Create a new partner for this user
         INSERT INTO PARTNERS (
             NAME,
@@ -79,6 +58,28 @@ BEGIN
             NEW.ID,
             'admin'
         );
+    ELSIF ACCOUNT_TYPE = 'partner' THEN
+ 
+        -- Platform Admin: Create system admin membership (no partner)
+        INSERT INTO MEMBERSHIPS (
+            PARTNER_ID,
+            USER_ID,
+            ROLE
+        ) VALUES (
+            NULL, -- NULL partner_id means system admin
+            NEW.ID,
+            'admin'
+        );
+ 
+        -- Update profile to mark as NOT partner admin
+        UPDATE PROFILES
+        SET
+            IS_PARTNER_ADMIN = FALSE,
+            PRIMARY_PARTNER_ID = NULL,
+            UPDATED_AT = NOW(
+            )
+        WHERE
+            ID = NEW.ID;
     END IF;
 
     RETURN NEW;
@@ -92,4 +93,4 @@ CREATE TRIGGER ON_NEW_USER_REGISTRATION AFTER INSERT ON AUTH.USERS FOR EACH ROW 
  
 -- Add comments for documentation
 COMMENT ON FUNCTION HANDLE_NEW_USER_REGISTRATION() IS
-    'Handles new user registration based on account type: admin users become system admins, partner users become partner admins';
+    'Handles new user registration: admin users become partner admins (business owners), partner users become system admins (platform admins)';
