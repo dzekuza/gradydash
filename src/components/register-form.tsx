@@ -31,21 +31,13 @@ const registerSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 }).refine((data) => {
-  if (data.accountType === 'admin') {
+  if (data.accountType === 'admin' || data.accountType === 'partner') {
     return data.companyName && data.companyName.length >= 2
   }
   return true
 }, {
-  message: 'Company name is required for admin accounts',
+  message: 'Company name is required for both account types',
   path: ['companyName'],
-}).refine((data) => {
-  if (data.accountType === 'partner') {
-    return data.inviteCode && data.inviteCode.length > 0
-  }
-  return true
-}, {
-  message: 'Invite code is required for partner accounts',
-  path: ['inviteCode'],
 })
 
 type RegisterFormData = z.infer<typeof registerSchema>
@@ -133,7 +125,7 @@ export function RegisterForm({
         }
 
         if (authData.user) {
-          setSuccess('Business account created successfully! Setting up your dashboard...')
+          setSuccess('Business admin account created successfully! Setting up your admin dashboard...')
           
           // Wait for the database triggers to complete and then redirect to dashboard
           // The dashboard page will handle the proper routing
@@ -164,13 +156,13 @@ export function RegisterForm({
         }
 
         if (authData.user) {
-          setSuccess('Team account created successfully! Please check your email to verify your account, then sign in to activate your team access.')
+          setSuccess('Partner account created successfully! Setting up your business dashboard...')
           
-          // For partner accounts, they need to verify email first
-          // Then they can use their invite code to join a partner
+          // Wait for the database triggers to complete and then redirect to dashboard
+          // The dashboard page will handle the proper routing
           setTimeout(() => {
-            router.push('/login?message=Please check your email to verify your account, then sign in to activate your team access')
-          }, 3000)
+            router.push('/dashboard')
+          }, 2000)
         }
       }
     } catch (err) {
@@ -258,9 +250,9 @@ export function RegisterForm({
               <Crown className="h-6 w-6 text-yellow-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-lg mb-2">For businesses</div>
+              <div className="font-semibold text-lg mb-2">Business Admin</div>
               <div className="text-muted-foreground text-sm leading-relaxed">
-                Create and manage your own business dashboard, track products across multiple locations, invite team members and partners, and many more..
+                Access the system admin dashboard to manage all partners, create new businesses, and oversee the entire platform.
               </div>
             </div>
             {accountType === 'admin' && (
@@ -286,9 +278,9 @@ export function RegisterForm({
               <Users className="h-6 w-6 text-blue-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-lg mb-2">For team members</div>
+              <div className="font-semibold text-lg mb-2">Partner Account</div>
               <div className="text-muted-foreground text-sm leading-relaxed">
-                Join an existing business dashboard, track products assigned to you, access team-specific features and many more..
+                Create and manage your own business dashboard, track products across multiple locations, invite team members and partners.
               </div>
             </div>
             {accountType === 'partner' && (
@@ -322,12 +314,12 @@ export function RegisterForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold">
-          {accountType === 'admin' ? 'Create Business Account' : 'Join Team Account'}
+          {accountType === 'admin' ? 'Create Business Admin Account' : 'Create Partner Account'}
         </h2>
         <p className="text-sm text-muted-foreground">
           {accountType === 'admin' 
-            ? 'Set up your business account and create your first dashboard'
-            : 'Enter your details to join the team dashboard'
+            ? 'Set up your business admin account to access the system admin dashboard'
+            : 'Set up your partner account and create your business dashboard'
           }
         </p>
       </div>
@@ -388,37 +380,19 @@ export function RegisterForm({
         )}
       </div>
       
-      {accountType === 'admin' && (
-        <div className="grid gap-1.5">
-          <Label htmlFor="companyName" className="text-sm">Company Name *</Label>
-          <Input
-            id="companyName"
-            type="text"
-            placeholder="My Awesome Store"
-            {...register('companyName')}
-            disabled={isLoading}
-          />
-          {errors.companyName && (
-            <p className="text-xs text-destructive">{errors.companyName.message}</p>
-          )}
-        </div>
-      )}
-      
-      {accountType === 'partner' && (
-        <div className="grid gap-1.5">
-          <Label htmlFor="inviteCode" className="text-sm">Team Invite Code *</Label>
-          <Input
-            id="inviteCode"
-            type="text"
-                          placeholder="Enter your team invite code"
-            {...register('inviteCode')}
-            disabled={isLoading}
-          />
-          {errors.inviteCode && (
-            <p className="text-xs text-destructive">{errors.inviteCode.message}</p>
-          )}
-        </div>
-      )}
+      <div className="grid gap-1.5">
+        <Label htmlFor="companyName" className="text-sm">Company Name *</Label>
+        <Input
+          id="companyName"
+          type="text"
+          placeholder="My Awesome Store"
+          {...register('companyName')}
+          disabled={isLoading}
+        />
+        {errors.companyName && (
+          <p className="text-xs text-destructive">{errors.companyName.message}</p>
+        )}
+      </div>
       
       <div className="grid gap-1.5">
         <Label htmlFor="phone" className="text-sm">Phone Number (Optional)</Label>
@@ -477,7 +451,7 @@ export function RegisterForm({
           disabled={isLoading}
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {accountType === 'admin' ? 'Create Business Account' : 'Create Team Account'}
+          {accountType === 'admin' ? 'Create Business Admin Account' : 'Create Partner Account'}
         </Button>
       </div>
     </form>
