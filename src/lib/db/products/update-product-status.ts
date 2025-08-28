@@ -50,7 +50,7 @@ export async function updateProductStatus(
         from_status: currentProduct.status,
         to_status: newStatus as ProductStatus,
         changed_by: user.id,
-        note: `Status changed from ${currentProduct.status} to ${newStatus}`
+        notes: `Status changed from ${currentProduct.status} to ${newStatus}`
       })
 
     if (historyError) {

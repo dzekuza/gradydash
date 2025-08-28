@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, MapPin, Edit, Trash2 } from 'lucide-react'
@@ -39,10 +40,10 @@ async function LocationsList({ environmentId }: { environmentId: string }) {
 }
 
 export default async function LocationsPage({ params }: LocationsPageProps) {
-  // Get the environment by slug
+  // Get the environment by slug (access already checked in layout)
   const environment = await getEnvironmentBySlug(params.env)
   if (!environment) {
-    return <div>Environment not found</div>
+    redirect('/dashboard')
   }
 
   return (

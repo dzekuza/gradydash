@@ -76,7 +76,7 @@ export interface ProductStatusHistory {
   product_id: string
   from_status: ProductStatus
   to_status: ProductStatus
-  note?: string
+  notes?: string
   changed_by?: string | null
   created_at: string
 }

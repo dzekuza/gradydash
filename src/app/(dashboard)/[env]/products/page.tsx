@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/supabase/auth'
 import { getProducts } from '@/lib/db/products/get-products'
 import { getDashboardStats } from '@/lib/db/products/get-dashboard-stats'
-import { getUserMembership } from '@/lib/db/environments/get-user-membership'
 import { getEnvironmentBySlug } from '@/lib/db/environments/get-environments'
 import { getLocations } from '@/lib/db/locations/get-locations'
 import { ProductsTableWrapper } from '@/components/product/products-table-wrapper'
@@ -25,22 +23,9 @@ interface ProductsPageProps {
 }
 
 export default async function ProductsPage({ params }: ProductsPageProps) {
-  const user = await getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Get the environment by slug
+  // Get the environment by slug (access already checked in layout)
   const environment = await getEnvironmentBySlug(params.env)
   if (!environment) {
-    redirect('/dashboard')
-  }
-
-  // Get user's membership in this environment
-  const membership = await getUserMembership(user.id, params.env)
-  
-  if (!membership) {
     redirect('/dashboard')
   }
 

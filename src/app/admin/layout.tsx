@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/supabase/auth'
 import { getUserRoutingInfo } from '@/lib/db/environments/get-user-routing-info'
 import { AccessDenied } from '@/components/auth/access-denied'
-import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -30,26 +31,17 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Admin Sidebar */}
-      <div className="w-64 border-r bg-muted/40">
-        <AdminSidebar userRole="admin" />
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center gap-4 px-4">
-            <div className="text-sm font-medium">Admin Panel</div>
-          </div>
-        </header>
-        
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+    <SidebarProvider>
+      <AppSidebar
+        showAdminBadge={true}
+        adminRole="admin"
+        userProfile={null}
+      />
+      <SidebarInset>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
-        </main>
-      </div>
-    </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

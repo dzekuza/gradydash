@@ -125,16 +125,17 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
             variant="ghost"
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
             data-action="row-menu"
+            onClick={(e) => e.stopPropagation()}
           >
             <DotsHorizontalIcon className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={handleEdit} data-action="edit">
+        <DropdownMenuContent align="end" className="w-[160px]" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(); }} data-action="edit">
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleView} data-action="view">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(); }} data-action="view">
             View Details
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -159,7 +160,7 @@ export function DataTableRowActions({ row, environmentSlug }: DataTableRowAction
           </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
-            onClick={() => setShowDeleteDialog(true)}
+            onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); }}
             className="text-red-600"
             data-action="delete"
           >

@@ -157,6 +157,7 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
     // Send email notification
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${invite.id}`
     
+    let emailSent = false
     try {
       // Get user profile for display name
       const { data: userProfile } = await supabase
@@ -176,7 +177,7 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
         environmentName = environmentData?.name || 'Unknown Environment'
       }
 
-      await EmailService.sendInviteEmail({
+      const emailResult = await EmailService.sendInviteEmail({
         to: email,
         from: process.env.EMAIL_FROM_ADDRESS || 'noreply@eventably.com',
         inviterName: userProfile?.full_name || user.email,
@@ -184,13 +185,23 @@ if (!['store_manager', 'admin'].includes(membership.role)) {
         inviteUrl,
         role: finalRole
       })
+      
+      emailSent = emailResult.success !== false
     } catch (emailError) {
       console.error('Error sending invitation email:', emailError)
       // Don't fail the entire operation if email fails
       // The invitation is still created and can be accessed via the URL
     }
 
-    return { success: true, inviteId: invite.id, inviteUrl }
+    return { 
+      success: true, 
+      inviteId: invite.id, 
+      inviteUrl,
+      emailSent,
+      message: emailSent 
+        ? 'Invitation sent successfully' 
+        : 'Invitation created but email not sent (check console for details)'
+    }
   } catch (error) {
     console.error('Error in inviteMember:', error)
     throw error

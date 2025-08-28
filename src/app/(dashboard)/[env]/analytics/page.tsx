@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -200,10 +201,10 @@ async function AnalyticsStats({ environmentId }: { environmentId: string }) {
 }
 
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
-  // Get the environment by slug
+  // Get the environment by slug (access already checked in layout)
   const environment = await getEnvironmentBySlug(params.env)
   if (!environment) {
-    return <div>Environment not found</div>
+    redirect('/dashboard')
   }
 
   return (

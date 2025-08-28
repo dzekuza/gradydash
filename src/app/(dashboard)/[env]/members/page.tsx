@@ -16,7 +16,7 @@ interface MembersPageProps {
 async function MembersContent({ environmentSlug }: { environmentSlug: string }) {
   const supabase = createClient()
 
-  // Get the environment
+  // Get the environment (access already checked in layout)
   const { data: environment, error: envError } = await supabase
     .from('environments')
     .select('id, name, slug')

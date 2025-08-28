@@ -110,7 +110,7 @@ export async function createProduct(formData: FormData) {
         from_status: null,
         to_status: validation.data.status,
         changed_by: user.id,
-        note: 'Product created'
+        notes: 'Product created'
       })
 
     if (historyError) {

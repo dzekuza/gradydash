@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,7 +28,7 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
   const router = useRouter()
 
   // Listen for the custom event from ProductForm
-  React.useEffect(() => {
+  useEffect(() => {
     const handleFormSuccess = () => {
       setOpen(false)
       router.refresh()
@@ -63,6 +63,7 @@ export function ProductDialog({ locations, environmentId, environments }: Produc
           environments={environments}
           isLoading={isLoading}
           setIsLoading={setIsLoading}
+          inDialog={true}
         />
       </DialogContent>
     </Dialog>

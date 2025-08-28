@@ -89,7 +89,7 @@ export async function importProducts(products: ImportProduct[], environmentId?: 
             from_status: null,
             to_status: validation.data.status,
             changed_by: user.id,
-            note: 'Product imported'
+            notes: 'Product imported'
           })
 
         totalInserted++

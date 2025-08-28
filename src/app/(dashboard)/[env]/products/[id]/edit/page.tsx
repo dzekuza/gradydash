@@ -67,10 +67,6 @@ export default async function ProductEditPage({ params }: ProductEditPageProps) 
             product={products}
             locations={locations}
             environmentId={environment.id}
-            onSuccess={() => {
-              // Redirect back to products page after successful update
-              window.location.href = `/${params.env}/products`
-            }}
           />
         </CardContent>
       </Card>

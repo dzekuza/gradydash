@@ -28,7 +28,7 @@ export const updateProductSchema = z.object({
 export const changeProductStatusSchema = z.object({
   product_id: z.string().uuid(),
   to_status: z.enum(['taken', 'in_repair', 'selling', 'sold', 'returned', 'discarded'] as const),
-  note: z.string().optional(),
+  notes: z.string().optional(),
 })
 
 export const addProductCommentSchema = z.object({
