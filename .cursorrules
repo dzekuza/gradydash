@@ -5,24 +5,24 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Authentication routes
 │   │   ├── login/page.tsx # Login page with shadcn/ui
-│   │   ├── register/page.tsx # Registration page
+│   │   ├── register/page.tsx # Registration page with two-tier system
 │   │   └── invite/[id]/page.tsx # Invitation acceptance page
 │   ├── (dashboard)/       # Dashboard routes
-│   │   └── [env]/         # Environment-specific routes
+│   │   └── [env]/         # Partner-specific routes
 │   │       ├── layout.tsx # Dashboard layout with sidebar
 │   │       ├── page.tsx   # Dashboard overview
 │   │       ├── products/  # Product management
 │   │       ├── locations/ # Location management
 │   │       ├── members/   # Member management
 │   │       ├── analytics/ # Analytics dashboard
-│   │       └── settings/  # Environment settings
+│   │       └── settings/  # Partner settings
 │   ├── admin/             # Admin routes
 │   │   ├── layout.tsx     # Admin layout
 │   │   ├── page.tsx       # Admin dashboard
-│   │   └── environments/page.tsx # Environment management
+│   │   └── environments/page.tsx # Partner management
 │   ├── api/               # API routes
 │   │   ├── email/send/route.ts # Email sending
-│   │   ├── environments/[slug]/route.ts # Environment API
+│   │   ├── environments/[slug]/route.ts # Partner API
 │   │   └── locations/[id]/route.ts # Location API
 │   ├── auth/callback/route.ts # Auth callback
 │   ├── dashboard/page.tsx # Dashboard redirect
@@ -32,7 +32,7 @@ src/
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components (generated)
 │   ├── dashboard/        # Dashboard-specific components
-│   │   ├── environment-switcher.tsx # Environment switcher with Command/Popover
+│   │   ├── environment-switcher.tsx # Partner switcher with Command/Popover
 │   │   └── page-breadcrumb.tsx # Page breadcrumbs
 │   ├── data-table/       # Table components with filtering/sorting
 │   ├── product/          # Product-specific components
@@ -55,7 +55,7 @@ src/
 │   │   └── test-email-button.tsx # Email testing
 │   ├── app-sidebar.tsx   # Main sidebar component
 │   ├── login-form.tsx    # Login form
-│   ├── register-form.tsx # Registration form
+│   ├── register-form.tsx # Registration form with two-tier system
 │   └── logout-button.tsx # Logout button
 ├── lib/                  # Utility libraries
 │   ├── supabase/         # Supabase clients and auth
@@ -63,13 +63,13 @@ src/
 │   │   ├── client-server.ts  # Server client (fixed cookie handling)
 │   │   └── auth.ts       # Authentication utilities
 │   ├── db/               # Database operations
-│   │   ├── environments/ # Environment operations
-│   │   │   ├── get-environments.ts # Get environments for user/by slug
-│   │   │   ├── create-environment.ts # Create new environment
-│   │   │   ├── update-environment.ts # Update environment
-│   │   │   └── get-user-environments.ts # Get user's environments
+│   │   ├── environments/ # Partner operations
+│   │   │   ├── get-environments.ts # Get partners for user/by slug
+│   │   │   ├── create-environment.ts # Create new partner
+│   │   │   ├── update-environment.ts # Update partner
+│   │   │   └── get-user-environments.ts # Get user's partners
 │   │   ├── products/     # Product operations
-│   │   │   ├── get-products.ts # Get products for environment
+│   │   │   ├── get-products.ts # Get products for partner
 │   │   │   ├── create-product.ts # Create new product
 │   │   │   ├── update-product.ts # Update product
 │   │   │   ├── delete-product.ts # Delete product
@@ -77,7 +77,7 @@ src/
 │   │   │   ├── bulk-actions.ts # Bulk operations
 │   │   │   └── get-dashboard-stats.ts # Dashboard statistics
 │   │   ├── locations/    # Location operations
-│   │   │   ├── get-locations.ts # Get locations for environment
+│   │   │   ├── get-locations.ts # Get locations for partner
 │   │   │   ├── create-location.ts # Create new location
 │   │   │   └── get-location-stats.ts # Location statistics
 │   │   ├── profiles/     # Profile operations
@@ -85,7 +85,7 @@ src/
 │   │   │   └── update-profile.ts # Update profile
 │   │   └── members/      # Member operations
 │   │       ├── invite-member.ts # Invite new member
-│   │       ├── get-members.ts # Get environment members
+│   │       ├── get-members.ts # Get partner members
 │   │       └── accept-invite.ts # Accept invitation
 │   ├── email/            # Email functionality
 │   │   ├── email-service.ts # Email sending service
@@ -117,8 +117,8 @@ src/
 
 ### Core Tables
 
-- `profiles` - User profiles with authentication
-- `partners` - Multi-tenant partners (formerly environments) with logo support
+- `profiles` - User profiles with authentication and account types
+- `partners` - Multi-tenant partners with logo support
 - `memberships` - User-partner relationships with roles
 - `locations` - Physical locations within partners
 - `products` - Product inventory with full metadata
@@ -127,16 +127,23 @@ src/
 - `product_images` - Product image metadata
 - `sales` - Sales records
 - `partner_invites` - User invitations with expiration
+- `invite_codes` - Partner invite codes with usage tracking
 
 ### Enums
 
 - `role`: admin, store_manager (Partner Managers only)
 - `product_status`: taken, in_repair, selling, sold, returned, discarded
 
+### Database Functions & Triggers
+
+- `handle_new_user_registration()` - Creates profiles, partners, and memberships
+- `on_new_user_registration` - Trigger for new user registration
+- `enforce_environment_ownership_trigger` - Protects partner ownership
+
 ### RLS Policies
 
 - All tables have Row Level Security enabled
-- Environment-based access control
+- Partner-based data access control
 - Role-based permissions
 - Secure invitation system
 
@@ -146,10 +153,10 @@ src/
 
 ### ✅ Authentication & Authorization
 
-- Complete Supabase Auth integration
+- Complete Supabase Auth integration with two-tier registration
 - Role-based access control (RBAC)
 - Secure session management
-- Environment-based permissions
+- Partner-based permissions
 - Invitation system with email notifications
 
 ### ✅ Multi-Tenant Partner System
@@ -160,14 +167,22 @@ src/
 - Admin-only partner creation with logo upload
 - User invitation and membership management (Partner Managers only)
 
+### ✅ Registration System
+
+- **Two-Tier Registration**: Admin and Partner account types
+- **Admin Registration**: Creates own partner dashboard
+- **Partner Registration**: Joins existing partner via invite code
+- **Database Triggers**: Automatic profile, partner, and membership creation
+- **UI Clarity**: Clear labeling for business vs team member accounts
+
 ### ✅ Dashboard & Navigation
 
-- Environment-specific dashboard layouts
-- Sidebar navigation with environment switcher and partner logos
+- Partner-specific dashboard layouts
+- Sidebar navigation with partner switcher and logos
 - SPA-style navigation (no full page reloads)
 - Active route highlighting
 - Breadcrumb navigation
-- Mobile-responsive design
+- Mobile-responsive design with bottom navigation
 
 ### ✅ Product Management
 
@@ -186,13 +201,14 @@ src/
 - Location-specific product tracking
 - Contact information management
 - Location statistics and analytics
+- Responsive grid layout
 
 ### ✅ Member Management
 
-- User invitation system
+- User invitation system with invite codes
 - Role assignment and management (Partner Managers only)
 - Member activity tracking
-- Environment access control
+- Partner access control
 - Action buttons integrated into table toolbar
 
 ### ✅ Analytics & Reporting
@@ -202,13 +218,21 @@ src/
 - Revenue tracking
 - Time-to-sale analytics
 - Location-based reporting
+- Modern bar charts and visualizations
 
 ### ✅ Settings & Configuration
 
 - User profile management
-- Environment settings
+- Partner settings
 - Notification preferences
 - Security settings
+
+### ✅ Theme System
+
+- Complete dark/light mode implementation
+- Theme-aware CSS variables
+- Consistent theming across all components
+- Theme toggle in sidebar and mobile menu
 
 ---
 
@@ -228,7 +252,7 @@ src/
 - Use `const router = useRouter(); router.push(url)` for programmatic navigation
 - All routes render inside the dashboard layout - no full refresh
 - Sidebar items use Link and highlight active routes
-- Environment-based routing: `/[env]/[section]`
+- Partner-based routing: `/[env]/[section]`
 
 ### UI Rules
 
@@ -237,6 +261,7 @@ src/
 - Use Tailwind CSS for styling
 - Follow shadcn/ui design patterns
 - Ensure mobile responsiveness
+- Use theme-aware CSS variables (`bg-popover`, `text-popover-foreground`, etc.)
 
 ### Table Component Rules
 
@@ -254,12 +279,12 @@ src/
 - Use server actions for mutations
 - Implement proper error handling
 - Use revalidatePath/router.refresh() after mutations
-- Environment-scoped data access
+- Partner-scoped data access
 
 ### Security Rules
 
 - All routes require authentication
-- Environment-based data access control
+- Partner-based data access control
 - Role-based permissions
 - Input validation with Zod schemas
 - Secure API endpoints with RLS
@@ -290,11 +315,11 @@ DEBUG_EMAILS=false
 ```bash
 # Run all migrations in order
 supabase/migrations/001_initial_schema.sql
-supabase/migrations/002_add_system_admin_support.sql
-supabase/migrations/003_fix_environment_access_policies.sql
-supabase/migrations/004_fix_rls_policies.sql
-supabase/migrations/005_add_product_import_fields.sql
-supabase/migrations/006_add_location_contact_fields.sql
+supabase/migrations/002_create_storage_bucket.sql
+supabase/migrations/003_rename_environments_to_partners.sql
+supabase/migrations/004_fix_storage_policies.sql
+supabase/migrations/005_enable_user_registration.sql
+supabase/migrations/20250828051404_remote_migration.sql
 ```
 
 ### 3. Admin User Creation
@@ -303,11 +328,11 @@ supabase/migrations/006_add_location_contact_fields.sql
 node scripts/create-admin-user.js
 ```
 
-### 4. Environment Creation
+### 4. Partner Creation
 
-- Use admin dashboard to create production environments
+- Use admin dashboard to create production partners
 - Invite team members with appropriate roles
-- Configure environment settings
+- Configure partner settings
 
 ---
 
@@ -322,41 +347,67 @@ npm run dev
 ### Test Routes
 
 - **Login**: http://localhost:3000/login
+- **Registration**: http://localhost:3000/register
 - **Admin Dashboard**: http://localhost:3000/admin
-- **Environment Dashboard**: http://localhost:3000/[env]
+- **Partner Dashboard**: http://localhost:3000/[env]
 - **Products**: http://localhost:3000/[env]/products
 - **Locations**: http://localhost:3000/[env]/locations
 - **Members**: http://localhost:3000/[env]/members
 - **Analytics**: http://localhost:3000/[env]/analytics
 - **Settings**: http://localhost:3000/[env]/settings
 
+### Testing the Registration System
+
+1. **Admin Registration**:
+   - Go to `/register`
+   - Select "For businesses" account type
+   - Fill in company name and personal details
+   - Verify account creation and partner dashboard setup
+
+2. **Partner Registration**:
+   - Generate invite code from admin dashboard
+   - Share invite code or direct link
+   - Test partner registration with invite code
+   - Verify partner activation and dashboard access
+
 ### Current Working Features
 
-- ✅ Complete authentication system
-- ✅ Multi-tenant environment management
-- ✅ Product management with CSV import
-- ✅ Location management
-- ✅ Member management with invitations
-- ✅ Analytics and reporting
+- ✅ Complete authentication system with two-tier registration
+- ✅ Multi-tenant partner management with logo support
+- ✅ Product management with CSV import and status tracking
+- ✅ Location management with responsive grid layout
+- ✅ Member management with invite codes system
+- ✅ Analytics and reporting with modern charts
 - ✅ Settings and configuration
-- ✅ Mobile-responsive design
+- ✅ Mobile-responsive design with bottom navigation
+- ✅ Complete theme system (dark/light mode)
 - ✅ TypeScript compilation
 - ✅ All components working
+- ✅ Partner logo support and display
+- ✅ Invite codes management and tracking
+- ✅ Partner activation flow
+- ✅ Email system with Resend integration
+- ✅ Database triggers and functions working correctly
 
 ---
 
 ## Acceptance Criteria Status
 
-1. ✅ **Authentication**: Complete Supabase Auth integration
-2. ✅ **Multi-Tenancy**: Environment-based data isolation
+1. ✅ **Authentication**: Complete Supabase Auth integration with two-tier registration
+2. ✅ **Multi-Tenancy**: Partner-based data isolation with logo support
 3. ✅ **Navigation**: All navigation uses Next.js routing
 4. ✅ **UI Components**: Every component uses shadcn/ui
 5. ✅ **RLS**: Row-level security implemented
 6. ✅ **Product Management**: Complete CRUD with status tracking
 7. ✅ **CSV Import**: Bulk import with validation
-8. ✅ **Member Management**: Invitation system with roles
-9. ✅ **Analytics**: Dashboard statistics and reporting
+8. ✅ **Member Management**: Invitation system with invite codes (Partner Managers only)
+9. ✅ **Analytics**: Dashboard statistics and reporting with charts
 10. ✅ **Security**: Comprehensive security measures
+11. ✅ **Theme System**: Complete dark/light mode implementation
+12. ✅ **Mobile Responsiveness**: Bottom navigation and responsive layouts
+13. ✅ **Invite Codes**: Complete invite code system with usage tracking
+14. ✅ **Partner Activation**: Secure partner activation flow
+15. ✅ **Email System**: Email notifications and invitations
 
 ---
 
@@ -366,15 +417,29 @@ npm run dev
 
 - ✅ Removed all demo content and functionality
 - ✅ Updated all database functions for production use
-- ✅ Implemented complete authentication system
+- ✅ Implemented complete authentication system with two-tier registration
 - ✅ Added partner-based access control with logo support
 - ✅ Updated all components for real data
-- ✅ Implemented invitation system (Partner Managers only)
-- ✅ Added email functionality
+- ✅ Implemented invitation system with invite codes (Partner Managers only)
+- ✅ Added email functionality with Resend integration
 - ✅ Updated documentation for production
 - ✅ Integrated action buttons into table toolbars
 - ✅ Improved mobile responsiveness and table display
 - ✅ Added partner logo support in sidebar and switcher
+- ✅ Implemented complete theme system with dark/light mode
+- ✅ Added mobile bottom navigation and responsive layouts
+- ✅ Fixed dialog backgrounds to use theme-aware styling
+- ✅ Updated stats grids for mobile responsiveness
+- ✅ Added modern bar charts for analytics
+- ✅ Improved location management with responsive grid layout
+- ✅ Implemented invite codes system with usage tracking
+- ✅ Added partner activation flow
+- ✅ Created invite codes management interface
+- ✅ Updated registration form with step-by-step flow
+- ✅ Added URL parameter support for invite codes
+- ✅ Fixed database trigger issues for user registration
+- ✅ Updated registration form UI text for clarity
+- ✅ Resolved "created_by cannot be modified" database errors
 
 ### Current Working Files
 
@@ -382,11 +447,17 @@ npm run dev
 - All components render correctly
 - Navigation works as expected
 - Database operations work with real data
-- Email system functional
+- Email system functional with Resend
 - Security measures implemented
+- Theme system fully functional
+- Mobile responsiveness complete
+- Invite codes system fully operational
+- Partner activation flow working
+- Registration system with two-tier accounts working
+- Database triggers and functions working correctly
 
 ---
 
 **Status**: 🟢 **PRODUCTION READY**
 
-The application is now production-ready with complete multi-tenant functionality, proper authentication, and comprehensive security measures. All demo content has been removed and the system works exclusively with real environments and user data.
+The application is now production-ready with complete multi-tenant functionality, proper authentication with two-tier registration system, comprehensive security measures, full theme system, mobile-responsive design, and complete invite codes system. All demo content has been removed and the system works exclusively with real partners and user data.

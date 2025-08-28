@@ -118,20 +118,30 @@
 ### Mobile Responsiveness Rules
 
 - **Bottom Navigation**: Mobile uses bottom navigation bar instead of sidebar
-- **Grid Layouts**: Stats grids use 2-column layout on mobile
-- **Button Placement**: Action buttons placed under headers on mobile, not inline
+- **Grid Layouts**: Stats griwds use 2-column layout on mobile
+- **Button Placement**: Action buttons placed under headers on mobile, not
+  inline
 - **Table Responsiveness**: Tables stack content vertically on mobile
 - **Padding**: Use `px-0 md:px-8` for mobile-first padding
 
 ### Table Component Rules
 
-- **Action Buttons**: Place action buttons (Add Product, Invite Users, etc.) in the table toolbar alongside filter and view options, not as separate buttons near page headings
-- **DataTable Props**: Use `actionButtons` prop to pass custom buttons to table toolbar
-- **Filter Placeholders**: Use `filterPlaceholder` prop for context-appropriate filtering (e.g., "Filter products...", "Filter members...")
-- **Mobile Layout**: Use `space-y-4` instead of `flex items-center justify-between` for page headers to ensure proper mobile stacking
-- **Row Selection**: Disabled by default (`enableRowSelection: false`) - only enable when bulk actions are needed
-- **Default Page Size**: Set to 10 rows (`initialState: { pagination: { pageSize: 10 } }`)
-- **Pagination Display**: Show "X total row(s)" instead of selection count, hide "Rows per page" selector
+- **Action Buttons**: Place action buttons (Add Product, Invite Users, etc.) in
+  the table toolbar alongside filter and view options, not as separate buttons
+  near page headings
+- **DataTable Props**: Use `actionButtons` prop to pass custom buttons to table
+  toolbar
+- **Filter Placeholders**: Use `filterPlaceholder` prop for context-appropriate
+  filtering (e.g., "Filter products...", "Filter members...")
+- **Mobile Layout**: Use `space-y-4` instead of
+  `flex items-center justify-between` for page headers to ensure proper mobile
+  stacking
+- **Row Selection**: Disabled by default (`enableRowSelection: false`) - only
+  enable when bulk actions are needed
+- **Default Page Size**: Set to 10 rows
+  (`initialState: { pagination: { pageSize: 10 } }`)
+- **Pagination Display**: Show "X total row(s)" instead of selection count, hide
+  "Rows per page" selector
 
 ### Data Fetching
 
@@ -159,7 +169,8 @@ The system supports two distinct account types:
 
 #### 1. Admin Accounts
 
-- **Capabilities**: Create and manage partner dashboards, invite partners, track products
+- **Capabilities**: Create and manage partner dashboards, invite partners, track
+  products
 - **Registration**: Requires company name and personal details
 - **Dashboard**: Full admin dashboard with partner management
 - **Access**: Can create multiple partners and invite team members
@@ -182,7 +193,8 @@ The system supports two distinct account types:
 
 #### For Partners
 
-- **Receive Code**: Get invite code from admin via email, link, or direct sharing
+- **Receive Code**: Get invite code from admin via email, link, or direct
+  sharing
 - **Register**: Use code during registration process
 - **Join Dashboard**: Automatically join the correct partner dashboard
 - **Activate Account**: Complete email verification and partner activation
@@ -308,14 +320,16 @@ npm run dev
 
 ## Acceptance Criteria Status
 
-1. ✅ **Authentication**: Complete Supabase Auth integration with two-tier registration
+1. ✅ **Authentication**: Complete Supabase Auth integration with two-tier
+   registration
 2. ✅ **Multi-Tenancy**: Partner-based data isolation with logo support
 3. ✅ **Navigation**: All navigation uses Next.js routing
 4. ✅ **UI Components**: Every component uses shadcn/ui
 5. ✅ **RLS**: Row-level security implemented
 6. ✅ **Product Management**: Complete CRUD with status tracking
 7. ✅ **CSV Import**: Bulk import with validation
-8. ✅ **Member Management**: Invitation system with invite codes (Partner Managers only)
+8. ✅ **Member Management**: Invitation system with invite codes (Partner
+   Managers only)
 9. ✅ **Analytics**: Dashboard statistics and reporting with charts
 10. ✅ **Security**: Comprehensive security measures
 11. ✅ **Theme System**: Complete dark/light mode implementation
@@ -375,4 +389,8 @@ npm run dev
 
 **Status**: 🟢 **PRODUCTION READY**
 
-The application is now production-ready with complete multi-tenant functionality, proper authentication with two-tier registration system, comprehensive security measures, full theme system, mobile-responsive design, and complete invite codes system. All demo content has been removed and the system works exclusively with real partners and user data.
+The application is now production-ready with complete multi-tenant
+functionality, proper authentication with two-tier registration system,
+comprehensive security measures, full theme system, mobile-responsive design,
+and complete invite codes system. All demo content has been removed and the
+system works exclusively with real partners and user data.
