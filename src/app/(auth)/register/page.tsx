@@ -28,7 +28,7 @@ export default function RegisterPage() {
             {/* Testimonial Quote */}
             <div className="relative">
               <div className="absolute -left-4 -top-4 text-6xl text-gray-400 opacity-50">
-                "
+                &quot;
               </div>
               <blockquote className="text-white text-2xl leading-relaxed font-medium">
                 Finally, I can track consigned products with zero stress.
